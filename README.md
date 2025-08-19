@@ -12,7 +12,7 @@ A modern, cross-platform application for managing Bitcoin mining hardware, built
 
 ## ✨ Features
 
-- 🔧 **Firmware Flashing**: Easy firmware updates for Bitaxe and NerdAxe devices
+- 🔧 **Firmware Flashing**: Easy firmware updates for Bitaxe and NerdAxe devices - Unavailable at the moment
 - 📱 **Cross-Platform**: Web, Android, iOS, Windows, macOS, and Linux support
 - 🎨 **Modern UI**: Beautiful, responsive design with dark/light themes
 - ⚡ **Performance**: Fast and lightweight with optimized builds
