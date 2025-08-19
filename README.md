@@ -20,8 +20,8 @@ A modern, cross-platform application for managing Bitcoin mining hardware, built
 
 ## 📋 Prerequisites
 
-- **Node.js** 18.0+ and npm
-- **Git** for version control
+- **Node.js** 18.0+ 
+- **Git**
 
 ### Platform-Specific Requirements:
 
