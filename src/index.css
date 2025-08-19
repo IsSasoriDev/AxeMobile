@@ -1,0 +1,185 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* AxeMobile Design System - Bitcoin Mining Dashboard */
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 210 24% 16%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 24% 16%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 24% 16%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 210 24% 16%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 142 76% 36%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
+
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 221 83% 53%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(221 83% 53%));
+    --gradient-accent: linear-gradient(135deg, hsl(142 76% 36%), hsl(217 91% 60%));
+    
+    --shadow-glow: 0 0 20px hsl(217 91% 60% / 0.3);
+    --shadow-card: 0 4px 6px -1px hsl(210 24% 16% / 0.1);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .theme-amoled {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 3%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 3%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 142 76% 36%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 217 91% 60%;
+
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 221 83% 53%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(221 83% 53%));
+    --gradient-accent: linear-gradient(135deg, hsl(142 76% 36%), hsl(217 91% 60%));
+    
+    --shadow-glow: 0 0 20px hsl(217 91% 60% / 0.5);
+    --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 217 91% 60%;
+  }
+
+  .theme-ixtech {
+    --background: 270 100% 5%;
+    --foreground: 0 100% 100%;
+
+    --card: 270 100% 8%;
+    --card-foreground: 0 100% 100%;
+
+    --popover: 270 100% 8%;
+    --popover-foreground: 0 100% 100%;
+
+    --primary: 0 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 120 100% 10%;
+    --secondary-foreground: 0 100% 100%;
+
+    --muted: 240 100% 15%;
+    --muted-foreground: 0 0% 70%;
+
+    --accent: 60 100% 50%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 100% 100%;
+
+    --border: 300 100% 25%;
+    --input: 300 100% 25%;
+    --ring: 0 100% 50%;
+
+    --success: 120 100% 50%;
+    --warning: 60 100% 50%;
+    --info: 240 100% 50%;
+
+    --gradient-primary: linear-gradient(45deg, hsl(0 100% 50%), hsl(120 100% 50%), hsl(240 100% 50%));
+    --gradient-accent: linear-gradient(90deg, hsl(60 100% 50%), hsl(300 100% 50%), hsl(180 100% 50%));
+    
+    --shadow-glow: 0 0 30px hsl(0 100% 50% / 0.8);
+    --shadow-card: 0 4px 6px -1px hsl(0 100% 50% / 0.3);
+
+    --sidebar-background: 270 100% 5%;
+    --sidebar-foreground: 0 100% 100%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 120 100% 10%;
+    --sidebar-accent-foreground: 0 100% 100%;
+    --sidebar-border: 300 100% 25%;
+    --sidebar-ring: 217 91% 60%;
+
+    animation: ixtech-flash 0.1s infinite;
+  }
+
+  @keyframes ixtech-flash {
+    0% { filter: hue-rotate(0deg) saturate(1); }
+    25% { filter: hue-rotate(90deg) saturate(1.5); }
+    50% { filter: hue-rotate(180deg) saturate(2); }
+    75% { filter: hue-rotate(270deg) saturate(1.5); }
+    100% { filter: hue-rotate(360deg) saturate(1); }
+  }
+
+  .sidebar-background { background: hsl(var(--sidebar-background)); }
+  .sidebar-foreground { color: hsl(var(--sidebar-foreground)); }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
