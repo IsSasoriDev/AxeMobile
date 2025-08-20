@@ -12,7 +12,7 @@ A modern, cross-platform application for managing Bitcoin mining hardware, built
 
 ## ✨ Features
 
-- 🔧 **Firmware Flashing**: Easy firmware updates for Bitaxe and NerdAxe devices - **Unavailable at the moment**
+- 🔧 **Firmware Flashing**: Easy firmware updates for Bitaxe and NerdAxe devices
 - 📱 **Cross-Platform**: Web, Android, iOS, Windows, macOS, and Linux support
 - 🎨 **Modern UI**: Beautiful, responsive design with dark/light themes
 - ⚡ **Performance**: Fast and lightweight with optimized builds
@@ -20,8 +20,8 @@ A modern, cross-platform application for managing Bitcoin mining hardware, built
 
 ## 📋 Prerequisites
 
-- **Node.js** 18.0+ 
-- **Git**
+- **Node.js** 18.0+ and npm
+- **Git** for version control
 
 ### Platform-Specific Requirements:
 
@@ -59,6 +59,16 @@ npm run build
 ```
 
 ## 📦 Building for Different Platforms
+
+### 🌐 Web Application
+
+```bash
+# Build for web deployment
+npm run build
+
+# Preview production build
+npm run preview
+```
 
 ### 📱 Mobile Apps (iOS/Android)
 
@@ -143,6 +153,28 @@ npx cap sync
 # Build desktop app with Tauri
 npx tauri build
 ```
+
+## 📁 Project Structure
+
+```
+axe-mobile/
+├── src/
+│   ├── components/        # Reusable UI components
+│   │   ├── layout/       # Layout components (sidebar, navigation)
+│   │   ├── miners/       # Miner-specific components
+│   │   ├── ui/           # Shadcn/ui components
+│   │   └── webview/      # WebView components
+│   ├── pages/            # Route pages
+│   ├── hooks/            # Custom React hooks
+│   ├── lib/              # Utility functions
+│   └── assets/           # Static assets
+├── public/               # Public assets
+├── android/              # Android native code (after cap add)
+├── ios/                  # iOS native code (after cap add)
+├── src-tauri/            # Tauri desktop configuration
+└── capacitor.config.ts   # Capacitor configuration
+```
+
 ## 🎨 Theming
 
 AxeMobile supports multiple themes:
