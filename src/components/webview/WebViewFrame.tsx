@@ -23,8 +23,7 @@ export function WebViewFrame({ url, title, onClose }: WebViewFrameProps) {
           src={url}
           className="w-full h-full border-0"
           title={title}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
-          allow="serial; usb; bluetooth"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         />
       </CardContent>
     </Card>

@@ -1,4 +1,4 @@
-import { Home, Zap, Users, Pickaxe, Waves } from "lucide-react";
+import { Home, Zap, Users, Pickaxe } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -17,7 +17,6 @@ import {
 const items = [
   { title: "Home", url: "/", icon: Home },
   { title: "Flash Firmware", url: "/flash", icon: Zap },
-  { title: "Pools", url: "/pools", icon: Waves },
 ];
 
 const communityItems = [

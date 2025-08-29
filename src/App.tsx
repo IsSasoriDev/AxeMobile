@@ -9,7 +9,6 @@ import { ThemeSelector } from "@/components/layout/ThemeSelector";
 import { PageTransition } from "@/components/layout/PageTransition";
 import Home from "./pages/Home";
 import FlashFirmware from "./pages/FlashFirmware";
-import Pools from "./pages/Pools";
 import GitHub from "./pages/GitHub";
 import NotFound from "./pages/NotFound";
 
@@ -34,7 +33,6 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/flash" element={<FlashFirmware />} />
-                    <Route path="/pools" element={<Pools />} />
                     <Route path="/github" element={<GitHub />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
