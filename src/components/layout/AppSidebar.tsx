@@ -1,6 +1,9 @@
-import { Home, Zap, Users, Pickaxe } from "lucide-react";
+import { Home, Zap, Users, Pickaxe, Waves, Activity, RefreshCw, Calculator } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { SuggestionButton } from "@/components/SuggestionButton";
+import { TypingText } from "@/components/ui/typing-text";
+import { UpdateChecker } from "@/components/ui/update-checker";
 
 import {
   Sidebar,
@@ -15,8 +18,11 @@ import {
 } from "@/components/ui/sidebar";
 
 const items = [
-  { title: "Home", url: "/", icon: Home },
+  { title: "Miners", url: "/", icon: Home },
+  { title: "Stats", url: "/stats", icon: Activity },
   { title: "Flash Firmware", url: "/flash", icon: Zap },
+  { title: "Pools", url: "/pools", icon: Waves },
+  { title: "Calculator", url: "/calculator", icon: Calculator },
 ];
 
 const communityItems = [
@@ -53,7 +59,12 @@ export function AppSidebar() {
                 </h1>
               </div>
               <p className="text-sm sidebar-foreground opacity-70">
-                Unleash the Open Source power
+                <TypingText 
+                  texts={["Unleash the Open Source power", "Hack the planet"]}
+                  typingSpeed={80}
+                  deletingSpeed={30}
+                  pauseDuration={2000}
+                />
               </p>
             </div>
           )}
@@ -83,6 +94,31 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <div className="flex-1" />
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="sidebar-foreground">Updates</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="px-2">
+              <UpdateChecker 
+                trigger={
+                  <button className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
+                    <RefreshCw className="h-4 w-4" />
+                    {!collapsed && <span>Check Updates</span>}
+                  </button>
+                }
+              />
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="sidebar-foreground">Feedback</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="px-2">
+              <SuggestionButton />
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel className="sidebar-foreground">Community</SidebarGroupLabel>

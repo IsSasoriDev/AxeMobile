@@ -3,6 +3,9 @@ import { Zap } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { WebViewFrame } from "@/components/webview/WebViewFrame";
+import { FirmwareUpdater } from "@/components/firmware/FirmwareUpdater";
+import { UpdateChecker } from "@/components/ui/update-checker";
+
 // Using uploaded images as base64 or direct paths
 const bitaxeIcon = "/lovable-uploads/7adf75f8-8945-4fd7-860c-25e1ed367b3c.png";
 const nerdaxeIcon = "/lovable-uploads/e4e02e37-303c-4cd3-ab4d-7ba7dba7a3ea.png";
@@ -28,6 +31,7 @@ const devices = [
 
 export default function FlashFirmware() {
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
+  const [showUpdater, setShowUpdater] = useState<string | null>(null);
 
   const handleDeviceSelect = (deviceId: string) => {
     setSelectedDevice(deviceId);
@@ -37,17 +41,28 @@ export default function FlashFirmware() {
     setSelectedDevice(null);
   };
 
+  const handleShowUpdater = (deviceId: string) => {
+    setShowUpdater(deviceId);
+  };
+
+  const handleCloseUpdater = () => {
+    setShowUpdater(null);
+  };
+
   const selectedDeviceData = devices.find(d => d.id === selectedDevice);
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-          Flash Firmware
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Update your miner firmware with the latest releases
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            Flash Firmware
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Update your miner firmware with the latest releases
+          </p>
+        </div>
+        <UpdateChecker />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -71,10 +86,25 @@ export default function FlashFirmware() {
               </CardHeader>
               
               <CardContent>
-                <Button className="w-full gap-2" variant="outline">
-                  <Zap className="h-4 w-4" />
-                  Flash Firmware
-                </Button>
+                <div className="flex gap-2">
+                  <Button className="flex-1 gap-2" variant="outline" onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeviceSelect(device.id);
+                  }}>
+                    <Zap className="h-4 w-4" />
+                    Web Flasher
+                  </Button>
+                  <Button 
+                    className="flex-1 gap-2" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShowUpdater(device.id);
+                    }}
+                  >
+                    <Zap className="h-4 w-4" />
+                    Bulk Update
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           );
@@ -95,6 +125,13 @@ export default function FlashFirmware() {
           url={selectedDeviceData.url}
           title={`${selectedDeviceData.name} Firmware Flasher`}
           onClose={handleCloseWebView}
+        />
+      )}
+
+      {showUpdater && (
+        <FirmwareUpdater
+          model={showUpdater as 'bitaxe' | 'nerdaxe'}
+          onClose={handleCloseUpdater}
         />
       )}
     </div>

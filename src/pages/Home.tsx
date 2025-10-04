@@ -2,18 +2,26 @@ import { useState } from "react";
 import { MinerCard } from "@/components/miners/MinerCard";
 import { AddMinerDialog } from "@/components/miners/AddMinerDialog";
 import { WebViewFrame } from "@/components/webview/WebViewFrame";
-import { useMinerStorage, Miner } from "@/hooks/useMinerStorage";
+import { useNetworkScanner, MinerDevice } from "@/hooks/useNetworkScanner";
 
 export default function Home() {
-  const { miners, addMiner, deleteMiner, checkMinerStatus } = useMinerStorage();
-  const [webViewMiner, setWebViewMiner] = useState<Miner | null>(null);
+  const { devices, addDevice, removeDevice, refreshDevices, updateDeviceName } = useNetworkScanner();
+  const [webViewMiner, setWebViewMiner] = useState<MinerDevice | null>(null);
 
-  const handleOpenWebView = (miner: Miner) => {
+  const handleOpenWebView = (miner: MinerDevice) => {
     setWebViewMiner(miner);
   };
 
   const handleCloseWebView = () => {
     setWebViewMiner(null);
+  };
+
+  const handleAddMiner = async (minerData: { name: string; ipAddress: string; model: 'bitaxe' | 'nerdaxe' }) => {
+    await addDevice(minerData.ipAddress);
+  };
+
+  const handleStatusCheck = async (miner: MinerDevice) => {
+    await refreshDevices();
   };
 
   return (
@@ -27,29 +35,30 @@ export default function Home() {
             Manage your Bitcoin miners with ease
           </p>
         </div>
-        <AddMinerDialog onAddMiner={addMiner} />
+        <AddMinerDialog onAddMiner={handleAddMiner} />
       </div>
 
-      {miners.length === 0 ? (
+      {devices.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-16 h-16 mx-auto mb-4 bg-gradient-primary rounded-xl flex items-center justify-center">
             <span className="text-2xl">⛏️</span>
           </div>
-          <h3 className="text-xl font-semibold mb-2">No miners added yet</h3>
+          <h3 className="text-xl font-semibold mb-2">No miners found yet</h3>
           <p className="text-muted-foreground mb-6">
-            Start by adding your first Bitcoin miner to the dashboard
+            Start by scanning your network or adding miners manually
           </p>
-          <AddMinerDialog onAddMiner={addMiner} />
+          <AddMinerDialog onAddMiner={handleAddMiner} />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {miners.map((miner) => (
+          {devices.map((miner) => (
             <MinerCard
-              key={miner.id}
+              key={miner.IP}
               miner={miner}
-              onStatusCheck={checkMinerStatus}
-              onDelete={deleteMiner}
+              onStatusCheck={handleStatusCheck}
+              onDelete={() => removeDevice(miner.IP)}
               onOpenWebView={handleOpenWebView}
+              onUpdateName={updateDeviceName}
             />
           ))}
         </div>
@@ -57,8 +66,8 @@ export default function Home() {
 
       {webViewMiner && (
         <WebViewFrame
-          url={`http://${webViewMiner.ipAddress}`}
-          title={`${webViewMiner.name} Interface`}
+          url={`http://${webViewMiner.IP}`}
+          title={`${webViewMiner.IP} Interface`}
           onClose={handleCloseWebView}
         />
       )}

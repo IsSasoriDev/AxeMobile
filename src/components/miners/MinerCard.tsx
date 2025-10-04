@@ -1,53 +1,68 @@
 import { useState } from "react";
-import { ExternalLink, RotateCw, Trash2, Activity, AlertCircle, CheckCircle } from "lucide-react";
+import { ExternalLink, RotateCcw, Trash2, Activity, AlertCircle, CheckCircle, Pencil } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Miner } from "@/hooks/useMinerStorage";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { MinerDevice } from "@/hooks/useNetworkScanner";
+import { toast } from "sonner";
 
 interface MinerCardProps {
-  miner: Miner;
-  onStatusCheck: (miner: Miner) => void;
-  onDelete: (id: string) => void;
-  onOpenWebView: (miner: Miner) => void;
+  miner: MinerDevice;
+  onStatusCheck: (miner: MinerDevice) => void;
+  onDelete: (ip: string) => void;
+  onOpenWebView: (miner: MinerDevice) => void;
+  onUpdateName: (ip: string, name: string) => void;
 }
 
-export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView }: MinerCardProps) {
+export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView, onUpdateName }: MinerCardProps) {
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editName, setEditName] = useState(miner.name || '');
+
+  const handleSaveName = () => {
+    if (editName.trim()) {
+      onUpdateName(miner.IP, editName.trim());
+      setEditDialogOpen(false);
+    } else {
+      toast.error('Device name cannot be empty');
+    }
+  };
+
   const getStatusIcon = () => {
-    switch (miner.status) {
-      case "online":
-        return <CheckCircle className="h-4 w-4 text-success" />;
-      case "offline":
-        return <AlertCircle className="h-4 w-4 text-destructive" />;
-      case "checking":
-        return <RotateCw className="h-4 w-4 animate-spin text-warning" />;
-      default:
-        return <Activity className="h-4 w-4 text-muted-foreground" />;
+    if (miner.isActive) {
+      return <CheckCircle className="h-4 w-4 text-success" />;
+    } else {
+      return <AlertCircle className="h-4 w-4 text-destructive" />;
     }
   };
 
   const getStatusVariant = () => {
-    switch (miner.status) {
-      case "online":
-        return "default";
-      case "offline":
-        return "destructive";
-      case "checking":
-        return "secondary";
-      default:
-        return "outline";
-    }
+    return miner.isActive ? "default" : "destructive";
   };
 
   return (
     <Card className="shadow-card hover:shadow-glow transition-all duration-300">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">{miner.name}</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg font-semibold">{miner.name || miner.IP}</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setEditName(miner.name || '');
+                setEditDialogOpen(true);
+              }}
+              className="h-6 w-6 p-0"
+            >
+              <Pencil className="h-3 w-3" />
+            </Button>
+          </div>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onDelete(miner.id)}
+            onClick={() => onDelete(miner.IP)}
             className="text-destructive hover:bg-destructive/10"
           >
             <Trash2 className="h-4 w-4" />
@@ -58,20 +73,38 @@ export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView }: Min
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">IP Address:</span>
-          <code className="bg-muted px-2 py-1 rounded text-sm">{miner.ipAddress}</code>
+          <code className="bg-muted px-2 py-1 rounded text-sm">{miner.IP}</code>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">Model:</span>
+          <span className="text-sm">{miner.model || 'Unknown'}</span>
         </div>
         
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Status:</span>
           <Badge variant={getStatusVariant()} className="gap-1">
             {getStatusIcon()}
-            {miner.status}
+            {miner.isActive ? 'Online' : 'Offline'}
           </Badge>
         </div>
-        
-        {miner.lastChecked && (
-          <div className="text-xs text-muted-foreground">
-            Last checked: {miner.lastChecked.toLocaleTimeString()}
+
+        {miner.hashRate && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Hashrate:</span>
+            <span className="text-sm font-mono">{miner.hashRate.toFixed(2)} GH/s</span>
+          </div>
+        )}
+
+        {miner.temp && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Temperature:</span>
+            <span className={`text-sm font-mono ${
+              miner.temp > 70 ? 'text-destructive' : 
+              miner.temp > 60 ? 'text-yellow-500' : ''
+            }`}>
+              {miner.temp}°C
+            </span>
           </div>
         )}
         
@@ -80,11 +113,10 @@ export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView }: Min
             variant="outline"
             size="sm"
             onClick={() => onStatusCheck(miner)}
-            disabled={miner.status === "checking"}
             className="flex-1"
           >
-            <RotateCw className={`h-4 w-4 mr-2 ${miner.status === "checking" ? "animate-spin" : ""}`} />
-            Check Status
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Refresh
           </Button>
           
           <Button
@@ -98,6 +130,35 @@ export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView }: Min
           </Button>
         </div>
       </CardContent>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Miner Name</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Miner Name
+              </label>
+              <Input
+                placeholder="Enter miner name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSaveName()}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveName}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

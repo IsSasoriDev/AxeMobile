@@ -11,16 +11,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Miner } from "@/hooks/useMinerStorage";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AddMinerDialogProps {
-  onAddMiner: (miner: Omit<Miner, "id">) => void;
+  onAddMiner: (miner: { name: string; ipAddress: string; model: 'bitaxe' | 'nerdaxe' }) => void;
 }
 
 export function AddMinerDialog({ onAddMiner }: AddMinerDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [ipAddress, setIpAddress] = useState("");
+  const [model, setModel] = useState<'bitaxe' | 'nerdaxe'>('bitaxe');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,11 +30,12 @@ export function AddMinerDialog({ onAddMiner }: AddMinerDialogProps) {
       onAddMiner({
         name: name.trim(),
         ipAddress: ipAddress.trim(),
-        status: "offline",
+        model,
       });
       
       setName("");
       setIpAddress("");
+      setModel('bitaxe');
       setOpen(false);
     }
   };
@@ -68,16 +70,27 @@ export function AddMinerDialog({ onAddMiner }: AddMinerDialogProps) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="ip">IP Address</Label>
+            <Label htmlFor="ipAddress">IP Address</Label>
             <Input
-              id="ip"
+              id="ipAddress"
               placeholder="e.g., 192.168.1.100"
               value={ipAddress}
               onChange={(e) => setIpAddress(e.target.value)}
-              pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$"
-              title="Please enter a valid IP address"
               required
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="model">Miner Model</Label>
+            <Select value={model} onValueChange={(value: 'bitaxe' | 'nerdaxe') => setModel(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bitaxe">Bitaxe</SelectItem>
+                <SelectItem value="nerdaxe">NerdAxe</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="flex gap-2 pt-4">
