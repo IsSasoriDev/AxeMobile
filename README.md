@@ -1,3 +1,8 @@
+# Support the project
+BTC: bc1qeynnfvtylt78k6herfwy8m4ehnc72228aj3qfl
+BC2: bc1q8hkcadluc44fx2pcqq2pzn8ayqa9mkj9jr0xs7
+
+
 # ⛏️ AxeMobile
 
 **Unleash the Open Source power**
