@@ -1,0 +1,611 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* AxeMobile Design System - Bitcoin Mining Dashboard */
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 210 24% 16%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 24% 16%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 24% 16%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 210 24% 16%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 142 76% 36%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
+
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 221 83% 53%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(221 83% 53%));
+    --gradient-accent: linear-gradient(135deg, hsl(142 76% 36%), hsl(217 91% 60%));
+    
+    --shadow-glow: 0 0 20px hsl(217 91% 60% / 0.3);
+    --shadow-card: 0 4px 6px -1px hsl(210 24% 16% / 0.1);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .theme-amoled {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 3%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 3%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 142 76% 36%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 217 91% 60%;
+
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 221 83% 53%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(221 83% 53%));
+    --gradient-accent: linear-gradient(135deg, hsl(142 76% 36%), hsl(217 91% 60%));
+    
+    --shadow-glow: 0 0 20px hsl(217 91% 60% / 0.5);
+    --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 217 91% 60%;
+  }
+
+  .theme-disco {
+    --background: 270 100% 5%;
+    --foreground: 0 100% 100%;
+
+    --card: 270 100% 8%;
+    --card-foreground: 0 100% 100%;
+
+    --popover: 270 100% 8%;
+    --popover-foreground: 0 100% 100%;
+
+    --primary: 0 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 120 100% 10%;
+    --secondary-foreground: 0 100% 100%;
+
+    --muted: 240 100% 15%;
+    --muted-foreground: 0 0% 70%;
+
+    --accent: 60 100% 50%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 100% 100%;
+
+    --border: 300 100% 25%;
+    --input: 300 100% 25%;
+    --ring: 0 100% 50%;
+
+    --success: 120 100% 50%;
+    --warning: 60 100% 50%;
+    --info: 240 100% 50%;
+
+    --gradient-primary: linear-gradient(45deg, hsl(0 100% 50%), hsl(120 100% 50%), hsl(240 100% 50%));
+    --gradient-accent: linear-gradient(90deg, hsl(60 100% 50%), hsl(300 100% 50%), hsl(180 100% 50%));
+    
+    --shadow-glow: 0 0 30px hsl(0 100% 50% / 0.8);
+    --shadow-card: 0 4px 6px -1px hsl(0 100% 50% / 0.3);
+
+    --sidebar-background: 270 100% 5%;
+    --sidebar-foreground: 0 100% 100%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 120 100% 10%;
+    --sidebar-accent-foreground: 0 100% 100%;
+    --sidebar-border: 300 100% 25%;
+    --sidebar-ring: 217 91% 60%;
+
+    animation: disco-flash 0.1s infinite;
+  }
+
+  @keyframes disco-flash {
+    0% { filter: hue-rotate(0deg) saturate(1); }
+    25% { filter: hue-rotate(90deg) saturate(1.5); }
+    50% { filter: hue-rotate(180deg) saturate(2); }
+    75% { filter: hue-rotate(270deg) saturate(1.5); }
+    100% { filter: hue-rotate(360deg) saturate(1); }
+  }
+
+  .theme-ixtech {
+    --background: 0 0% 92%;
+    --foreground: 210 24% 16%;
+
+    --card: 0 0% 96%;
+    --card-foreground: 210 24% 16%;
+
+    --popover: 0 0% 96%;
+    --popover-foreground: 210 24% 16%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 210 20% 88%;
+    --secondary-foreground: 210 24% 16%;
+
+    --muted: 210 20% 88%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 142 76% 36%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214 32% 85%;
+    --input: 214 32% 85%;
+    --ring: 217 91% 60%;
+
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --info: 221 83% 53%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(221 83% 53%));
+    --gradient-accent: linear-gradient(135deg, hsl(142 76% 36%), hsl(217 91% 60%));
+    
+    --shadow-glow: 0 0 20px hsl(217 91% 60% / 0.3);
+    --shadow-card: 0 4px 12px hsl(210 24% 16% / 0.08);
+
+    --sidebar-background: 0 0% 96%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 92%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 85%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  html.theme-ixtech {
+    background-image: url('/lovable-uploads/ed155a7d-20ad-465b-9dae-1cb96e004260.png') !important;
+    background-size: cover !important;
+    background-attachment: fixed !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    min-height: 100vh !important;
+  }
+
+  html.theme-ixtech body {
+    background-image: url('/lovable-uploads/ed155a7d-20ad-465b-9dae-1cb96e004260.png') !important;
+    background-size: cover !important;
+    background-attachment: fixed !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    min-height: 100vh !important;
+    background-color: transparent !important;
+  }
+
+  html.theme-ixtech body #root {
+    background: transparent !important;
+    min-height: 100vh !important;
+  }
+
+  @keyframes ixtech-float {
+    0%, 100% { 
+      transform: translateY(0px);
+    }
+    50% { 
+      transform: translateY(-4px);
+    }
+  }
+
+  @keyframes ixtech-glow {
+    0%, 100% { 
+      box-shadow: 0 4px 12px hsl(217 91% 60% / 0.1);
+    }
+    50% { 
+      box-shadow: 0 8px 25px hsl(217 91% 60% / 0.15);
+    }
+  }
+
+  .theme-ixtech .card {
+    background: hsl(0 0% 96% / 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(214 32% 85%);
+    animation: ixtech-float 4s ease-in-out infinite, ixtech-glow 3s ease-in-out infinite;
+    transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+
+  .theme-ixtech .card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 12px 35px hsl(217 91% 60% / 0.2);
+    background: hsl(0 0% 98% / 0.98);
+  }
+
+  .theme-ixtech button {
+    transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+    backdrop-filter: blur(8px);
+  }
+
+  .theme-ixtech button:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 20px hsl(217 91% 60% / 0.25);
+  }
+
+  .theme-ixtech * {
+    animation-duration: 0.4s;
+    animation-timing-function: cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+
+  .theme-bitaxe {
+    --background: 0 0% 2%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 0 100% 50%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 100% 50%;
+    --input: 0 0% 8%;
+    --ring: 0 100% 50%;
+
+    --success: 0 100% 50%;
+    --warning: 45 100% 50%;
+    --info: 0 100% 50%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(0 100% 50%), hsl(0 80% 40%));
+    --gradient-accent: linear-gradient(135deg, hsl(0 80% 40%), hsl(0 0% 8%));
+    
+    --shadow-glow: 0 0 30px hsl(0 100% 50% / 0.5);
+    --shadow-card: 0 0 20px hsl(0 100% 50% / 0.2);
+
+    --sidebar-background: 0 0% 2%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 8%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 100% 50%;
+    --sidebar-ring: 0 100% 50%;
+
+    /* Cyberpunk grid background */
+    background-image: 
+      radial-gradient(circle at 1px 1px, hsl(0 100% 50% / 0.3) 1px, transparent 0);
+    background-size: 20px 20px;
+    background-attachment: fixed;
+  }
+
+  @keyframes bitaxe-pulse {
+    0%, 100% { 
+      box-shadow: 0 0 20px hsl(0 100% 50% / 0.4), inset 0 0 20px hsl(0 100% 50% / 0.1);
+      border-color: hsl(0 100% 50% / 0.6);
+    }
+    50% { 
+      box-shadow: 0 0 40px hsl(0 100% 50% / 0.8), inset 0 0 30px hsl(0 100% 50% / 0.2);
+      border-color: hsl(0 100% 50% / 1);
+    }
+  }
+
+  .theme-bitaxe .card,
+  .theme-bitaxe [class*="card"]:not([class*="dropdown"]) {
+    border: 1px solid hsl(0 100% 50% / 0.3) !important;
+    background: linear-gradient(135deg, hsl(0 0% 4%) 0%, hsl(0 0% 2%) 100%) !important;
+    animation: bitaxe-pulse 3s ease-in-out infinite;
+  }
+
+  .theme-bitaxe .button:not([data-radix-collection-item]):not([role="menuitem"]),
+  .theme-bitaxe button:not([data-radix-collection-item]):not([role="menuitem"]),
+  .theme-bitaxe [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]) {
+    border: 2px solid hsl(0 100% 50%) !important;
+    text-transform: uppercase !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.1em !important;
+    padding: 0.375rem 0.75rem !important;
+    height: 2.25rem !important;
+    min-height: 2.25rem !important;
+    font-size: 0.75rem !important;
+    background: linear-gradient(135deg, 
+      hsl(0 0% 8%) 0%, 
+      hsl(0 20% 12%) 25%, 
+      hsl(0 40% 8%) 50%, 
+      hsl(0 20% 4%) 75%, 
+      hsl(0 0% 2%) 100%) !important;
+    box-shadow: 
+      0 0 15px hsl(0 100% 50% / 0.4),
+      inset 0 1px 0 hsl(0 100% 60% / 0.2),
+      inset 0 -1px 0 hsl(0 0% 0% / 0.8) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    color: hsl(0 100% 50%) !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  .theme-bitaxe .button:not([data-radix-collection-item]):not([role="menuitem"])::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(90deg, transparent, hsl(0 100% 60% / 0.2), transparent) !important;
+    transition: left 0.5s ease !important;
+  }
+
+  .theme-bitaxe .button:not([data-radix-collection-item]):not([role="menuitem"]):hover::before {
+    left: 100% !important;
+  }
+
+  .theme-bitaxe .button:not([data-radix-collection-item]):not([role="menuitem"]):hover,
+  .theme-bitaxe button:not([data-radix-collection-item]):not([role="menuitem"]):hover,
+  .theme-bitaxe [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]):hover {
+    box-shadow: 
+      0 0 25px hsl(0 100% 50% / 0.8),
+      inset 0 1px 0 hsl(0 100% 70% / 0.3),
+      inset 0 -1px 0 hsl(0 0% 0% / 1) !important;
+    border-color: hsl(0 100% 70%) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+    background: linear-gradient(135deg, 
+      hsl(0 0% 12%) 0%, 
+      hsl(0 30% 16%) 25%, 
+      hsl(0 50% 12%) 50%, 
+      hsl(0 30% 8%) 75%, 
+      hsl(0 0% 4%) 100%) !important;
+    color: hsl(0 100% 60%) !important;
+  }
+
+  .theme-bitaxe .button:not([data-radix-collection-item]):not([role="menuitem"]):active,
+  .theme-bitaxe button:not([data-radix-collection-item]):not([role="menuitem"]):active,
+  .theme-bitaxe [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]):active {
+    transform: translateY(0) scale(0.98) !important;
+    box-shadow: 
+      0 0 10px hsl(0 100% 50% / 0.6),
+      inset 0 2px 4px hsl(0 0% 0% / 0.8) !important;
+  }
+
+  /* Ensure dropdown components are not affected */
+  .theme-bitaxe [data-radix-dropdown-menu-content] {
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    animation: none !important;
+    z-index: 50 !important;
+  }
+
+  .theme-bitaxe [role="menuitem"] {
+    background: transparent !important;
+    border: none !important;
+    text-transform: none !important;
+    font-weight: normal !important;
+    letter-spacing: normal !important;
+    box-shadow: none !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .theme-bitaxe [role="menuitem"]:hover {
+    background: hsl(var(--accent)) !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  .theme-bitaxe .sidebar {
+    border-right: 1px solid hsl(0 100% 50% / 0.3);
+  }
+
+  .theme-bitcoin-ii {
+    --background: 0 0% 8%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 25 100% 54%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 25 100% 54%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 14%;
+    --ring: 25 100% 54%;
+
+    --success: 142 76% 36%;
+    --warning: 25 100% 54%;
+    --info: 25 100% 54%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(25 100% 54%), hsl(25 80% 45%));
+    --gradient-accent: linear-gradient(135deg, hsl(25 100% 54%), hsl(0 0% 14%));
+    
+    --shadow-glow: 0 0 30px hsl(25 100% 54% / 0.3);
+    --shadow-card: 0 4px 12px hsl(0 0% 0% / 0.4);
+
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 25 100% 54%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 25 100% 54%;
+  }
+
+  /* Bitcoin-II decorative dots */
+  .theme-bitcoin-ii::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    background-image: 
+      radial-gradient(circle at 10% 20%, hsl(25 100% 54% / 0.15) 0%, transparent 2%),
+      radial-gradient(circle at 80% 80%, hsl(25 100% 54% / 0.15) 0%, transparent 2%),
+      radial-gradient(circle at 50% 50%, hsl(25 100% 54% / 0.1) 0%, transparent 2%),
+      radial-gradient(circle at 90% 10%, hsl(25 100% 54% / 0.1) 0%, transparent 2%),
+      radial-gradient(circle at 20% 90%, hsl(25 100% 54% / 0.1) 0%, transparent 2%);
+    background-size: 100% 100%;
+  }
+
+  .theme-bitcoin-ii .card,
+  .theme-bitcoin-ii [class*="card"]:not([class*="dropdown"]) {
+    border: 1px solid hsl(0 0% 20%) !important;
+    background: linear-gradient(135deg, hsl(0 0% 10%) 0%, hsl(0 0% 8%) 100%) !important;
+    transition: all 0.3s ease;
+  }
+
+  .theme-bitcoin-ii .card:hover,
+  .theme-bitcoin-ii [class*="card"]:not([class*="dropdown"]):hover {
+    border-color: hsl(25 100% 54% / 0.3) !important;
+    box-shadow: 0 8px 24px hsl(0 0% 0% / 0.5) !important;
+  }
+
+  .theme-bitcoin-ii button:not([data-radix-collection-item]):not([role="menuitem"]),
+  .theme-bitcoin-ii [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]) {
+    background: transparent !important;
+    color: hsl(25 100% 54%) !important;
+    border: 2px solid hsl(25 100% 54%) !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .theme-bitcoin-ii button:not([data-radix-collection-item]):not([role="menuitem"]):hover,
+  .theme-bitcoin-ii [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]):hover {
+    background: hsl(25 100% 54% / 0.1) !important;
+    border-color: hsl(25 100% 60%) !important;
+    box-shadow: 0 4px 12px hsl(25 100% 54% / 0.3) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .theme-bitcoin-ii button[class*="outline"]:not([data-radix-collection-item]):not([role="menuitem"]),
+  .theme-bitcoin-ii [class*="outline"]:not([data-radix-collection-item]):not([role="menuitem"]) {
+    background: transparent !important;
+    color: hsl(25 100% 54%) !important;
+    border: 2px solid hsl(25 100% 54%) !important;
+  }
+
+  .theme-bitcoin-ii button[class*="outline"]:not([data-radix-collection-item]):not([role="menuitem"]):hover,
+  .theme-bitcoin-ii [class*="outline"]:not([data-radix-collection-item]):not([role="menuitem"]):hover {
+    background: hsl(25 100% 54% / 0.1) !important;
+    border-color: hsl(25 100% 60%) !important;
+  }
+
+  /* Ensure dropdown components work properly */
+  .theme-bitcoin-ii [data-radix-dropdown-menu-content],
+  .theme-bitcoin-ii [data-radix-popover-content] {
+    background: hsl(0 0% 10%) !important;
+    border: 1px solid hsl(0 0% 20%) !important;
+    z-index: 50 !important;
+  }
+
+  .theme-bitcoin-ii [role="menuitem"] {
+    background: transparent !important;
+    border: none !important;
+    color: hsl(0 0% 98%) !important;
+    font-weight: normal !important;
+  }
+
+  .theme-bitcoin-ii [role="menuitem"]:hover {
+    background: hsl(0 0% 14%) !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  .theme-bitcoin-ii .sidebar {
+    border-right: 1px solid hsl(0 0% 20%);
+  }
+
+  .sidebar-background { background: hsl(var(--sidebar-background)); }
+  .sidebar-foreground { color: hsl(var(--sidebar-foreground)); }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

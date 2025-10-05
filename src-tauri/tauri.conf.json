@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "AxeBeta",
   "version": "0.4.0",
-  "identifier": "com.edu.devBeta",
+  "identifier": "com.edu.axemobile",
   "build": {
     "frontendDist": "dist",
     "devUrl": "http://localhost:3000",
@@ -13,8 +13,8 @@
     "windows": [
       {
         "title": "Axe",
-        "width": 800,
-        "height": 600,
+        "width": 1400,
+        "height": 800,
         "resizable": true,
         "fullscreen": false
       }
