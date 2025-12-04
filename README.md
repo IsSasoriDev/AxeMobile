@@ -1,8 +1,3 @@
-# Support the project
-- BTC: bc1qeynnfvtylt78k6herfwy8m4ehnc72228aj3qfl
-- BC2: bc1q8hkcadluc44fx2pcqq2pzn8ayqa9mkj9jr0xs7
-
-
 # ⛏️ AxeMobile
 
 **Unleash the Open Source power**
@@ -110,13 +105,21 @@ npx cap run android
 #### Tauri (Recommended - Smaller bundle size)
 
 ```bash
-# Initialize Tauri (first time only)
-npx tauri init
+# For Windows build, you need Rust installed
+# Install Rust from: https://rustup.rs/
 
 # Build desktop app
 npm run build
 npx tauri build
+
+# Or for development mode with hot reload
+npx tauri dev
 ```
+
+**Windows Requirements:**
+- Install [Rust](https://rustup.rs/)
+- Install [Microsoft Visual Studio C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+- Install [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (usually pre-installed on Windows 10/11)
 
 Executables will be in `src-tauri/target/release/bundle/`
 
@@ -179,19 +182,13 @@ axe-mobile/
 ├── src-tauri/            # Tauri desktop configuration
 └── capacitor.config.ts   # Capacitor configuration
 ```
-^ Not Updated for the current structure
 
-## 🎨 Themes
+## 🎨 Theming
 
 AxeMobile supports multiple themes:
 - **White Theme**: Clean, minimal design
 - **AMOLED Theme**: Pure black for OLED displays
-- **IxTech Theme**: Silk Grey
-- **PowerMining Theme**: Blue Tech
-- **Bitcoin Theme**: Hashing
-- **Bitaxe Theme**: Red Devil
-
-Both IxTech & PowerMining Require a reload to function properly
+- **IxTech Theme**: BURN
 
 Themes are configured in `src/index.css` and `tailwind.config.ts`.
 

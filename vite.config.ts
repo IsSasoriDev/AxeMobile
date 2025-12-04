@@ -8,6 +8,19 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  base: "/",
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+    rollupOptions: {
+      external: [
+        '@tauri-apps/api',
+        '@tauri-apps/plugin-updater',
+        '@tauri-apps/plugin-process',
+        '@tauri-apps/plugin-http',
+      ],
+    },
+  },
   plugins: [
     react(),
     mode === 'development' &&

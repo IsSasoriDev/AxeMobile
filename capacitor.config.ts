@@ -1,11 +1,11 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.eduionita.eu',
+  appId: 'com.eduionita.axemobile',
   appName: 'AxeMobile',
   webDir: 'dist',
   server: {
-    url: 'eduionita.eu',
+    url: 'https://127.1.1.0',
     cleartext: true
   },
   plugins: {

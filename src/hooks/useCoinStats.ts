@@ -20,43 +20,7 @@ const defaultCoinData: Record<string, CoinData> = {
     blockTime: 600,
     price: 118785,
     difficulty: 126271300000000,
-  },
-  bitcoincash: {
-    name: "Bitcoin Cash",
-    symbol: "BCH",
-    networkHashrate: 4570000,
-    blockReward: 3.125,
-    blockTime: 600,
-    price: 550,
-    difficulty: 616530000000,
-  },
-  digibyte: {
-    name: "DigiByte",
-    symbol: "DGB",
-    networkHashrate: 800000,
-    blockReward: 665,
-    blockTime: 15,
-    price: 0.0081,
-    difficulty: 12000000000,
-  },
-  ecash: {
-    name: "eCash",
-    symbol: "XEC",
-    networkHashrate: 77520,
-    blockReward: 1812500,
-    blockTime: 660,
-    price: 0.00001985,
-    difficulty: 11910000000,
-  },
-  "bitcoin-ii": {
-    name: "Bitcoin-II",
-    symbol: "BC2",
-    networkHashrate: 15000,
-    blockReward: 50,
-    blockTime: 600,
-    price: 1.6811,
-    difficulty: 200000000,
-  },
+  }
 };
 
 export function useCoinStats() {

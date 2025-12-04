@@ -1,6 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
+// Check if running in Tauri environment
+const isTauri = () => {
+  if (typeof window === 'undefined') return false;
+  return '__TAURI__' in window || 
+         '__TAURI_INTERNALS__' in window ||
+         (window as any).__TAURI_METADATA__ !== undefined;
+};
+
+// Get Tauri invoke function
+const getTauriInvoke = async () => {
+  if (isTauri()) {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      return invoke;
+    } catch (error) {
+      console.error('Failed to load Tauri invoke:', error);
+      return null;
+    }
+  }
+  return null;
+};
+
 export interface MinerDevice {
   IP: string;
   name?: string;
@@ -23,43 +45,70 @@ export const useNetworkScanner = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
 
-  // Get device info from API (supports BitAxe and NerdAxe endpoints)
+  // Warn user if running in browser (Tauri commands won't work)
+  useEffect(() => {
+    if (!isTauri()) {
+      console.warn('⚠️ Running in browser mode - network scanning requires Tauri desktop app');
+      console.warn('⚠️ BitAxe devices reject requests from non-private IPs due to CORS security');
+    }
+  }, []);
+
+  // Get device info using Tauri Rust command (no Origin header)
   const getDeviceInfo = async (ip: string): Promise<MinerDevice> => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const response = await fetch(`http://${ip}/api/system/info`, {
-        signal: controller.signal,
-        mode: 'cors',
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      const invoke = await getTauriInvoke();
+      
+      if (!invoke) {
+        // Fallback for browser - will fail due to CORS but at least attempts
+        console.log(`Attempting browser fetch for ${ip} (will likely fail due to CORS)`);
+        const response = await fetch(`http://${ip}/api/system/info`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) throw new Error('Request failed');
+        const data = await response.json();
+        return {
+          IP: ip,
+          isActive: true,
+          name: data.hostname || undefined,
+          hashRate: data.hashRate || 0,
+          temp: data.temp || 0,
+          power: data.power || 0,
+          voltage: data.coreVoltageActual || data.coreVoltage || data.voltage || 0,
+          uptimeSeconds: data.uptimeSeconds || 0,
+          shares: {
+            accepted: data.sharesAccepted || 0,
+            rejected: data.sharesRejected || 0,
+          },
+          model: data.ASICModel || 'Unknown',
+          version: data.version || 'Unknown',
+        };
       }
 
-      const data = await response.json();
+      // Use Tauri Rust command - makes request without Origin header
+      const systemData = await invoke<any>('fetch_miner_info', { ip });
       
-      // Parse data from NerdAxe or BitAxe format
-      // NerdAxe uses similar API structure to BitAxe
+      console.log(`✓ Connected to ${ip} via Tauri command`, systemData);
+
       return {
         IP: ip,
         isActive: true,
-        hashRate: data.hashRate || data.hashRate_10m || data.hashrate || data.hr || 0,
-        temp: data.temp || data.asicTemp || data.temperature || data.temp1 || data.temp2 || 0,
-        power: data.power || data.powerConsumption || data.wattage || 0,
-        voltage: data.voltage || data.coreVoltage || data.coreVoltageActual || data.vrTemp || 0,
-        uptimeSeconds: data.uptimeSeconds || data.uptime || data.uptimeSecs || 0,
+        name: systemData.hostname || undefined,
+        hashRate: systemData.hashRate || 0,
+        temp: systemData.temp || 0,
+        power: systemData.power || 0,
+        voltage: systemData.coreVoltageActual || systemData.coreVoltage || systemData.voltage || 0,
+        uptimeSeconds: systemData.uptimeSeconds || 0,
         shares: {
-          accepted: data.sharesAccepted || data.shares?.accepted || data.bestDiff || 0,
-          rejected: data.sharesRejected || data.shares?.rejected || data.rejected || 0,
+          accepted: systemData.sharesAccepted || 0,
+          rejected: systemData.sharesRejected || 0,
         },
-        model: data.deviceModel || data.ASICModel || data.model || data.version || 'Unknown',
-        version: data.version || data.firmwareVersion || 'Unknown',
+        model: systemData.ASICModel || 'Unknown',
+        version: systemData.version || 'Unknown',
       };
     } catch (error) {
+      console.log(`❌ Device ${ip} not responding:`, error);
       return {
         IP: ip,
         isActive: false,
@@ -70,24 +119,35 @@ export const useNetworkScanner = () => {
   // Scan network for devices
   const scanNetwork = useCallback(async (baseIP?: string) => {
     setIsScanning(true);
+
+    if (!isTauri()) {
+      toast.error('Network scanning requires Tauri desktop app', {
+        description: 'BitAxe devices block browser requests due to CORS security. Please use the desktop app.',
+        position: 'bottom-right',
+      });
+      setIsScanning(false);
+      return [];
+    }
     
     try {
+      // Common mDNS .local hostnames for BitAxe/NerdAxe devices
+      const mdnsHostnames = [
+        'bitaxe.local',
+        'nerdaxe.local',
+        'bitaxe-01.local',
+        'bitaxe-02.local',
+        'bitaxe-03.local',
+        'nerdaxe-01.local',
+        'nerdaxe-02.local',
+        'nerdaxe-03.local',
+      ];
+
       // Determine base IP for scanning
-      let baseSegment = '192.168.1'; // Default to common router IP range
+      let baseSegment = '192.168.1';
       
       if (baseIP) {
-        // Use provided base IP
         const ipSegments = baseIP.split('.');
         baseSegment = ipSegments.slice(0, 3).join('.');
-      } else {
-        // Try to detect local IP from hostname
-        const hostname = window.location.hostname;
-        // Check if hostname is a valid local IP address (not a domain)
-        const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
-        if (ipRegex.test(hostname)) {
-          const ipSegments = hostname.split('.');
-          baseSegment = ipSegments.slice(0, 3).join('.');
-        }
       }
 
       // Common IP addresses for bitaxe devices
@@ -112,28 +172,29 @@ export const useNetworkScanner = () => {
         scanRange.push(`${baseSegment}.${i}`);
       }
 
-      // Prioritize common IPs first, then scan full range
-      const ipsToScan = [...commonIPs, ...scanRange.filter(ip => !commonIPs.includes(ip))];
+      // Prioritize: mDNS hostnames first, then common IPs, then full range
+      const ipsToScan = [
+        ...mdnsHostnames,
+        ...commonIPs, 
+        ...scanRange.filter(ip => !commonIPs.includes(ip))
+      ];
 
-      // Scan in batches to avoid overwhelming the network
+      // Scan in batches
       const batchSize = 20;
       const foundDevices: MinerDevice[] = [];
       
-      // Create a loading toast that we'll update
-      const scanToastId = toast.loading(`Scanning ${baseSegment}.0/24...`, {
-        description: `Checking IP: ${ipsToScan[0]}`,
+      const scanToastId = toast.loading(`Scanning network... 0%`, {
+        description: `Scanning ${baseSegment}.0/24`,
         position: 'bottom-right',
       });
 
       for (let i = 0; i < ipsToScan.length; i += batchSize) {
         const batch = ipsToScan.slice(i, i + batchSize);
         
-        // Update toast with current IPs being scanned
-        const currentIPs = batch.join(', ');
         const progress = Math.round((i / ipsToScan.length) * 100);
-        toast.loading(`Scanning ${baseSegment}.0/24... (${progress}%)`, {
+        toast.loading(`Scanning network... ${progress}%`, {
           id: scanToastId,
-          description: `Checking: ${currentIPs}`,
+          description: `Scanning ${baseSegment}.0/24`,
           position: 'bottom-right',
         });
         
@@ -144,7 +205,6 @@ export const useNetworkScanner = () => {
         const activeDevices = batchResults.filter(device => device.isActive);
         foundDevices.push(...activeDevices);
 
-        // Update state with found devices so far
         if (activeDevices.length > 0) {
           setDevices(prev => {
             const existing = prev.filter(d => !foundDevices.some(f => f.IP === d.IP));
@@ -156,7 +216,6 @@ export const useNetworkScanner = () => {
         }
       }
 
-      // Dismiss the loading toast
       toast.dismiss(scanToastId);
 
       if (foundDevices.length === 0) {
@@ -196,7 +255,6 @@ export const useNetworkScanner = () => {
       toast.success('Device added successfully');
       return true;
     } else {
-      // Still add inactive devices to show they were attempted
       setDevices(prev => [...prev, deviceInfo]);
       localStorage.setItem('MINER_DEVICES', JSON.stringify([...devices, deviceInfo]));
       toast.warning('Device added but appears to be offline');
@@ -222,14 +280,16 @@ export const useNetworkScanner = () => {
     toast.success('Device name updated');
   }, [devices]);
 
-  // Restart device
+  // Restart device using Tauri command
   const restartDevice = useCallback(async (ip: string) => {
     try {
-      await fetch(`http://${ip}/api/system/restart`, {
-        method: 'POST',
-        mode: 'cors',
-      });
-      toast.success('Device restart command sent');
+      const invoke = await getTauriInvoke();
+      if (invoke) {
+        await invoke('restart_miner', { ip });
+        toast.success('Device restart command sent');
+      } else {
+        toast.error('Restart requires desktop app');
+      }
     } catch (error) {
       toast.error('Failed to restart device');
     }
@@ -255,13 +315,11 @@ export const useNetworkScanner = () => {
         const stored = localStorage.getItem('MINER_DEVICES');
         if (stored) {
           const storedDevices = JSON.parse(stored);
-          // Refresh stored devices data
           const refreshedDevices = await Promise.all(
             storedDevices.map((device: MinerDevice) => getDeviceInfo(device.IP))
           );
           setDevices(refreshedDevices);
-        } else {
-          // No stored devices, perform initial scan
+        } else if (isTauri()) {
           await scanNetwork();
         }
       } catch (error) {
