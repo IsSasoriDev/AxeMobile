@@ -179,13 +179,19 @@ axe-mobile/
 ├── src-tauri/            # Tauri desktop configuration
 └── capacitor.config.ts   # Capacitor configuration
 ```
+^ Not Updated for the current structure
 
-## 🎨 Theming
+## 🎨 Themes
 
 AxeMobile supports multiple themes:
 - **White Theme**: Clean, minimal design
 - **AMOLED Theme**: Pure black for OLED displays
-- **IxTech Theme**: BURN
+- **IxTech Theme**: Silk Grey
+- **PowerMining Theme**: Blue Tech
+- **Bitcoin Theme**: Hashing
+- **Bitaxe Theme**: Red Devil
+
+Both IxTech & PowerMining Require a reload to function properly
 
 Themes are configured in `src/index.css` and `tailwind.config.ts`.
 
