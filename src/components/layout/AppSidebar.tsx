@@ -1,9 +1,12 @@
-import { Home, Zap, Users, Pickaxe, Waves, Activity, RefreshCw, Calculator } from "lucide-react";
+import { Home, Zap, Users, Pickaxe, Waves, Activity, RefreshCw, Calculator, MessageSquare, Mountain, Settings, Trophy } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { SuggestionButton } from "@/components/SuggestionButton";
 import { TypingText } from "@/components/ui/typing-text";
 import { UpdateChecker } from "@/components/ui/update-checker";
+import powerMiningLogo from "@/assets/powermining-logo.png";
+import ixtechLogo from "@/assets/ixtech-logo.png";
+import { useTheme } from "@/hooks/useTheme";
 
 import {
   Sidebar,
@@ -20,9 +23,12 @@ import {
 const items = [
   { title: "Miners", url: "/", icon: Home },
   { title: "Stats", url: "/stats", icon: Activity },
+  { title: "Config", url: "/config", icon: Settings },
+  { title: "Achievements", url: "/achievements", icon: Trophy },
   { title: "Flash Firmware", url: "/flash", icon: Zap },
   { title: "Pools", url: "/pools", icon: Waves },
   { title: "Calculator", url: "/calculator", icon: Calculator },
+  { title: "Cave", url: "/cave", icon: Mountain },
 ];
 
 const communityItems = [
@@ -31,9 +37,12 @@ const communityItems = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
+  const { theme } = useTheme();
   const location = useLocation();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
+  const isPowerMining = theme === "powermining";
+  const isIxTech = theme === "ixtech";
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
@@ -51,26 +60,64 @@ export function AppSidebar() {
       <SidebarContent className="sidebar-background">
         <div className="p-4">
           {!collapsed && (
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <Pickaxe className="h-5 w-5 text-primary" />
-                <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                  AxeMobile
-                </h1>
+            <div className="mb-6 relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent rounded-lg blur-xl" />
+              <div className="relative p-4 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+                <div className="flex items-center gap-3 mb-3">
+                  {!isPowerMining && !isIxTech && (
+                    <div className="p-2 rounded-lg bg-primary/20">
+                      <Pickaxe className="h-6 w-6 text-primary animate-pulse" />
+                    </div>
+                  )}
+                  {isPowerMining ? (
+                    <img 
+                      src={powerMiningLogo} 
+                      alt="PowerMining" 
+                      className="h-12 w-auto"
+                    />
+                  ) : isIxTech ? (
+                    <img 
+                      src={ixtechLogo} 
+                      alt="IxTech" 
+                      className="h-12 w-auto"
+                    />
+                  ) : (
+                    <h1 className="text-2xl font-black bg-gradient-primary bg-clip-text text-transparent"
+                        style={{ textShadow: '0 0 20px hsl(var(--primary) / 0.3)' }}>
+                      AxeMobile
+                    </h1>
+                  )}
+                </div>
+                <p className="text-xs sidebar-foreground opacity-80 font-medium">
+                  <TypingText 
+                    texts={isPowerMining ? ["Professional Mining Solutions"] : isIxTech ? ["Innovation & Technology"] : ["Unleash the Open Source power", "Hack the planet", "Mine Bitcoin freely"]}
+                    typingSpeed={80}
+                    deletingSpeed={30}
+                    pauseDuration={2000}
+                  />
+                </p>
               </div>
-              <p className="text-sm sidebar-foreground opacity-70">
-                <TypingText 
-                  texts={["Unleash the Open Source power", "Hack the planet"]}
-                  typingSpeed={80}
-                  deletingSpeed={30}
-                  pauseDuration={2000}
-                />
-              </p>
             </div>
           )}
           {collapsed && (
             <div className="flex justify-center mb-6">
-              <Pickaxe className="h-6 w-6 text-primary" />
+              {isPowerMining ? (
+                <img 
+                  src={powerMiningLogo} 
+                  alt="PowerMining" 
+                  className="h-8 w-auto"
+                />
+              ) : isIxTech ? (
+                <img 
+                  src={ixtechLogo} 
+                  alt="IxTech" 
+                  className="h-8 w-auto"
+                />
+              ) : (
+                <div className="p-2 rounded-lg bg-primary/20">
+                  <Pickaxe className="h-7 w-7 text-primary animate-pulse" />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -98,25 +145,40 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="sidebar-foreground">Updates</SidebarGroupLabel>
           <SidebarGroupContent>
-            <div className="px-2">
-              <UpdateChecker 
-                trigger={
-                  <button className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
-                    <RefreshCw className="h-4 w-4" />
-                    {!collapsed && <span>Check Updates</span>}
-                  </button>
-                }
-              />
-            </div>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild={false}>
+                  <UpdateChecker 
+                    trigger={
+                      <button className="w-full flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4" />
+                        {!collapsed && <span>Check Updates</span>}
+                      </button>
+                    }
+                  />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
           <SidebarGroupLabel className="sidebar-foreground">Feedback</SidebarGroupLabel>
           <SidebarGroupContent>
-            <div className="px-2">
-              <SuggestionButton />
-            </div>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild={false}>
+                  <SuggestionButton 
+                    trigger={
+                      <button className="w-full flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        {!collapsed && <span>Leave a Suggestion</span>}
+                      </button>
+                    }
+                  />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -129,7 +191,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild={false}>
                     <button 
                       onClick={() => handleItemClick(item)}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                      className="w-full flex items-center gap-2"
                     >
                       <item.icon className="h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}

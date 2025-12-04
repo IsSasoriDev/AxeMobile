@@ -7,8 +7,8 @@ import { FirmwareUpdater } from "@/components/firmware/FirmwareUpdater";
 import { UpdateChecker } from "@/components/ui/update-checker";
 
 // Using uploaded images as base64 or direct paths
-const bitaxeIcon = "/lovable-uploads/7adf75f8-8945-4fd7-860c-25e1ed367b3c.png";
-const nerdaxeIcon = "/lovable-uploads/e4e02e37-303c-4cd3-ab4d-7ba7dba7a3ea.png";
+const bitaxeIcon = "/images/7adf75f8-8945-4fd7-860c-25e1ed367b3c.png";
+const nerdaxeIcon = "/images/e4e02e37-303c-4cd3-ab4d-7ba7dba7a3ea.png";
 
 const devices = [
   {

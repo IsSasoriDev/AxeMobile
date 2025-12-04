@@ -220,7 +220,7 @@
   }
 
   html.theme-ixtech {
-    background-image: url('/lovable-uploads/ed155a7d-20ad-465b-9dae-1cb96e004260.png') !important;
+    background-image: url('/images/ed155a7d-20ad-465b-9dae-1cb96e004260.png') !important;
     background-size: cover !important;
     background-attachment: fixed !important;
     background-repeat: no-repeat !important;
@@ -229,7 +229,7 @@
   }
 
   html.theme-ixtech body {
-    background-image: url('/lovable-uploads/ed155a7d-20ad-465b-9dae-1cb96e004260.png') !important;
+    background-image: url('/images/ed155a7d-20ad-465b-9dae-1cb96e004260.png') !important;
     background-size: cover !important;
     background-attachment: fixed !important;
     background-repeat: no-repeat !important;
@@ -460,7 +460,7 @@
     border-right: 1px solid hsl(0 100% 50% / 0.3);
   }
 
-  .theme-bitcoin-ii {
+  .theme-bitcoin {
     --background: 0 0% 8%;
     --foreground: 0 0% 98%;
 
@@ -509,8 +509,8 @@
     --sidebar-ring: 25 100% 54%;
   }
 
-  /* Bitcoin-II decorative dots */
-  .theme-bitcoin-ii::before {
+  /* Bitcoin decorative dots */
+  .theme-bitcoin::before {
     content: '';
     position: fixed;
     top: 0;
@@ -528,21 +528,21 @@
     background-size: 100% 100%;
   }
 
-  .theme-bitcoin-ii .card,
-  .theme-bitcoin-ii [class*="card"]:not([class*="dropdown"]) {
+  .theme-bitcoin .card,
+  .theme-bitcoin [class*="card"]:not([class*="dropdown"]) {
     border: 1px solid hsl(0 0% 20%) !important;
     background: linear-gradient(135deg, hsl(0 0% 10%) 0%, hsl(0 0% 8%) 100%) !important;
     transition: all 0.3s ease;
   }
 
-  .theme-bitcoin-ii .card:hover,
-  .theme-bitcoin-ii [class*="card"]:not([class*="dropdown"]):hover {
+  .theme-bitcoin .card:hover,
+  .theme-bitcoin [class*="card"]:not([class*="dropdown"]):hover {
     border-color: hsl(25 100% 54% / 0.3) !important;
     box-shadow: 0 8px 24px hsl(0 0% 0% / 0.5) !important;
   }
 
-  .theme-bitcoin-ii button:not([data-radix-collection-item]):not([role="menuitem"]),
-  .theme-bitcoin-ii [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]) {
+  .theme-bitcoin button:not([data-radix-collection-item]):not([role="menuitem"]),
+  .theme-bitcoin [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]) {
     background: transparent !important;
     color: hsl(25 100% 54%) !important;
     border: 2px solid hsl(25 100% 54%) !important;
@@ -550,50 +550,185 @@
     transition: all 0.2s ease !important;
   }
 
-  .theme-bitcoin-ii button:not([data-radix-collection-item]):not([role="menuitem"]):hover,
-  .theme-bitcoin-ii [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]):hover {
+  .theme-bitcoin button:not([data-radix-collection-item]):not([role="menuitem"]):hover,
+  .theme-bitcoin [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]):hover {
     background: hsl(25 100% 54% / 0.1) !important;
     border-color: hsl(25 100% 60%) !important;
     box-shadow: 0 4px 12px hsl(25 100% 54% / 0.3) !important;
     transform: translateY(-1px) !important;
   }
 
-  .theme-bitcoin-ii button[class*="outline"]:not([data-radix-collection-item]):not([role="menuitem"]),
-  .theme-bitcoin-ii [class*="outline"]:not([data-radix-collection-item]):not([role="menuitem"]) {
+  .theme-bitcoin button[class*="outline"]:not([data-radix-collection-item]):not([role="menuitem"]),
+  .theme-bitcoin [class*="outline"]:not([data-radix-collection-item]):not([role="menuitem"]) {
     background: transparent !important;
     color: hsl(25 100% 54%) !important;
     border: 2px solid hsl(25 100% 54%) !important;
   }
 
-  .theme-bitcoin-ii button[class*="outline"]:not([data-radix-collection-item]):not([role="menuitem"]):hover,
-  .theme-bitcoin-ii [class*="outline"]:not([data-radix-collection-item]):not([role="menuitem"]):hover {
+  .theme-bitcoin button[class*="outline"]:not([data-radix-collection-item]):not([role="menuitem"]):hover,
+  .theme-bitcoin [class*="outline"]:not([data-radix-collection-item]):not([role="menuitem"]):hover {
     background: hsl(25 100% 54% / 0.1) !important;
     border-color: hsl(25 100% 60%) !important;
   }
 
   /* Ensure dropdown components work properly */
-  .theme-bitcoin-ii [data-radix-dropdown-menu-content],
-  .theme-bitcoin-ii [data-radix-popover-content] {
+  .theme-bitcoin [data-radix-dropdown-menu-content],
+  .theme-bitcoin [data-radix-popover-content] {
     background: hsl(0 0% 10%) !important;
     border: 1px solid hsl(0 0% 20%) !important;
     z-index: 50 !important;
   }
 
-  .theme-bitcoin-ii [role="menuitem"] {
+  .theme-bitcoin [role="menuitem"] {
     background: transparent !important;
     border: none !important;
     color: hsl(0 0% 98%) !important;
     font-weight: normal !important;
   }
 
-  .theme-bitcoin-ii [role="menuitem"]:hover {
+  .theme-bitcoin [role="menuitem"]:hover {
     background: hsl(0 0% 14%) !important;
     transform: none !important;
     box-shadow: none !important;
   }
 
-  .theme-bitcoin-ii .sidebar {
+  .theme-bitcoin .sidebar {
     border-right: 1px solid hsl(0 0% 20%);
+  }
+
+  /* PowerMining Theme */
+  .theme-powermining {
+    --background: 210 50% 8%;
+    --foreground: 0 0% 98%;
+
+    --card: 210 45% 10%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 210 45% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 203 100% 43%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 210 40% 15%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 210 35% 15%;
+    --muted-foreground: 0 0% 70%;
+
+    --accent: 203 100% 53%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 203 50% 20%;
+    --input: 210 35% 15%;
+    --ring: 203 100% 43%;
+
+    --success: 142 76% 36%;
+    --warning: 45 100% 51%;
+    --info: 203 100% 53%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(203 100% 43%), hsl(203 100% 53%));
+    --gradient-accent: linear-gradient(135deg, hsl(203 100% 27%), hsl(203 100% 43%));
+    
+    --shadow-glow: 0 0 30px hsl(203 100% 43% / 0.4);
+    --shadow-card: 0 4px 12px hsl(0 0% 0% / 0.5);
+
+    --sidebar-background: 210 50% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 203 100% 43%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 210 40% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 203 50% 20%;
+    --sidebar-ring: 203 100% 43%;
+  }
+
+  html.theme-powermining {
+    background-image: url('/images/powermining-bg.png') !important;
+    background-size: cover !important;
+    background-attachment: fixed !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    min-height: 100vh !important;
+  }
+
+  html.theme-powermining body {
+    background-image: url('/images/powermining-bg.png') !important;
+    background-size: cover !important;
+    background-attachment: fixed !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    min-height: 100vh !important;
+    background-color: transparent !important;
+  }
+
+  html.theme-powermining body #root {
+    background: transparent !important;
+    min-height: 100vh !important;
+    backdrop-filter: blur(8px);
+  }
+
+  .theme-powermining .card,
+  .theme-powermining [class*="card"]:not([class*="dropdown"]) {
+    border: 1px solid hsl(203 100% 43% / 0.3) !important;
+    background: linear-gradient(135deg, hsl(210 45% 10% / 0.85) 0%, hsl(210 50% 8% / 0.90) 100%) !important;
+    backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+  }
+
+  .theme-powermining .card:hover,
+  .theme-powermining [class*="card"]:not([class*="dropdown"]):hover {
+    border-color: hsl(203 100% 43% / 0.6) !important;
+    box-shadow: 0 8px 24px hsl(203 100% 43% / 0.3) !important;
+    transform: translateY(-2px);
+  }
+
+  .theme-powermining button:not([data-radix-collection-item]):not([role="menuitem"]),
+  .theme-powermining [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]) {
+    background: hsl(203 100% 43% / 0.15) !important;
+    color: hsl(203 100% 53%) !important;
+    border: 2px solid hsl(203 100% 43%) !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    backdrop-filter: blur(8px);
+  }
+
+  .theme-powermining button:not([data-radix-collection-item]):not([role="menuitem"]):hover,
+  .theme-powermining [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]):hover {
+    background: hsl(203 100% 43% / 0.3) !important;
+    border-color: hsl(203 100% 53%) !important;
+    box-shadow: 0 4px 16px hsl(203 100% 43% / 0.5) !important;
+    transform: translateY(-2px) !important;
+  }
+
+  .theme-powermining [data-radix-dropdown-menu-content],
+  .theme-powermining [data-radix-popover-content] {
+    background: hsl(210 45% 10% / 0.95) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(203 100% 43% / 0.3) !important;
+    z-index: 50 !important;
+  }
+
+  .theme-powermining [role="menuitem"] {
+    background: transparent !important;
+    border: none !important;
+    color: hsl(0 0% 98%) !important;
+    font-weight: normal !important;
+  }
+
+  .theme-powermining [role="menuitem"]:hover {
+    background: hsl(203 100% 43% / 0.2) !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  .theme-powermining .sidebar {
+    border-right: 1px solid hsl(203 100% 43% / 0.3);
+    background: hsl(210 50% 8% / 0.85) !important;
+    backdrop-filter: blur(12px);
   }
 
   .sidebar-background { background: hsl(var(--sidebar-background)); }
@@ -608,4 +743,37 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Smooth global transitions */
+@layer utilities {
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+}
+
+/* Optimize animations for performance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* GPU acceleration for animated elements */
+.animate-slide-up,
+.animate-slide-down,
+.animate-scale-up,
+.animate-fade-in,
+.animate-collapsible-down,
+.animate-collapsible-up {
+  will-change: transform, opacity;
 }

@@ -31,9 +31,10 @@ export function TypingText({
   const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
-    if (isComplete) return;
+    if (isComplete || allTexts.length === 0) return;
     
     const fullText = allTexts[currentTextIndex];
+    if (!fullText) return;
     
     const timeout = setTimeout(() => {
       if (isDeleting) {

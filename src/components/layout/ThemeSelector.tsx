@@ -15,7 +15,8 @@ const themes = [
   { id: "disco", name: "Disco", className: "theme-disco" },
   { id: "ixtech", name: "IxTech", className: "theme-ixtech" },
   { id: "bitaxe", name: "Bitaxe", className: "theme-bitaxe" },
-  { id: "bitcoin-ii", name: "Bitcoin-II", className: "theme-bitcoin-ii" },
+  { id: "bitcoin", name: "Bitcoin", className: "theme-bitcoin" },
+  { id: "powermining", name: "PowerMining", className: "theme-powermining" },
 ];
 
 export function ThemeSelector() {
@@ -30,9 +31,8 @@ export function ThemeSelector() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="icon" className="h-8 w-8">
           <Palette className="h-4 w-4" />
-          Themes
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-card border">

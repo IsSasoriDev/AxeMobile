@@ -14,7 +14,11 @@ import { useToast } from "@/hooks/use-toast";
 
 const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1407784261863477362/A4ZiMm6V9vHAlQoDpE3mc7Ow6VaoLDQD_86gNLXiRzaBaumPIltpDbd-YSXwJsmkAz1m";
 
-export function SuggestionButton() {
+interface SuggestionButtonProps {
+  trigger?: React.ReactNode;
+}
+
+export function SuggestionButton({ trigger }: SuggestionButtonProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [suggestion, setSuggestion] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -71,10 +75,12 @@ export function SuggestionButton() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <MessageSquare className="h-4 w-4" />
-          Leave a Suggestion
-        </Button>
+        {trigger || (
+          <Button variant="outline" size="sm" className="gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Leave a Suggestion
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

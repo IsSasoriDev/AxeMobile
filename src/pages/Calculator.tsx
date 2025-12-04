@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Calculator as CalcIcon, TrendingUp, Coins, Zap, Clock, DollarSign, Percent, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { Calculator as CalcIcon, TrendingUp, Coins, Zap, Clock, DollarSign, Percent, RefreshCw, Activity, Hash, Cpu } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,21 +69,15 @@ export default function Calculator() {
     const hashrateInTH = getHashrateInTH();
     const networkHashrate = coin.networkHashrate;
     
-    // Probability of finding a block per attempt
     const probability = hashrateInTH / networkHashrate;
-    
-    // Expected blocks per day
     const dailyBlocks = (24 * 60 * 60) / coin.blockTime;
     const expectedBlocksPerDay = dailyBlocks * probability;
     const expectedBlocksPerWeek = expectedBlocksPerDay * 7;
     const expectedBlocksPerMonth = expectedBlocksPerDay * 30;
     const expectedBlocksPerYear = expectedBlocksPerDay * 365;
     
-    // Time to find a block (on average)
     const secondsPerBlock = coin.blockTime / probability;
     const daysPerBlock = secondsPerBlock / (24 * 60 * 60);
-    
-    // Revenue if you find a block
     const blockValue = coin.blockReward * coin.price;
     
     return {
@@ -150,451 +144,422 @@ export default function Calculator() {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
-      <AnimatedCard>
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-primary bg-clip-text text-transparent animate-in fade-in-0 slide-in-from-left-5 duration-700">
-              Mining Calculator
-            </h1>
-            <p className="text-muted-foreground text-lg animate-in fade-in-0 slide-in-from-left-5 duration-700" style={{ animationDelay: '100ms' }}>
-              Calculate your mining profitability with live network data
+    <div className="container mx-auto p-4 md:p-8 min-h-screen space-y-8">
+      {/* Hero Section */}
+      <AnimatedCard animation="scale" delay={0}>
+        <div className="relative overflow-hidden rounded-3xl p-12 mb-8 border border-primary/30 bg-gradient-to-br from-primary/10 via-accent/5 to-background" style={{ boxShadow: 'var(--shadow-glow)' }}>
+          <div className="absolute inset-0 opacity-5 bg-gradient-primary" />
+          
+          <div className="relative z-10 text-center space-y-6">
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <Cpu className="h-12 w-12 text-primary animate-float" />
+              <h1 
+                className="text-5xl md:text-7xl font-bold text-foreground" 
+                style={{ 
+                  textShadow: '0 0 40px hsl(var(--primary) / 0.6), 0 0 80px hsl(var(--primary) / 0.3), 0 0 120px hsl(var(--primary) / 0.2)'
+                }}
+              >
+                Mining Calculator
+              </h1>
+              <Coins className="h-12 w-12 text-accent animate-float" style={{ animationDelay: '1s' }} />
+            </div>
+            
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <Badge variant="outline" className="px-4 py-2 text-sm font-semibold border-success text-success bg-success/10">
+                <Activity className="h-4 w-4 mr-2 inline animate-pulse" />
+                Live Data
+              </Badge>
+              <Badge variant="outline" className="px-4 py-2 text-sm font-semibold border-primary text-primary bg-primary/10">
+                Real-Time Network Stats
+              </Badge>
+              {lastUpdate && (
+                <Badge variant="outline" className="px-3 py-1.5 text-xs border-muted-foreground/30">
+                  Updated: {lastUpdate.toLocaleTimeString()}
+                </Badge>
+              )}
+            </div>
+
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              Calculate your potential mining earnings with live network statistics
             </p>
-            {lastUpdate && (
-              <p className="text-xs text-muted-foreground">
-                Last updated: {lastUpdate.toLocaleTimeString()}
-              </p>
-            )}
+            
+            <Button
+              onClick={() => {
+                refreshStats();
+                toast.success('Refreshing live data...');
+              }}
+              disabled={statsLoading}
+              size="lg"
+              className="gap-2 hover:scale-105 transition-all duration-300"
+              style={{ boxShadow: 'var(--shadow-glow)' }}
+            >
+              <RefreshCw className={`h-5 w-5 ${statsLoading ? 'animate-spin' : ''}`} />
+              {statsLoading ? "Updating..." : "Refresh Live Stats"}
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              refreshStats();
-              toast.success('Refreshing coin statistics...');
-            }}
-            disabled={statsLoading}
-            className="hover:scale-105 transition-transform"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${statsLoading ? 'animate-spin' : ''}`} />
-            Refresh Stats
-          </Button>
         </div>
       </AnimatedCard>
 
       {/* Input Parameters */}
-      <AnimatedCard delay={200}>
-        <Card className="shadow-card hover:shadow-glow transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalcIcon className="h-5 w-5 text-primary" />
-              Mining Parameters
-            </CardTitle>
-            <CardDescription>
-              Enter your mining setup details to calculate profitability
-            </CardDescription>
+      <AnimatedCard animation="slide-up" delay={100}>
+        <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <CardHeader className="border-b border-border/50 bg-gradient-to-r from-primary/5 to-transparent">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-primary/10 rounded-xl animate-glow-pulse">
+                  <CalcIcon className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-2xl">Mining Parameters</CardTitle>
+                  <CardDescription className="mt-1">
+                    Configure your mining setup
+                  </CardDescription>
+                </div>
+              </div>
+            </div>
           </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Coin Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="coin">Cryptocurrency</Label>
-              <Select value={selectedCoin} onValueChange={setSelectedCoin}>
-                <SelectTrigger id="coin">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(coinData).map(([key, data]) => (
-                    <SelectItem key={key} value={key}>
-                      {data.name} ({data.symbol})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Hashrate */}
-            <div className="space-y-2">
-              <Label htmlFor="hashrate">Your Hashrate</Label>
-              <div className="flex gap-2">
+          
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Coin Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="coin" className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Coins className="h-4 w-4" />
+                  Cryptocurrency
+                </Label>
                 <Input
-                  id="hashrate"
-                  type="number"
-                  value={hashrate}
-                  onChange={(e) => setHashrate(e.target.value)}
-                  placeholder="500"
-                  className="flex-1"
+                  type="text"
+                  value="Bitcoin (BTC)"
+                  disabled
+                  className="border-primary/20 bg-muted/50 cursor-not-allowed"
                 />
-                <Select value={hashrateUnit} onValueChange={setHashrateUnit}>
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GH/s">GH/s</SelectItem>
-                    <SelectItem value="TH/s">TH/s</SelectItem>
-                    <SelectItem value="PH/s">PH/s</SelectItem>
-                  </SelectContent>
-                </Select>
+              </div>
+
+              {/* Hashrate */}
+              <div className="space-y-2">
+                <Label htmlFor="hashrate" className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Hash className="h-4 w-4" />
+                  Your Hashrate
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="hashrate"
+                    type="number"
+                    value={hashrate}
+                    onChange={(e) => setHashrate(e.target.value)}
+                    placeholder="500"
+                    className="flex-1 border-primary/20 focus:border-primary/60"
+                  />
+                  <Select value={hashrateUnit} onValueChange={setHashrateUnit}>
+                    <SelectTrigger className="w-24 border-primary/20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="GH/s">GH/s</SelectItem>
+                      <SelectItem value="TH/s">TH/s</SelectItem>
+                      <SelectItem value="PH/s">PH/s</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Pool Fee */}
+              <div className="space-y-2">
+                <Label htmlFor="pool-fee" className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Percent className="h-4 w-4" />
+                  Pool Fee (%)
+                </Label>
+                <Input
+                  id="pool-fee"
+                  type="number"
+                  value={poolFee}
+                  onChange={(e) => setPoolFee(e.target.value)}
+                  placeholder="1"
+                  step="0.1"
+                  className="border-primary/20 focus:border-primary/60"
+                />
+              </div>
+
+              {/* Power Consumption */}
+              <div className="space-y-2">
+                <Label htmlFor="power" className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  Power Consumption (W)
+                </Label>
+                <Input
+                  id="power"
+                  type="number"
+                  value={powerConsumption}
+                  onChange={(e) => setPowerConsumption(e.target.value)}
+                  placeholder="15"
+                  className="border-primary/20 focus:border-primary/60"
+                />
+              </div>
+
+              {/* Electricity Cost */}
+              <div className="space-y-2">
+                <Label htmlFor="electricity" className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Electricity Cost ($/kWh)
+                </Label>
+                <Input
+                  id="electricity"
+                  type="number"
+                  value={electricityCost}
+                  onChange={(e) => setElectricityCost(e.target.value)}
+                  placeholder="0.10"
+                  step="0.01"
+                  className="border-primary/20 focus:border-primary/60"
+                />
               </div>
             </div>
 
-            {/* Pool Fee */}
-            <div className="space-y-2">
-              <Label htmlFor="pool-fee">Pool Fee (%)</Label>
-              <Input
-                id="pool-fee"
-                type="number"
-                value={poolFee}
-                onChange={(e) => setPoolFee(e.target.value)}
-                placeholder="1"
-                step="0.1"
-              />
-            </div>
+            {/* Live Network Info */}
+            <div className="mt-8 pt-8 border-t border-border/50">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-success animate-pulse" />
+                Live Network Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 hover:border-primary/40 transition-all hover:scale-105">
+                  <div className="text-sm text-muted-foreground mb-2">Network Hashrate</div>
+                  {statsLoading ? (
+                    <div className="h-8 bg-muted/50 rounded animate-pulse" />
+                  ) : (
+                    <div className="text-2xl font-bold text-foreground" style={{ textShadow: '0 0 20px hsl(var(--primary) / 0.4)' }}>
+                      {(coin.networkHashrate / 1000000).toFixed(2)} EH/s
+                    </div>
+                  )}
+                </div>
 
-            {/* Power Consumption */}
-            <div className="space-y-2">
-              <Label htmlFor="power">Power Consumption (W)</Label>
-              <Input
-                id="power"
-                type="number"
-                value={powerConsumption}
-                onChange={(e) => setPowerConsumption(e.target.value)}
-                placeholder="15"
-              />
-            </div>
+                <div className="p-4 rounded-xl bg-gradient-to-br from-accent/10 to-transparent border border-accent/20 hover:border-accent/40 transition-all hover:scale-105">
+                  <div className="text-sm text-muted-foreground mb-2">Current Price</div>
+                  {statsLoading ? (
+                    <div className="h-8 bg-muted/50 rounded animate-pulse" />
+                  ) : (
+                    <div className="text-2xl font-bold text-foreground" style={{ textShadow: '0 0 20px hsl(var(--accent) / 0.4)' }}>
+                      ${coin.price.toLocaleString()}
+                    </div>
+                  )}
+                </div>
 
-            {/* Electricity Cost */}
-            <div className="space-y-2">
-              <Label htmlFor="electricity">Electricity Cost ($/kWh)</Label>
-              <Input
-                id="electricity"
-                type="number"
-                value={electricityCost}
-                onChange={(e) => setElectricityCost(e.target.value)}
-                placeholder="0.10"
-                step="0.01"
-              />
-            </div>
-
-            {/* Network Info */}
-            <div className="space-y-2">
-              <Label>Network Hashrate</Label>
-              <div className="h-10 px-3 flex items-center bg-muted rounded-md text-sm">
-                {statsLoading ? (
-                  <span className="text-muted-foreground">Loading...</span>
-                ) : (
-                  <span className="font-mono">{(coin.networkHashrate / 1000000).toFixed(2)} EH/s</span>
-                )}
+                <div className="p-4 rounded-xl bg-gradient-to-br from-info/10 to-transparent border border-info/20 hover:border-info/40 transition-all hover:scale-105">
+                  <div className="text-sm text-muted-foreground mb-2">Difficulty</div>
+                  {statsLoading ? (
+                    <div className="h-8 bg-muted/50 rounded animate-pulse" />
+                  ) : (
+                    <div className="text-2xl font-bold text-foreground" style={{ textShadow: '0 0 20px hsl(var(--info) / 0.4)' }}>
+                      {(coin.difficulty / 1e12).toFixed(2)}T
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label>Current Price</Label>
-              <div className="h-10 px-3 flex items-center bg-muted rounded-md text-sm">
-                {statsLoading ? (
-                  <span className="text-muted-foreground">Loading...</span>
-                ) : (
-                  <span className="font-mono">${coin.price.toLocaleString()}</span>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
       </AnimatedCard>
 
       {/* Results Tabs */}
-      <AnimatedCard delay={300}>
+      <AnimatedCard delay={200}>
         <Tabs defaultValue="pool" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="pool" className="hover:scale-105 transition-transform">Pool Mining</TabsTrigger>
-            <TabsTrigger value="solo" className="hover:scale-105 transition-transform">Solo Mining</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 h-12">
+            <TabsTrigger value="pool" className="text-base">Pool Mining</TabsTrigger>
+            <TabsTrigger value="solo" className="text-base">Solo Mining</TabsTrigger>
           </TabsList>
 
-        {/* Pool Mining Results */}
-        <TabsContent value="pool" className="space-y-4">
-          <Card className="shadow-card hover:shadow-glow transition-all duration-300 border-success/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-success" />
-                Pool Mining Profitability
-              </CardTitle>
-              <CardDescription>
-                Expected earnings when mining in a pool with {poolFee}% fee
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Revenue Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="hover:scale-105 transition-transform duration-300">
-                  <CardHeader className="pb-3">
-                    <CardDescription className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      Daily
+          {/* Pool Mining Results */}
+          <TabsContent value="pool" className="space-y-4 mt-6">
+            <Card className="border-success/30 hover:border-success/50 transition-all duration-300" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <CardHeader className="border-b border-border/50 bg-gradient-to-r from-success/5 to-transparent">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-success/10 rounded-xl animate-glow-pulse">
+                    <TrendingUp className="h-6 w-6 text-success" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl">Pool Mining Profitability</CardTitle>
+                    <CardDescription className="mt-1">
+                      Expected earnings mining in a pool with {poolFee}% fee
                     </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1">
-                      <div className="text-2xl font-bold">{formatCurrency(poolResults.dailyRevenue)}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatCoins(poolResults.dailyCoins)} {coin.symbol}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:scale-105 transition-transform duration-300">
-                  <CardHeader className="pb-3">
-                    <CardDescription className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      Weekly
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1">
-                      <div className="text-2xl font-bold">{formatCurrency(poolResults.weeklyRevenue)}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatCoins(poolResults.weeklyCoins)} {coin.symbol}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:scale-105 transition-transform duration-300">
-                  <CardHeader className="pb-3">
-                    <CardDescription className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      Monthly
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1">
-                      <div className="text-2xl font-bold">{formatCurrency(poolResults.monthlyRevenue)}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatCoins(poolResults.monthlyCoins)} {coin.symbol}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="hover:scale-105 transition-transform duration-300">
-                  <CardHeader className="pb-3">
-                    <CardDescription className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      Yearly
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1">
-                      <div className="text-2xl font-bold">{formatCurrency(poolResults.yearlyRevenue)}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatCoins(poolResults.yearlyCoins)} {coin.symbol}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Costs and Profit */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-destructive/5 border-destructive/20 hover:scale-105 transition-transform duration-300">
-                  <CardHeader className="pb-3">
-                    <CardDescription className="flex items-center gap-1">
-                      <Zap className="h-3 w-3" />
-                      Monthly Electricity Cost
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-destructive">{formatCurrency(costs.monthlyCost)}</div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-success/5 border-success/20 hover:scale-105 transition-transform duration-300">
-                  <CardHeader className="pb-3">
-                    <CardDescription className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3" />
-                      Monthly Net Profit
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-success">
-                      {formatCurrency(poolResults.monthlyRevenue - costs.monthlyCost)}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-primary/5 border-primary/20 hover:scale-105 transition-transform duration-300">
-                  <CardHeader className="pb-3">
-                    <CardDescription className="flex items-center gap-1">
-                      <Percent className="h-3 w-3" />
-                      Profit Margin
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-primary">
-                      {((((poolResults.monthlyRevenue - costs.monthlyCost) / poolResults.monthlyRevenue) * 100) || 0).toFixed(1)}%
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Solo Mining Results */}
-        <TabsContent value="solo" className="space-y-4">
-          <Card className="shadow-card hover:shadow-glow transition-all duration-300 border-warning/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-warning" />
-                Solo Mining Probability
-              </CardTitle>
-              <CardDescription>
-                Your chances of finding blocks when mining solo
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Probability Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-primary/5 border-primary/20 hover:scale-105 transition-transform duration-300">
-                  <CardHeader className="pb-3">
-                    <CardDescription>Block Finding Probability</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">
-                      {soloResults.probabilityPercent < 0.01
-                        ? soloResults.probabilityPercent.toExponential(2)
-                        : soloResults.probabilityPercent.toFixed(6)}%
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-warning/5 border-warning/20 hover:scale-105 transition-transform duration-300">
-                  <CardHeader className="pb-3">
-                    <CardDescription>Expected Time to Block</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-warning">
-                      {formatTime(soloResults.daysPerBlock)}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-success/5 border-success/20 hover:scale-105 transition-transform duration-300">
-                  <CardHeader className="pb-3">
-                    <CardDescription>Block Reward Value</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1">
-                      <div className="text-2xl font-bold text-success">
-                        {formatCurrency(soloResults.blockValue)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {coin.blockReward} {coin.symbol}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Expected Earnings */}
-              <div>
-                <h4 className="text-sm font-medium mb-3">Expected Earnings (Statistical Average)</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card className="hover:scale-105 transition-transform duration-300">
-                    <CardHeader className="pb-3">
-                      <CardDescription>Daily</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-1">
-                        <div className="text-xl font-bold">{formatCurrency(soloResults.expectedDailyRevenue)}</div>
-                        <div className="text-xs text-muted-foreground">
-                          ~{soloResults.expectedBlocksPerDay.toFixed(4)} blocks
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="hover:scale-105 transition-transform duration-300">
-                    <CardHeader className="pb-3">
-                      <CardDescription>Weekly</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-1">
-                        <div className="text-xl font-bold">
-                          {formatCurrency(soloResults.expectedDailyRevenue * 7)}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          ~{soloResults.expectedBlocksPerWeek.toFixed(4)} blocks
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="hover:scale-105 transition-transform duration-300">
-                    <CardHeader className="pb-3">
-                      <CardDescription>Monthly</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-1">
-                        <div className="text-xl font-bold">{formatCurrency(soloResults.expectedMonthlyRevenue)}</div>
-                        <div className="text-xs text-muted-foreground">
-                          ~{soloResults.expectedBlocksPerMonth.toFixed(4)} blocks
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="hover:scale-105 transition-transform duration-300">
-                    <CardHeader className="pb-3">
-                      <CardDescription>Yearly</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-1">
-                        <div className="text-xl font-bold">{formatCurrency(soloResults.expectedYearlyRevenue)}</div>
-                        <div className="text-xs text-muted-foreground">
-                          ~{soloResults.expectedBlocksPerYear.toFixed(2)} blocks
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  </div>
                 </div>
-              </div>
+              </CardHeader>
+              
+              <CardContent className="p-6 space-y-6">
+                {/* Revenue Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-success/20 to-success/5 border border-success/30 hover:scale-105 transition-all duration-300">
+                    <div className="flex items-center gap-2 text-success mb-3">
+                      <Clock className="h-4 w-4" />
+                      <span className="text-sm font-medium">Daily</span>
+                    </div>
+                    <div className="text-3xl font-bold text-foreground mb-1" style={{ textShadow: '0 0 20px hsl(var(--success) / 0.4)' }}>
+                      {formatCurrency(poolResults.dailyRevenue)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatCoins(poolResults.dailyCoins)} {coin.symbol}
+                    </div>
+                  </div>
 
-              {/* Warning for low probability */}
-              {soloResults.probabilityPercent < 0.001 && (
-                <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 animate-in fade-in-0 duration-500">
-                  <div className="flex items-start gap-3">
-                    <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
-                      ⚠️ Low Probability
-                    </Badge>
-                    <div className="flex-1 text-sm">
-                      <p className="font-medium mb-1">Solo mining not recommended</p>
-                      <p className="text-muted-foreground">
-                        With your current hashrate, it would take approximately {formatTime(soloResults.daysPerBlock)} to 
-                        find a block. Consider pool mining for more consistent returns.
-                      </p>
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 hover:scale-105 transition-all duration-300">
+                    <div className="flex items-center gap-2 text-primary mb-3">
+                      <Clock className="h-4 w-4" />
+                      <span className="text-sm font-medium">Weekly</span>
+                    </div>
+                    <div className="text-3xl font-bold text-foreground mb-1">
+                      {formatCurrency(poolResults.weeklyRevenue)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatCoins(poolResults.weeklyCoins)} {coin.symbol}
+                    </div>
+                  </div>
+
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-accent/10 to-transparent border border-accent/20 hover:scale-105 transition-all duration-300">
+                    <div className="flex items-center gap-2 text-accent mb-3">
+                      <Clock className="h-4 w-4" />
+                      <span className="text-sm font-medium">Monthly</span>
+                    </div>
+                    <div className="text-3xl font-bold text-foreground mb-1">
+                      {formatCurrency(poolResults.monthlyRevenue)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatCoins(poolResults.monthlyCoins)} {coin.symbol}
+                    </div>
+                  </div>
+
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-info/10 to-transparent border border-info/20 hover:scale-105 transition-all duration-300">
+                    <div className="flex items-center gap-2 text-info mb-3">
+                      <Clock className="h-4 w-4" />
+                      <span className="text-sm font-medium">Yearly</span>
+                    </div>
+                    <div className="text-3xl font-bold text-foreground mb-1">
+                      {formatCurrency(poolResults.yearlyRevenue)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatCoins(poolResults.yearlyCoins)} {coin.symbol}
                     </div>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      </AnimatedCard>
 
-      {/* Disclaimer */}
-      <AnimatedCard delay={400}>
-        <Card className="bg-muted/30 hover:shadow-card transition-all duration-300">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground text-center">
-              <strong>Disclaimer:</strong> Mining profitability calculations are estimates based on current network conditions, 
-              coin prices, and difficulty. Actual results may vary significantly due to market volatility, network difficulty changes, 
-              and hardware performance. Solo mining is highly variable and actual time to find blocks can differ greatly from statistical averages.
-            </p>
-          </CardContent>
-        </Card>
+                {/* Costs and Profit */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-border/50">
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-destructive/10 to-transparent border border-destructive/30 hover:scale-105 transition-all duration-300">
+                    <div className="flex items-center gap-2 text-destructive mb-3">
+                      <Zap className="h-4 w-4" />
+                      <span className="text-sm font-medium">Monthly Power Cost</span>
+                    </div>
+                    <div className="text-3xl font-bold text-destructive">
+                      {formatCurrency(costs.monthlyCost)}
+                    </div>
+                  </div>
+
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-success/10 to-transparent border border-success/30 hover:scale-105 transition-all duration-300">
+                    <div className="flex items-center gap-2 text-success mb-3">
+                      <DollarSign className="h-4 w-4" />
+                      <span className="text-sm font-medium">Monthly Net Profit</span>
+                    </div>
+                    <div className="text-3xl font-bold text-success" style={{ textShadow: '0 0 25px hsl(var(--success) / 0.5)' }}>
+                      {formatCurrency(poolResults.monthlyRevenue - costs.monthlyCost)}
+                    </div>
+                  </div>
+
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/30 hover:scale-105 transition-all duration-300">
+                    <div className="flex items-center gap-2 text-primary mb-3">
+                      <Percent className="h-4 w-4" />
+                      <span className="text-sm font-medium">Profit Margin</span>
+                    </div>
+                    <div className="text-3xl font-bold text-primary">
+                      {((((poolResults.monthlyRevenue - costs.monthlyCost) / poolResults.monthlyRevenue) * 100) || 0).toFixed(1)}%
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Solo Mining Results */}
+          <TabsContent value="solo" className="space-y-4 mt-6">
+            <Card className="border-warning/30 hover:border-warning/50 transition-all duration-300" style={{ boxShadow: 'var(--shadow-card)' }}>
+              <CardHeader className="border-b border-border/50 bg-gradient-to-r from-warning/5 to-transparent">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-warning/10 rounded-xl animate-glow-pulse">
+                    <Coins className="h-6 w-6 text-warning" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl">Solo Mining Statistics</CardTitle>
+                    <CardDescription className="mt-1">
+                      Probability and expected earnings when solo mining
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="p-6 space-y-6">
+                {/* Key Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-warning/20 to-warning/5 border border-warning/30 hover:scale-105 transition-all duration-300">
+                    <div className="text-sm text-muted-foreground mb-3">Block Find Probability</div>
+                    <div className="text-4xl font-bold text-warning mb-2" style={{ textShadow: '0 0 20px hsl(var(--warning) / 0.4)' }}>
+                      {soloResults.probabilityPercent.toExponential(2)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">per block attempt</div>
+                  </div>
+
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-info/10 to-transparent border border-info/20 hover:scale-105 transition-all duration-300">
+                    <div className="text-sm text-muted-foreground mb-3">Time to Find Block</div>
+                    <div className="text-4xl font-bold text-info mb-2">
+                      {formatTime(soloResults.daysPerBlock)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">average estimate</div>
+                  </div>
+
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-success/10 to-transparent border border-success/20 hover:scale-105 transition-all duration-300">
+                    <div className="text-sm text-muted-foreground mb-3">Block Reward Value</div>
+                    <div className="text-4xl font-bold text-success mb-2" style={{ textShadow: '0 0 20px hsl(var(--success) / 0.4)' }}>
+                      {formatCurrency(soloResults.blockValue)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">{coin.blockReward} {coin.symbol}</div>
+                  </div>
+                </div>
+
+                {/* Expected Earnings */}
+                <div className="pt-6 border-t border-border/50">
+                  <h3 className="text-lg font-semibold mb-4">Expected Earnings (Statistical Average)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-6 rounded-xl bg-card/50 border border-border/50 hover:border-primary/30 transition-all">
+                      <div className="text-sm text-muted-foreground mb-2">Expected Daily</div>
+                      <div className="text-2xl font-bold text-foreground">
+                        {formatCurrency(soloResults.expectedDailyRevenue)}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        ~{soloResults.expectedBlocksPerDay.toExponential(2)} blocks
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-xl bg-card/50 border border-border/50 hover:border-primary/30 transition-all">
+                      <div className="text-sm text-muted-foreground mb-2">Expected Monthly</div>
+                      <div className="text-2xl font-bold text-foreground">
+                        {formatCurrency(soloResults.expectedMonthlyRevenue)}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        ~{soloResults.expectedBlocksPerMonth.toFixed(4)} blocks
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-xl bg-card/50 border border-border/50 hover:border-primary/30 transition-all">
+                      <div className="text-sm text-muted-foreground mb-2">Expected Yearly</div>
+                      <div className="text-2xl font-bold text-foreground">
+                        {formatCurrency(soloResults.expectedYearlyRevenue)}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        ~{soloResults.expectedBlocksPerYear.toFixed(2)} blocks
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </AnimatedCard>
     </div>
   );

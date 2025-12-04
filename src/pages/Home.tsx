@@ -39,67 +39,87 @@ export default function Home() {
   return (
     <div className="min-h-screen p-4 md:p-6 space-y-6">
       {/* Header Section */}
-      <AnimatedCard>
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-primary bg-clip-text text-transparent animate-in fade-in-0 slide-in-from-left-5 duration-700">
-              AxeMobile Dashboard
-            </h1>
-            <p className="text-muted-foreground text-lg animate-in fade-in-0 slide-in-from-left-5 duration-700" style={{ animationDelay: '100ms' }}>
-              Unleash the Open Source power
-            </p>
-          </div>
-          <div className="animate-in fade-in-0 slide-in-from-right-5 duration-700" style={{ animationDelay: '200ms' }}>
-            <AddMinerDialog onAddMiner={handleAddMiner} />
+      <AnimatedCard animation="fade">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 border border-primary/10 backdrop-blur-sm p-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-50" />
+          <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-3">
+              <h1 
+                className="text-5xl md:text-6xl font-black bg-gradient-primary bg-clip-text text-transparent animate-in fade-in-0 slide-in-from-left-5 duration-700"
+                style={{
+                  textShadow: '0 0 40px hsl(var(--primary) / 0.3)'
+                }}
+              >
+                AxeMobile
+              </h1>
+              <p className="text-muted-foreground text-xl animate-in fade-in-0 slide-in-from-left-5 duration-700 font-medium" style={{ animationDelay: '100ms' }}>
+                Open Source Bitcoin Mining Dashboard
+              </p>
+            </div>
+            <div className="animate-in fade-in-0 scale-in-0 duration-700" style={{ animationDelay: '200ms' }}>
+              <AddMinerDialog onAddMiner={handleAddMiner} />
+            </div>
           </div>
         </div>
       </AnimatedCard>
 
       {/* Stats Overview */}
       {devices.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <AnimatedCard delay={300}>
-            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:scale-105 transition-transform duration-300">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-primary/20">
-                    <Activity className="h-6 w-6 text-primary" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <AnimatedCard delay={300} animation="slide-up">
+            <Card className="group relative overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/30 hover:border-primary/50 hover:shadow-glow transition-all duration-500">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardContent className="relative pt-6 pb-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Active Miners</p>
+                    <p className="text-4xl font-black bg-gradient-primary bg-clip-text text-transparent"
+                       style={{ textShadow: '0 0 20px hsl(var(--primary) / 0.3)' }}>
+                      {activeDevices}<span className="text-2xl text-muted-foreground/50">/{devices.length}</span>
+                    </p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Active Miners</p>
-                    <p className="text-2xl font-bold">{activeDevices}/{devices.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </AnimatedCard>
-
-          <AnimatedCard delay={400}>
-            <Card className="bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:scale-105 transition-transform duration-300">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-success/20">
-                    <Cpu className="h-6 w-6 text-success" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Hashrate</p>
-                    <p className="text-2xl font-bold">{totalHashRate.toFixed(2)} GH/s</p>
+                  <div className="p-4 rounded-2xl bg-primary/20 group-hover:bg-primary/30 transition-colors duration-500">
+                    <Activity className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-500" />
                   </div>
                 </div>
               </CardContent>
             </Card>
           </AnimatedCard>
 
-          <AnimatedCard delay={500}>
-            <Card className="bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20 hover:scale-105 transition-transform duration-300">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-warning/20">
-                    <Zap className="h-6 w-6 text-warning" />
+          <AnimatedCard delay={400} animation="slide-up">
+            <Card className="group relative overflow-hidden bg-gradient-to-br from-success/10 via-success/5 to-transparent border-success/30 hover:border-success/50 hover:shadow-glow transition-all duration-500">
+              <div className="absolute inset-0 bg-gradient-to-br from-success/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardContent className="relative pt-6 pb-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Total Hashrate</p>
+                    <p className="text-4xl font-black text-success"
+                       style={{ textShadow: '0 0 20px hsl(var(--success) / 0.3)' }}>
+                      {totalHashRate.toFixed(2)}<span className="text-xl text-muted-foreground/70 ml-1">GH/s</span>
+                    </p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Power</p>
-                    <p className="text-2xl font-bold">{totalPower.toFixed(0)} W</p>
+                  <div className="p-4 rounded-2xl bg-success/20 group-hover:bg-success/30 transition-colors duration-500">
+                    <Cpu className="h-8 w-8 text-success group-hover:scale-110 transition-transform duration-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </AnimatedCard>
+
+          <AnimatedCard delay={500} animation="slide-up">
+            <Card className="group relative overflow-hidden bg-gradient-to-br from-warning/10 via-warning/5 to-transparent border-warning/30 hover:border-warning/50 hover:shadow-glow transition-all duration-500">
+              <div className="absolute inset-0 bg-gradient-to-br from-warning/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardContent className="relative pt-6 pb-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Total Power</p>
+                    <p className="text-4xl font-black text-warning"
+                       style={{ textShadow: '0 0 20px hsl(var(--warning) / 0.3)' }}>
+                      {totalPower.toFixed(0)}<span className="text-xl text-muted-foreground/70 ml-1">W</span>
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-warning/20 group-hover:bg-warning/30 transition-colors duration-500">
+                    <Zap className="h-8 w-8 text-warning group-hover:scale-110 transition-transform duration-500" />
                   </div>
                 </div>
               </CardContent>
@@ -110,24 +130,28 @@ export default function Home() {
 
       {/* Miners Grid */}
       {devices.length === 0 ? (
-        <AnimatedCard delay={300}>
-          <div className="text-center py-20">
-            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-primary rounded-2xl flex items-center justify-center animate-pulse shadow-glow">
-              <span className="text-5xl">⛏️</span>
+        <AnimatedCard delay={300} animation="scale">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-card via-card to-card/50 border border-primary/20 backdrop-blur-sm">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.1),transparent_50%)]" />
+            <div className="relative text-center py-24 px-8">
+              <div className="w-32 h-32 mx-auto mb-8 bg-gradient-primary rounded-3xl flex items-center justify-center animate-float shadow-glow">
+                <span className="text-7xl">⛏️</span>
+              </div>
+              <h3 className="text-3xl font-black mb-4 bg-gradient-primary bg-clip-text text-transparent"
+                  style={{ textShadow: '0 0 40px hsl(var(--primary) / 0.3)' }}>
+                No Miners Detected
+              </h3>
+              <p className="text-muted-foreground mb-10 text-lg max-w-md mx-auto">
+                Connect your BitAxe or NerdAxe miners to start monitoring your mining operation
+              </p>
+              <AddMinerDialog onAddMiner={handleAddMiner} />
             </div>
-            <h3 className="text-2xl font-bold mb-3 bg-gradient-primary bg-clip-text text-transparent">
-              No miners found yet
-            </h3>
-            <p className="text-muted-foreground mb-8 text-lg">
-              Start by scanning your network or adding miners manually
-            </p>
-            <AddMinerDialog onAddMiner={handleAddMiner} />
           </div>
         </AnimatedCard>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {devices.map((miner, index) => (
-            <AnimatedCard key={miner.IP} delay={600 + index * 100}>
+            <AnimatedCard key={miner.IP} delay={600 + index * 50} animation="slide-up">
               <MinerCard
                 miner={miner}
                 onStatusCheck={handleStatusCheck}
