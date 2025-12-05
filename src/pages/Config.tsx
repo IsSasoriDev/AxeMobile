@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Send, Check, Loader2 } from "lucide-react";
+import { Settings, Send, Loader2, Fan } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,53 +7,46 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
-
-interface SavedMiner {
-  id: string;
-  name: string;
-  ip_address: string;
-  model: string;
-}
+import { useNetworkScanner, MinerDevice } from "@/hooks/useNetworkScanner";
 
 const Config = () => {
+  const { devices } = useNetworkScanner();
   const [poolAddress, setPoolAddress] = useState("");
   const [port, setPort] = useState("3333");
   const [password, setPassword] = useState("x");
   const [fanSpeed, setFanSpeed] = useState("100");
-  const [miners, setMiners] = useState<SavedMiner[]>([]);
   const [selectedMiners, setSelectedMiners] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
+  const [sendingFan, setSendingFan] = useState(false);
 
+  // Select all miners by default when devices load
   useEffect(() => {
-    const saved = localStorage.getItem("savedMiners");
-    if (saved) {
-      const parsed = JSON.parse(saved) as SavedMiner[];
-      setMiners(parsed);
-      setSelectedMiners(new Set(parsed.map(m => m.id)));
+    if (devices.length > 0 && selectedMiners.size === 0) {
+      setSelectedMiners(new Set(devices.map(m => m.IP)));
     }
-  }, []);
+  }, [devices]);
 
-  const toggleMiner = (id: string) => {
+  const toggleMiner = (ip: string) => {
     setSelectedMiners(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
+      if (newSet.has(ip)) {
+        newSet.delete(ip);
       } else {
-        newSet.add(id);
+        newSet.add(ip);
       }
       return newSet;
     });
   };
 
   const selectAll = () => {
-    setSelectedMiners(new Set(miners.map(m => m.id)));
+    setSelectedMiners(new Set(devices.map(m => m.IP)));
   };
 
   const selectNone = () => {
     setSelectedMiners(new Set());
   };
 
-  const sendSettings = async () => {
+  const sendPoolSettings = async () => {
     if (!poolAddress.trim()) {
       toast.error("Please enter a pool address");
       return;
@@ -68,22 +61,21 @@ const Config = () => {
     }
 
     setSending(true);
-    const selected = miners.filter(m => selectedMiners.has(m.id));
+    const selected = devices.filter(m => selectedMiners.has(m.IP));
     let successCount = 0;
     let failCount = 0;
 
     for (const miner of selected) {
       try {
-        const fanSpeedNum = parseInt(fanSpeed, 10);
         await invoke("update_miner_pool", {
-          ip: miner.ip_address,
+          ip: miner.IP,
           pool: `stratum+tcp://${poolAddress}:${port}`,
           password: password || "x",
-          fanSpeed: !isNaN(fanSpeedNum) && fanSpeedNum >= 0 && fanSpeedNum <= 100 ? fanSpeedNum : null
+          fanSpeed: null
         });
         successCount++;
       } catch (error) {
-        console.error(`Failed to update ${miner.name}:`, error);
+        console.error(`Failed to update ${miner.name || miner.IP}:`, error);
         failCount++;
       }
     }
@@ -92,6 +84,48 @@ const Config = () => {
 
     if (successCount > 0) {
       toast.success(`Updated ${successCount} miner(s) successfully`);
+    }
+    if (failCount > 0) {
+      toast.error(`Failed to update ${failCount} miner(s)`);
+    }
+  };
+
+  const sendFanSpeed = async () => {
+    if (selectedMiners.size === 0) {
+      toast.error("Please select at least one miner");
+      return;
+    }
+
+    const fanSpeedNum = parseInt(fanSpeed, 10);
+    if (isNaN(fanSpeedNum) || fanSpeedNum < 0 || fanSpeedNum > 100) {
+      toast.error("Fan speed must be 0-100");
+      return;
+    }
+
+    setSendingFan(true);
+    const selected = devices.filter(m => selectedMiners.has(m.IP));
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const miner of selected) {
+      try {
+        await invoke("update_miner_pool", {
+          ip: miner.IP,
+          pool: null,
+          password: null,
+          fanSpeed: fanSpeedNum
+        });
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to update fan on ${miner.name || miner.IP}:`, error);
+        failCount++;
+      }
+    }
+
+    setSendingFan(false);
+
+    if (successCount > 0) {
+      toast.success(`Updated fan speed on ${successCount} miner(s)`);
     }
     if (failCount > 0) {
       toast.error(`Failed to update ${failCount} miner(s)`);
@@ -145,7 +179,65 @@ const Config = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <div className="space-y-2">
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Select Miners</CardTitle>
+            <CardDescription>
+              Choose which miners to update ({selectedMiners.size}/{devices.length} selected)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={selectAll}>Select All</Button>
+              <Button variant="outline" size="sm" onClick={selectNone}>Select None</Button>
+            </div>
+            
+            {devices.length === 0 ? (
+              <p className="text-muted-foreground text-sm py-4">
+                No miners found. Add miners from the Stats page first.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-auto">
+                {devices.map((miner) => (
+                  <div
+                    key={miner.IP}
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                    onClick={() => toggleMiner(miner.IP)}
+                  >
+                    <Checkbox
+                      checked={selectedMiners.has(miner.IP)}
+                      onCheckedChange={() => toggleMiner(miner.IP)}
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium">{miner.name || miner.IP}</p>
+                      <p className="text-xs text-muted-foreground">{miner.IP} • {miner.model || 'Unknown'}</p>
+                    </div>
+                    <span className={`text-xs ${miner.isActive ? 'text-green-500' : 'text-red-500'}`}>
+                      {miner.isActive ? '● Online' : '○ Offline'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Fan Speed - Separate Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Fan className="h-5 w-5 text-primary" />
+            <CardTitle>Fan Control</CardTitle>
+          </div>
+          <CardDescription>Adjust cooling fan speed for selected miners</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end gap-4">
+            <div className="space-y-2 flex-1 max-w-xs">
               <Label htmlFor="fanSpeed">Fan Speed (%)</Label>
               <Input
                 id="fanSpeed"
@@ -156,80 +248,45 @@ const Config = () => {
                 value={fanSpeed}
                 onChange={(e) => setFanSpeed(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">0-100%, controls cooling fan speed</p>
             </div>
-          </CardContent>
-        </Card>
+            <Button 
+              onClick={sendFanSpeed} 
+              disabled={sendingFan || selectedMiners.size === 0}
+            >
+              {sendingFan ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <Fan className="h-4 w-4" />
+                  Set Fan Speed
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Select Miners</CardTitle>
-            <CardDescription>
-              Choose which miners to update ({selectedMiners.size}/{miners.length} selected)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={selectAll}>Select All</Button>
-              <Button variant="outline" size="sm" onClick={selectNone}>Select None</Button>
-            </div>
-            
-            {miners.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4">
-                No miners found. Add miners from the home page first.
-              </p>
-            ) : (
-              <div className="space-y-2 max-h-64 overflow-auto">
-                {miners.map((miner) => (
-                  <div
-                    key={miner.id}
-                    className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                    onClick={() => toggleMiner(miner.id)}
-                  >
-                    <Checkbox
-                      checked={selectedMiners.has(miner.id)}
-                      onCheckedChange={() => toggleMiner(miner.id)}
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium">{miner.name}</p>
-                      <p className="text-xs text-muted-foreground">{miner.ip_address}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-3">
-        <Button 
-          size="lg" 
-          onClick={sendSettings} 
-          disabled={sending || selectedMiners.size === 0}
-          className="w-full md:w-auto"
-        >
-          {sending ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Sending...
-            </>
-          ) : (
-            <>
-              <Send className="h-4 w-4" />
-              Send to {selectedMiners.size} Miner(s)
-            </>
-          )}
-        </Button>
-        <Button 
-          size="lg" 
-          variant="outline"
-          disabled
-          className="w-full md:w-auto opacity-50"
-        >
-          Bulk Update (Coming Soon)
-        </Button>
-      </div>
+      <Button 
+        size="lg" 
+        onClick={sendPoolSettings} 
+        disabled={sending || selectedMiners.size === 0}
+        className="w-full md:w-auto"
+      >
+        {sending ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Sending Pool Settings...
+          </>
+        ) : (
+          <>
+            <Send className="h-4 w-4" />
+            Send Pool Settings to {selectedMiners.size} Miner(s)
+          </>
+        )}
+      </Button>
     </div>
   );
 };

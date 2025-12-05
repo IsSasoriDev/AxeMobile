@@ -96,13 +96,14 @@ export default function FlashFirmware() {
                   </Button>
                   <Button 
                     className="flex-1 gap-2" 
+                    variant="outline"
+                    disabled
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleShowUpdater(device.id);
                     }}
                   >
                     <Zap className="h-4 w-4" />
-                    Bulk Update
+                    Bulk Update (Soon)
                   </Button>
                 </div>
               </CardContent>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMiningGame } from "@/hooks/useMiningGame";
 import { useMiningShop } from "@/hooks/useMiningShop";
 import { useNetworkScanner } from "@/hooks/useNetworkScanner";
@@ -6,7 +6,7 @@ import { useMiningSound } from "@/hooks/useMiningSound";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pickaxe, Package, Trash2, TrendingUp, ShoppingCart, Coins, Zap, Clock, DollarSign, Sparkles } from "lucide-react";
+import { Pickaxe, Package, Trash2, TrendingUp, ShoppingCart, Coins, Zap, Clock, DollarSign, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,6 +33,14 @@ import bitcoinOre from "@/assets/ores/bitcoin.png";
 export default function Cave() {
   const { totalHashRate } = useNetworkScanner();
   const [showSellAllDialog, setShowSellAllDialog] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => {
+    const saved = localStorage.getItem('caveSoundMuted');
+    return saved === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('caveSoundMuted', String(isMuted));
+  }, [isMuted]);
   
   const { 
     btcBalance, 
@@ -128,13 +136,23 @@ export default function Cave() {
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Mining Cave
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Your miners are working hard to find valuable resources
-          </p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Mining Cave
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Your miners are working hard to find valuable resources
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMuted(!isMuted)}
+            className="shrink-0"
+          >
+            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          </Button>
         </div>
         <div className="flex gap-6">
           <div className="text-right">

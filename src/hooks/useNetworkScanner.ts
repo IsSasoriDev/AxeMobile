@@ -38,6 +38,7 @@ export interface MinerDevice {
   };
   model?: string;
   version?: string;
+  bestDiff?: number;
 }
 
 export const useNetworkScanner = () => {
@@ -83,6 +84,7 @@ export const useNetworkScanner = () => {
           },
           model: data.ASICModel || 'Unknown',
           version: data.version || 'Unknown',
+          bestDiff: data.bestDiff || data.bestSessionDiff || 0,
         };
       }
 
@@ -106,6 +108,7 @@ export const useNetworkScanner = () => {
         },
         model: systemData.ASICModel || 'Unknown',
         version: systemData.version || 'Unknown',
+        bestDiff: systemData.bestDiff || systemData.bestSessionDiff || 0,
       };
     } catch (error) {
       console.log(`❌ Device ${ip} not responding:`, error);

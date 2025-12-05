@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Search, Plus, RefreshCw, Trash2, RotateCcw, Thermometer, Zap, TrendingUp, Activity, Network } from 'lucide-react';
+import { Search, Plus, RefreshCw, Trash2, RotateCcw, Thermometer, Zap, TrendingUp, Activity, Network, Trophy } from 'lucide-react';
 import { useNetworkScanner } from '@/hooks/useNetworkScanner';
 import { toast } from 'sonner';
 
@@ -63,6 +63,15 @@ export const DeviceScanner = () => {
       return `${(hashRate / 1000).toFixed(2)} TH/s`;
     }
     return `${hashRate.toFixed(2)} GH/s`;
+  };
+
+  const formatDiff = (diff: number) => {
+    if (!diff) return '0';
+    if (diff >= 1e12) return `${(diff / 1e12).toFixed(2)}T`;
+    if (diff >= 1e9) return `${(diff / 1e9).toFixed(2)}B`;
+    if (diff >= 1e6) return `${(diff / 1e6).toFixed(2)}M`;
+    if (diff >= 1e3) return `${(diff / 1e3).toFixed(2)}K`;
+    return diff.toString();
   };
 
   if (isLoading) {
@@ -304,6 +313,7 @@ export const DeviceScanner = () => {
                       <TableHead>Device</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Hashrate</TableHead>
+                      <TableHead>Best Diff</TableHead>
                       <TableHead>Temperature</TableHead>
                       <TableHead>Power</TableHead>
                       <TableHead>Uptime</TableHead>
@@ -329,6 +339,14 @@ export const DeviceScanner = () => {
                           <div className="flex items-center gap-1">
                             <TrendingUp className="h-3 w-3" />
                             {formatHashRate(device.hashRate || 0)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Trophy className="h-3 w-3 text-amber-500" />
+                            <span className="text-amber-500 font-medium">
+                              {formatDiff(device.bestDiff || 0)}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>

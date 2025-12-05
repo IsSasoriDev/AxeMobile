@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef } from 'react';
 
 type SoundType = 'mine' | 'find_common' | 'find_rare' | 'find_legendary' | 'purchase' | 'ambient';
 
+const isMuted = () => localStorage.getItem('caveSoundMuted') === 'true';
+
 export const useMiningSound = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const ambientIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -22,7 +24,7 @@ export const useMiningSound = () => {
   }, []);
 
   const playTone = useCallback((frequency: number, duration: number, type: OscillatorType = 'sine') => {
-    if (!audioContextRef.current) return;
+    if (!audioContextRef.current || isMuted()) return;
 
     const context = audioContextRef.current;
     const oscillator = context.createOscillator();
@@ -42,7 +44,7 @@ export const useMiningSound = () => {
   }, []);
 
   const playPickaxeSwing = useCallback(() => {
-    if (!audioContextRef.current) return;
+    if (!audioContextRef.current || isMuted()) return;
 
     const context = audioContextRef.current;
     
@@ -70,7 +72,7 @@ export const useMiningSound = () => {
   }, [playTone]);
 
   const playOreFound = useCallback((rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary') => {
-    if (!audioContextRef.current) return;
+    if (!audioContextRef.current || isMuted()) return;
 
     const context = audioContextRef.current;
     
@@ -112,7 +114,7 @@ export const useMiningSound = () => {
   }, [playTone]);
 
   const playAmbientDrip = useCallback(() => {
-    if (!audioContextRef.current) return;
+    if (!audioContextRef.current || isMuted()) return;
     
     // Random drip sound
     const freq = 800 + Math.random() * 400;
