@@ -25,13 +25,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.platform == 'macos-latest' && 'x86_64-apple-darwin,aarch64-apple-darwin' || '' }}
+
+      - name: Add macOS cross-compilation targets
+        if: matrix.platform == 'macos-latest'
+        run: |
+          rustup target add x86_64-apple-darwin --toolchain stable
+          rustup target add aarch64-apple-darwin --toolchain stable
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -44,11 +49,8 @@ jobs:
 
       - name: Align Tauri Versions
         run: |
-          # Get Rust Tauri version
           RUST_TAURI_VERSION=$(grep '^tauri = ' src-tauri/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
           echo "Found Rust Tauri version: $RUST_TAURI_VERSION"
-
-          # Ensure NPM package @tauri-apps/api matches Rust crate
           yarn add @tauri-apps/api@$RUST_TAURI_VERSION
 
       - name: Build frontend
