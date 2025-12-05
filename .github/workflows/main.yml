@@ -1,62 +1,197 @@
-name: Build AxeMobile Tauri App
+name: Build AxeMobile (Linux & macOS)
 
 on:
   push:
-    branches:
-      - release
+    branches: [main, develop]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, develop]
   workflow_dispatch:
 
-permissions:
-  contents: write
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        platform: [ubuntu-22.04, macos-latest]
-    runs-on: ${{ matrix.platform }}
-
+  # ============================================
+  # Build for Linux (Ubuntu)
+  # ============================================
+  build-linux:
+    runs-on: ubuntu-22.04
+    
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          node-version: '20'
+          targets: x86_64-unknown-linux-gnu
 
-      - uses: actions-rs/toolchain@v1
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
         with:
-          toolchain: stable
+          workspaces: src-tauri
 
-      - if: matrix.platform == 'macos-latest'
-        run: |
-          rustup target add x86_64-apple-darwin --toolchain stable
-          rustup target add aarch64-apple-darwin --toolchain stable
-
-      - if: matrix.platform == 'ubuntu-22.04'
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev
 
-      - run: yarn install
-
-      - name: Align Tauri Versions
-        run: |
-          RUST_TAURI_VERSION=$(grep '^tauri' src-tauri/Cargo.toml \
-            | sed -E 's/.*version = ?"([0-9]+\.[0-9]+).*/\1/')
-          echo "Aligning @tauri-apps/api and tauri to Rust version $RUST_TAURI_VERSION"
-          yarn add "@tauri-apps/api@$RUST_TAURI_VERSION.x" "tauri@$RUST_TAURI_VERSION.x"
-
-      - run: yarn build
-
-      - run: |
-          if [[ "${{ matrix.platform }}" == "macos-latest" ]]; then
-            yarn tauri build --target x86_64-apple-darwin
-            yarn tauri build --target aarch64-apple-darwin
-          else
-            yarn tauri build
-          fi
-
-      - uses: actions/upload-artifact@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: AxeMobile-build-${{ matrix.platform }}
-          path: src-tauri/target/release/bundle/
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build Tauri app
+        run: npm run tauri build
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: List build artifacts
+        run: |
+          echo "=== Linux Build Artifacts ==="
+          find src-tauri/target/release/bundle -type f
+
+      - name: Upload Linux AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: axemobile-linux-appimage
+          path: src-tauri/target/release/bundle/appimage/*.AppImage
+          if-no-files-found: warn
+
+      - name: Upload Linux .deb package
+        uses: actions/upload-artifact@v4
+        with:
+          name: axemobile-linux-deb
+          path: src-tauri/target/release/bundle/deb/*.deb
+          if-no-files-found: warn
+
+      - name: Upload Linux .rpm package
+        uses: actions/upload-artifact@v4
+        with:
+          name: axemobile-linux-rpm
+          path: src-tauri/target/release/bundle/rpm/*.rpm
+          if-no-files-found: warn
+
+  # ============================================
+  # Build for macOS (Universal Binary)
+  # ============================================
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build Tauri app (Universal)
+        run: npm run tauri build -- --target universal-apple-darwin
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: List build artifacts
+        run: |
+          echo "=== macOS Build Artifacts ==="
+          find src-tauri/target/universal-apple-darwin/release/bundle -type f 2>/dev/null || \
+          find src-tauri/target/release/bundle -type f
+
+      - name: Upload macOS .app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: axemobile-macos-app
+          path: |
+            src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app
+            src-tauri/target/release/bundle/macos/*.app
+          if-no-files-found: warn
+
+      - name: Upload macOS .dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: axemobile-macos-dmg
+          path: |
+            src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: warn
+
+  # ============================================
+  # Create GitHub Release (on tags)
+  # ============================================
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-linux, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+            artifacts/**/*.dmg
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
