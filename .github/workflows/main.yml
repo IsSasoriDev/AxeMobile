@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - macos-latest    # macOS (Intel and Apple‑Silicon)
+          - macos-latest    # macOS (Intel & Apple‑Silicon)
           - ubuntu-22.04    # Linux
     runs-on: ${{ matrix.platform }}
 
@@ -27,12 +27,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'  # or pin a version you use, e.g. '20'
+          node-version: 'lts/*'
 
-      - name: Install Rust stable (for Tauri)
+      - name: Install Rust stable (for Tauri & cross‑compilation)
         uses: dtolnay/rust-toolchain@stable
         with:
-          # Only needed on macOS to setup macOS targets
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Install Linux build dependencies
@@ -42,24 +41,19 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Install frontend dependencies
-        run: yarn install  # or `npm install` / `pnpm install`, depending on your project
+        run: yarn install   # or npm / pnpm depending on your setup
 
-      - name: Build front-end / prepare web assets
-        run: yarn build    # if your project needs a build step before Tauri build
+      - name: Build frontend
+        run: yarn build     # adapt as needed
 
-      - name: Build Tauri application & create release
-        uses: tauri-apps/tauri-action@v1
+      - name: Build Tauri application & publish release
+        uses: tauri-apps/tauri-action@v0.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: app-v__VERSION__
           releaseName: "AxeMobile v__VERSION__"
-          releaseBody: "Automated build for AxeMobile"
+          releaseBody: "Automated build of AxeMobile"
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.platform == 'macos-latest' && '--target x86_64-apple-darwin' || '' }}
-
-      - name: List artifacts
-        run: |
-          echo "Artifacts:"
-          ls -R src-tauri/target/release/bundle || true
