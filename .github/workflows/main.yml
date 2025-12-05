@@ -60,6 +60,17 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Check Tauri versions
+        run: |
+          echo "Checking Tauri package versions..."
+          npx tauri info || true
+
+      - name: Fix Tauri version mismatches
+        run: |
+          echo "Updating Tauri packages to match versions..."
+          npm install @tauri-apps/api@~2.8.0 @tauri-apps/cli@~2.8.0
+        continue-on-error: true
+
       - name: Build frontend
         run: npm run build
 
@@ -123,6 +134,17 @@ jobs:
 
       - name: Install npm dependencies
         run: npm ci
+
+      - name: Check Tauri versions
+        run: |
+          echo "Checking Tauri package versions..."
+          npx tauri info || true
+
+      - name: Fix Tauri version mismatches
+        run: |
+          echo "Updating Tauri packages to match versions..."
+          npm install @tauri-apps/api@~2.8.0 @tauri-apps/cli@~2.8.0
+        continue-on-error: true
 
       - name: Build frontend
         run: npm run build
