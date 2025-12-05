@@ -11,56 +11,44 @@ permissions:
 
 jobs:
   build:
-    name: Build for Linux & macOS
     strategy:
-      fail-fast: false
       matrix:
         platform: [ubuntu-22.04, macos-latest]
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+      - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
 
-      - name: Add macOS cross-compilation targets
-        if: matrix.platform == 'macos-latest'
+      - if: matrix.platform == 'macos-latest'
         run: |
           rustup target add x86_64-apple-darwin --toolchain stable
           rustup target add aarch64-apple-darwin --toolchain stable
 
-      - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-22.04'
+      - if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-      - name: Install Yarn dependencies
-        run: yarn install
+      - run: yarn install
 
       - name: Align Tauri Versions
         run: |
-          # Extract version from inline table or string
-          RUST_TAURI_VERSION=$(grep '^tauri =' src-tauri/Cargo.toml | sed -E 's/.*version = "(.*)".*/\1/')
-          echo "Found Rust Tauri version: $RUST_TAURI_VERSION"
+          RUST_TAURI_VERSION=$(grep '^tauri' src-tauri/Cargo.toml \
+            | sed -E 's/.*version = ?"([0-9]+\.[0-9]+).*/\1/')
+          echo "Aligning @tauri-apps/api and tauri to Rust version $RUST_TAURI_VERSION"
+          yarn add "@tauri-apps/api@$RUST_TAURI_VERSION.x" "tauri@$RUST_TAURI_VERSION.x"
 
-          # Update NPM package to match Rust crate
-          yarn add @tauri-apps/api@$RUST_TAURI_VERSION
+      - run: yarn build
 
-      - name: Build frontend
-        run: yarn build
-
-      - name: Build Tauri app
-        run: |
+      - run: |
           if [[ "${{ matrix.platform }}" == "macos-latest" ]]; then
             yarn tauri build --target x86_64-apple-darwin
             yarn tauri build --target aarch64-apple-darwin
@@ -68,18 +56,7 @@ jobs:
             yarn tauri build
           fi
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: AxeMobile-build-${{ matrix.platform }}
           path: src-tauri/target/release/bundle/
-
-      - name: Create GitHub Release (draft)
-        if: github.ref == 'refs/heads/release'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: "AxeMobile ${{ github.ref_name }}"
-          draft: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
