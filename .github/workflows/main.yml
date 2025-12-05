@@ -6,10 +6,14 @@ on:
       - release
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build for Linux & macOS
     strategy:
+      fail-fast: false
       matrix:
         platform: [ubuntu-22.04, macos-latest]
     runs-on: ${{ matrix.platform }}
@@ -21,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'  # or your preferred LTS
+          node-version: '18'
 
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
@@ -40,11 +44,11 @@ jobs:
 
       - name: Align Tauri Versions
         run: |
-          # Get current Rust crate version
+          # Get Rust Tauri version
           RUST_TAURI_VERSION=$(grep '^tauri = ' src-tauri/Cargo.toml | sed 's/.*"\(.*\)"/\1/')
           echo "Found Rust Tauri version: $RUST_TAURI_VERSION"
 
-          # Force NPM package @tauri-apps/api to match Rust crate
+          # Ensure NPM package @tauri-apps/api matches Rust crate
           yarn add @tauri-apps/api@$RUST_TAURI_VERSION
 
       - name: Build frontend
@@ -54,12 +58,23 @@ jobs:
         run: |
           if [[ "${{ matrix.platform }}" == "macos-latest" ]]; then
             yarn tauri build --target x86_64-apple-darwin
+            yarn tauri build --target aarch64-apple-darwin
           else
             yarn tauri build
           fi
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: AxeMobile-build-${{ matrix.platform }}
           path: src-tauri/target/release/bundle/
+
+      - name: Create GitHub Release (draft)
+        if: github.ref == 'refs/heads/release'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "AxeMobile ${{ github.ref_name }}"
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
