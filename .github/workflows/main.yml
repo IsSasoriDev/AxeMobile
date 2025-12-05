@@ -1,0 +1,188 @@
+name: AxeMobile — Build All Targets
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+
+  # -----------------------------
+  # Web Build
+  # -----------------------------
+  web_build:
+    name: Build Web (Production)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web
+        run: npm run build
+
+      - name: Upload web dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: ./dist/
+
+
+  # -----------------------------
+  # Android Build
+  # -----------------------------
+  android_build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    needs: web_build
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web
+        run: npm run build
+
+      - name: Sync Capacitor and build Android
+        run: |
+          npx cap sync android
+          cd android
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+
+  # -----------------------------
+  # iOS Build (Unsigned)
+  # -----------------------------
+  ios_build:
+    name: Build iOS App (Unsigned)
+    runs-on: macos-latest
+    needs: web_build
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web
+        run: npm run build
+
+      - name: Sync Capacitor and build iOS
+        run: |
+          npx cap sync ios
+          cd ios/App
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -sdk iphoneos \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Upload iOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: ios/App/build
+
+
+  # -----------------------------
+  # Desktop Build (Tauri)
+  # -----------------------------
+  desktop_build:
+    name: Build Desktop (Tauri)
+    runs-on: ubuntu-latest
+    needs: web_build
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web
+        run: npm run build
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Tauri App
+        run: |
+          npm install -g @tauri-apps/cli
+          tauri build
+
+      - name: Upload Desktop bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-desktop-build
+          path: src-tauri/target/release/bundle/
+
+
+  # -----------------------------
+  # Arch Linux Package Build
+  # -----------------------------
+  arch_build:
+    name: Build Arch Linux Package
+    runs-on: ubuntu-latest
+    needs: web_build
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build inside Arch Docker
+        run: |
+          docker run --rm \
+            -v "$PWD":/repo \
+            -w /repo/arch \
+            archlinux:latest \
+            bash -lc "
+              pacman -Syu --noconfirm &&
+              pacman -S --noconfirm base-devel rustup nodejs npm git &&
+              rustup default stable &&
+              makepkg -fs --noconfirm
+            "
+
+      - name: Upload Arch package
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-linux-package
+          path: arch/*.pkg.tar.zst
