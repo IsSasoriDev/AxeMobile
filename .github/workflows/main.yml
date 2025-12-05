@@ -49,8 +49,8 @@ jobs:
 
       - name: Align Tauri Versions
         run: |
-          # Extract only the version number (ignores features)
-          RUST_TAURI_VERSION=$(grep '^tauri =' src-tauri/Cargo.toml | sed -E 's/tauri = "(.*)".*/\1/')
+          # Extract version from inline table or string
+          RUST_TAURI_VERSION=$(grep '^tauri =' src-tauri/Cargo.toml | sed -E 's/.*version = "(.*)".*/\1/')
           echo "Found Rust Tauri version: $RUST_TAURI_VERSION"
 
           # Update NPM package to match Rust crate
