@@ -74,8 +74,15 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Verify frontend build
+        run: |
+          echo "=== Frontend Build Output ==="
+          ls -la dist/ || echo "dist/ directory not found"
+          
       - name: Build Tauri app
-        run: npx tauri build
+        run: |
+          echo "=== Starting Tauri Build ==="
+          npx tauri build --verbose
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -83,7 +90,15 @@ jobs:
       - name: List build artifacts
         run: |
           echo "=== Linux Build Artifacts ==="
-          find src-tauri/target/release/bundle -type f
+          echo "Checking if bundle directory exists..."
+          if [ -d "src-tauri/target/release/bundle" ]; then
+            find src-tauri/target/release/bundle -type f
+          else
+            echo "Bundle directory not found. Listing target directory structure:"
+            ls -la src-tauri/target/ || echo "Target directory doesn't exist"
+            ls -la src-tauri/target/release/ || echo "Release directory doesn't exist"
+          fi
+        continue-on-error: true
 
       - name: Upload Linux AppImage
         uses: actions/upload-artifact@v4
@@ -149,8 +164,15 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Verify frontend build
+        run: |
+          echo "=== Frontend Build Output ==="
+          ls -la dist/ || echo "dist/ directory not found"
+
       - name: Build Tauri app (Universal)
-        run: npx tauri build --target universal-apple-darwin
+        run: |
+          echo "=== Starting Tauri Build (Universal) ==="
+          npx tauri build --target universal-apple-darwin --verbose
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -164,8 +186,17 @@ jobs:
       - name: List build artifacts
         run: |
           echo "=== macOS Build Artifacts ==="
-          find src-tauri/target/universal-apple-darwin/release/bundle -type f 2>/dev/null || \
-          find src-tauri/target/release/bundle -type f
+          echo "Checking for universal build artifacts..."
+          if [ -d "src-tauri/target/universal-apple-darwin/release/bundle" ]; then
+            find src-tauri/target/universal-apple-darwin/release/bundle -type f
+          elif [ -d "src-tauri/target/release/bundle" ]; then
+            echo "Found non-universal build artifacts:"
+            find src-tauri/target/release/bundle -type f
+          else
+            echo "Bundle directory not found. Listing target directory structure:"
+            ls -la src-tauri/target/ || echo "Target directory doesn't exist"
+          fi
+        continue-on-error: true
 
       - name: Upload macOS .app bundle
         uses: actions/upload-artifact@v4
