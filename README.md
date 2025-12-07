@@ -193,7 +193,8 @@ AxeMobile supports multiple themes:
 - **Disco Theme**: 
 - **Bitcoin Theme**: 
 - **PowerMiningh Theme**: 
-- **Bitaxe Theme**: 
+- **Bitaxe Theme**:
+  ^ IxTech PowerMining and DTV themes require a refresh oof the app or restart to update properly.
 
 
 Themes are configured in `src/index.css` and `tailwind.config.ts`.
