@@ -1,188 +1,264 @@
-name: AxeMobile — Build All Targets
+name: Build AxeMobile (Linux & macOS)
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, develop]
+    tags:
+      - 'v*'
   pull_request:
-    branches: [ main ]
+    branches: [main, develop]
   workflow_dispatch:
 
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
 jobs:
-
-  # -----------------------------
-  # Web Build
-  # -----------------------------
-  web_build:
-    name: Build Web (Production)
-    runs-on: ubuntu-latest
-
+  # ============================================
+  # Build for Linux (Ubuntu)
+  # ============================================
+  build-linux:
+    runs-on: ubuntu-22.04
+    
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build web
-        run: npm run build
-
-      - name: Upload web dist
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-dist
-          path: ./dist/
-
-
-  # -----------------------------
-  # Android Build
-  # -----------------------------
-  android_build:
-    name: Build Android APK
-    runs-on: ubuntu-latest
-    needs: web_build
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build web
-        run: npm run build
-
-      - name: Sync Capacitor and build Android
-        run: |
-          npx cap sync android
-          cd android
-          ./gradlew assembleDebug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-
-
-  # -----------------------------
-  # iOS Build (Unsigned)
-  # -----------------------------
-  ios_build:
-    name: Build iOS App (Unsigned)
-    runs-on: macos-latest
-    needs: web_build
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build web
-        run: npm run build
-
-      - name: Sync Capacitor and build iOS
-        run: |
-          npx cap sync ios
-          cd ios/App
-          xcodebuild \
-            -workspace App.xcworkspace \
-            -scheme App \
-            -sdk iphoneos \
-            -configuration Release \
-            CODE_SIGNING_ALLOWED=NO \
-            build
-
-      - name: Upload iOS build
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-build
-          path: ios/App/build
-
-
-  # -----------------------------
-  # Desktop Build (Tauri)
-  # -----------------------------
-  desktop_build:
-    name: Build Desktop (Tauri)
-    runs-on: ubuntu-latest
-    needs: web_build
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build web
-        run: npm run build
-
-      - name: Install Rust
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
 
-      - name: Build Tauri App
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install system dependencies
         run: |
-          npm install -g @tauri-apps/cli
-          tauri build
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev
 
-      - name: Upload Desktop bundle
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Check Tauri versions
+        run: |
+          echo "Checking Tauri package versions..."
+          npx tauri info || true
+
+      - name: Fix Tauri version mismatches
+        run: |
+          echo "Updating Tauri packages to match versions..."
+          npm install @tauri-apps/api@~2.8.0 @tauri-apps/cli@~2.8.0
+        continue-on-error: true
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Verify frontend build
+        run: |
+          echo "=== Frontend Build Output ==="
+          ls -la dist/ || echo "dist/ directory not found"
+          
+      - name: Build Tauri app
+        run: |
+          echo "=== Starting Tauri Build ==="
+          npx tauri build --verbose
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: List build artifacts
+        run: |
+          echo "=== Linux Build Artifacts ==="
+          echo "Checking if bundle directory exists..."
+          if [ -d "src-tauri/target/release/bundle" ]; then
+            find src-tauri/target/release/bundle -type f
+          else
+            echo "Bundle directory not found. Listing target directory structure:"
+            ls -la src-tauri/target/ || echo "Target directory doesn't exist"
+            ls -la src-tauri/target/release/ || echo "Release directory doesn't exist"
+          fi
+        continue-on-error: true
+
+      - name: Upload Linux AppImage
         uses: actions/upload-artifact@v4
         with:
-          name: tauri-desktop-build
-          path: src-tauri/target/release/bundle/
+          name: axemobile-linux-appimage
+          path: src-tauri/target/release/bundle/appimage/*.AppImage
+          if-no-files-found: warn
 
+      - name: Upload Linux .deb package
+        uses: actions/upload-artifact@v4
+        with:
+          name: axemobile-linux-deb
+          path: src-tauri/target/release/bundle/deb/*.deb
+          if-no-files-found: warn
 
-  # -----------------------------
-  # Arch Linux Package Build
-  # -----------------------------
-  arch_build:
-    name: Build Arch Linux Package
-    runs-on: ubuntu-latest
-    needs: web_build
+      - name: Upload Linux .rpm package
+        uses: actions/upload-artifact@v4
+        with:
+          name: axemobile-linux-rpm
+          path: src-tauri/target/release/bundle/rpm/*.rpm
+          if-no-files-found: warn
 
+      - name: Upload Tauri source files
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-src-linux
+          path: src-tauri/src/**/*
+          if-no-files-found: warn
+
+  # ============================================
+  # Build for macOS (Universal Binary)
+  # ============================================
+  build-macos:
+    runs-on: macos-latest
+    
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build inside Arch Docker
-        run: |
-          docker run --rm \
-            -v "$PWD":/repo \
-            -w /repo/arch \
-            archlinux:latest \
-            bash -lc "
-              pacman -Syu --noconfirm &&
-              pacman -S --noconfirm base-devel rustup nodejs npm git &&
-              rustup default stable &&
-              makepkg -fs --noconfirm
-            "
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
 
-      - name: Upload Arch package
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Check Tauri versions
+        run: |
+          echo "Checking Tauri package versions..."
+          npx tauri info || true
+
+      - name: Fix Tauri version mismatches
+        run: |
+          echo "Updating Tauri packages to match versions..."
+          npm install @tauri-apps/api@~2.8.0 @tauri-apps/cli@~2.8.0
+        continue-on-error: true
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Verify frontend build
+        run: |
+          echo "=== Frontend Build Output ==="
+          ls -la dist/ || echo "dist/ directory not found"
+
+      - name: Build Tauri app (Universal)
+        run: |
+          echo "=== Starting Tauri Build (Universal) ==="
+          npx tauri build --target universal-apple-darwin --verbose
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: List build artifacts
+        run: |
+          echo "=== macOS Build Artifacts ==="
+          echo "Checking for universal build artifacts..."
+          if [ -d "src-tauri/target/universal-apple-darwin/release/bundle" ]; then
+            find src-tauri/target/universal-apple-darwin/release/bundle -type f
+          elif [ -d "src-tauri/target/release/bundle" ]; then
+            echo "Found non-universal build artifacts:"
+            find src-tauri/target/release/bundle -type f
+          else
+            echo "Bundle directory not found. Listing target directory structure:"
+            ls -la src-tauri/target/ || echo "Target directory doesn't exist"
+          fi
+        continue-on-error: true
+
+      - name: Upload macOS .app bundle
         uses: actions/upload-artifact@v4
         with:
-          name: arch-linux-package
-          path: arch/*.pkg.tar.zst
+          name: axemobile-macos-app
+          path: |
+            src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app
+            src-tauri/target/release/bundle/macos/*.app
+          if-no-files-found: warn
+
+      - name: Upload macOS .dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: axemobile-macos-dmg
+          path: |
+            src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: warn
+
+      - name: Upload Tauri source files
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-src-macos
+          path: src-tauri/src/**/*
+          if-no-files-found: warn
+
+  # ============================================
+  # Create GitHub Release (on tags)
+  # ============================================
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-linux, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+            artifacts/**/*.dmg
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
