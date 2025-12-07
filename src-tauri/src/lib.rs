@@ -98,7 +98,7 @@ async fn restart_miner(ip: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-async fn update_miner_pool(ip: String, pool: String, password: String, fan_speed: Option<u8>) -> Result<String, String> {
+async fn update_miner_pool(ip: String, pool: Option<String>, password: Option<String>, fan_speed: Option<u8>) -> Result<String, String> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(10))
         .redirect(reqwest::redirect::Policy::none())
@@ -107,21 +107,26 @@ async fn update_miner_pool(ip: String, pool: String, password: String, fan_speed
 
     let url = format!("http://{}/api/system", ip);
     
-    let mut payload = serde_json::json!({
-        "stratumURL": pool,
-        "stratumPassword": password
-    });
+    let mut payload = serde_json::Map::new();
+
+    // Add pool settings if provided
+    if let Some(p) = pool {
+        payload.insert("stratumURL".to_string(), serde_json::json!(p));
+    }
+    if let Some(pw) = password {
+        payload.insert("stratumPassword".to_string(), serde_json::json!(pw));
+    }
 
     // Add fan speed if provided
     if let Some(speed) = fan_speed {
-        payload["fanspeed"] = serde_json::json!(speed);
+        payload.insert("fanspeed".to_string(), serde_json::json!(speed));
     }
 
     let response = client
         .patch(&url)
         .header("Content-Type", "application/json")
         .header("User-Agent", "AxeMobile/1.0")
-        .json(&payload)
+        .json(&serde_json::Value::Object(payload))
         .send()
         .await
         .map_err(|e| e.to_string())?;

@@ -731,6 +731,350 @@
     backdrop-filter: blur(12px);
   }
 
+  /* DTV Electronics Theme - Black/White/Orange */
+  .theme-dtv {
+    --background: 0 0% 5%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 25 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 25 100% 50%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 12%;
+    --ring: 25 100% 50%;
+
+    --success: 142 76% 36%;
+    --warning: 25 100% 50%;
+    --info: 25 100% 50%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(25 100% 50%), hsl(25 80% 40%));
+    --gradient-accent: linear-gradient(135deg, hsl(25 80% 40%), hsl(0 0% 12%));
+    
+    --shadow-glow: 0 0 30px hsl(25 100% 50% / 0.4);
+    --shadow-card: 0 4px 12px hsl(0 0% 0% / 0.5);
+
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 25 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 25 100% 50%;
+  }
+
+  /* DTV Interactive Background with Stars */
+  html.theme-dtv {
+    background: hsl(0 0% 2%) !important;
+    min-height: 100vh !important;
+  }
+
+  html.theme-dtv body {
+    background: hsl(0 0% 2%) !important;
+    min-height: 100vh !important;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Static stars layer */
+  html.theme-dtv body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      radial-gradient(2px 2px at 10% 15%, hsl(0 0% 100%) 100%, transparent),
+      radial-gradient(2px 2px at 25% 35%, hsl(0 0% 100% / 0.8) 100%, transparent),
+      radial-gradient(1px 1px at 40% 10%, hsl(0 0% 100% / 0.6) 100%, transparent),
+      radial-gradient(2px 2px at 55% 45%, hsl(25 100% 60%) 100%, transparent),
+      radial-gradient(1px 1px at 70% 20%, hsl(0 0% 100% / 0.7) 100%, transparent),
+      radial-gradient(2px 2px at 85% 55%, hsl(0 0% 100% / 0.9) 100%, transparent),
+      radial-gradient(1px 1px at 15% 65%, hsl(25 100% 55%) 100%, transparent),
+      radial-gradient(2px 2px at 30% 80%, hsl(0 0% 100% / 0.8) 100%, transparent),
+      radial-gradient(1px 1px at 50% 70%, hsl(0 0% 100% / 0.5) 100%, transparent),
+      radial-gradient(2px 2px at 65% 85%, hsl(25 100% 50%) 100%, transparent),
+      radial-gradient(1px 1px at 80% 75%, hsl(0 0% 100% / 0.7) 100%, transparent),
+      radial-gradient(2px 2px at 95% 30%, hsl(0 0% 100%) 100%, transparent),
+      radial-gradient(1px 1px at 5% 50%, hsl(0 0% 100% / 0.6) 100%, transparent),
+      radial-gradient(2px 2px at 45% 25%, hsl(25 100% 55% / 0.9) 100%, transparent),
+      radial-gradient(1px 1px at 75% 60%, hsl(0 0% 100% / 0.8) 100%, transparent),
+      radial-gradient(2px 2px at 20% 90%, hsl(0 0% 100% / 0.7) 100%, transparent),
+      radial-gradient(1px 1px at 60% 5%, hsl(0 0% 100%) 100%, transparent),
+      radial-gradient(2px 2px at 90% 95%, hsl(25 100% 60% / 0.8) 100%, transparent);
+    background-size: 100% 100%;
+    animation: dtv-stars-twinkle 4s ease-in-out infinite alternate;
+  }
+
+  /* Second layer - more stars with different timing */
+  html.theme-dtv body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      radial-gradient(1px 1px at 8% 22%, hsl(0 0% 100% / 0.9) 100%, transparent),
+      radial-gradient(2px 2px at 18% 48%, hsl(25 100% 55%) 100%, transparent),
+      radial-gradient(1px 1px at 33% 12%, hsl(0 0% 100% / 0.7) 100%, transparent),
+      radial-gradient(2px 2px at 48% 58%, hsl(0 0% 100% / 0.8) 100%, transparent),
+      radial-gradient(1px 1px at 62% 32%, hsl(25 100% 50% / 0.9) 100%, transparent),
+      radial-gradient(2px 2px at 78% 42%, hsl(0 0% 100%) 100%, transparent),
+      radial-gradient(1px 1px at 88% 68%, hsl(0 0% 100% / 0.6) 100%, transparent),
+      radial-gradient(2px 2px at 12% 78%, hsl(25 100% 60% / 0.8) 100%, transparent),
+      radial-gradient(1px 1px at 38% 92%, hsl(0 0% 100% / 0.7) 100%, transparent),
+      radial-gradient(2px 2px at 58% 18%, hsl(0 0% 100% / 0.9) 100%, transparent),
+      radial-gradient(1px 1px at 72% 88%, hsl(25 100% 55%) 100%, transparent),
+      radial-gradient(2px 2px at 92% 8%, hsl(0 0% 100% / 0.8) 100%, transparent);
+    background-size: 100% 100%;
+    animation: dtv-stars-twinkle-2 5s ease-in-out infinite alternate;
+    animation-delay: 1s;
+  }
+
+  /* Shooting star layer */
+  html.theme-dtv #root::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: hsl(0 0% 100%);
+    box-shadow: 
+      0 0 10px 2px hsl(0 0% 100%),
+      0 0 20px 4px hsl(0 0% 100% / 0.5),
+      -30px 0 15px 1px hsl(0 0% 100% / 0.3),
+      -60px 0 10px 0px hsl(0 0% 100% / 0.1);
+    pointer-events: none;
+    z-index: 1;
+    animation: dtv-shooting-star 6s ease-in-out infinite;
+    opacity: 0;
+  }
+
+  /* Second shooting star */
+  html.theme-dtv #root::after {
+    content: '';
+    position: fixed;
+    top: 30%;
+    left: 0;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: hsl(25 100% 60%);
+    box-shadow: 
+      0 0 8px 2px hsl(25 100% 60%),
+      0 0 15px 3px hsl(25 100% 50% / 0.5),
+      -25px 0 12px 1px hsl(25 100% 50% / 0.3),
+      -50px 0 8px 0px hsl(25 100% 50% / 0.1);
+    pointer-events: none;
+    z-index: 1;
+    animation: dtv-shooting-star-2 8s ease-in-out infinite;
+    animation-delay: 3s;
+    opacity: 0;
+  }
+
+  @keyframes dtv-stars-twinkle {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+  }
+
+  @keyframes dtv-stars-twinkle-2 {
+    0% { opacity: 0.5; }
+    50% { opacity: 0.9; }
+    100% { opacity: 0.6; }
+  }
+
+  @keyframes dtv-shooting-star {
+    0% {
+      top: 10%;
+      left: -5%;
+      opacity: 0;
+    }
+    5% {
+      opacity: 1;
+    }
+    30% {
+      top: 40%;
+      left: 110%;
+      opacity: 0;
+    }
+    100% {
+      top: 40%;
+      left: 110%;
+      opacity: 0;
+    }
+  }
+
+  @keyframes dtv-shooting-star-2 {
+    0% {
+      top: 25%;
+      left: 110%;
+      opacity: 0;
+    }
+    5% {
+      opacity: 1;
+    }
+    35% {
+      top: 60%;
+      left: -10%;
+      opacity: 0;
+    }
+    100% {
+      top: 60%;
+      left: -10%;
+      opacity: 0;
+    }
+  }
+
+  @keyframes dtv-pulse {
+    0%, 100% { 
+      box-shadow: 0 0 15px hsl(0 0% 100% / 0.15);
+      border-color: hsl(25 100% 50% / 0.4);
+    }
+    50% { 
+      box-shadow: 0 0 25px hsl(0 0% 100% / 0.25);
+      border-color: hsl(25 100% 50% / 0.6);
+    }
+  }
+
+  @keyframes dtv-glow-pulse {
+    0%, 100% {
+      filter: drop-shadow(0 0 6px hsl(0 0% 100% / 0.5));
+    }
+    50% {
+      filter: drop-shadow(0 0 15px hsl(0 0% 100% / 0.8));
+    }
+  }
+
+  .theme-dtv .card,
+  .theme-dtv [class*="card"]:not([class*="dropdown"]) {
+    border: 1px solid hsl(25 100% 50% / 0.4) !important;
+    background: linear-gradient(135deg, hsl(0 0% 8% / 0.92) 0%, hsl(0 0% 2% / 0.95) 100%) !important;
+    backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+    animation: dtv-pulse 4s ease-in-out infinite;
+  }
+
+  .theme-dtv .card:hover,
+  .theme-dtv [class*="card"]:not([class*="dropdown"]):hover {
+    border-color: hsl(25 100% 50% / 1) !important;
+    box-shadow: 0 8px 40px hsl(0 0% 100% / 0.2) !important;
+    transform: translateY(-3px);
+  }
+
+  /* DTV Sidebar buttons - rounded with orange border */
+  .theme-dtv .sidebar button,
+  .theme-dtv [data-sidebar] button {
+    background: transparent !important;
+    color: hsl(25 100% 55%) !important;
+    border: 2px solid hsl(25 100% 50%) !important;
+    border-radius: 0.5rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  .theme-dtv .sidebar button:hover,
+  .theme-dtv [data-sidebar] button:hover {
+    background: hsl(25 100% 50% / 0.15) !important;
+    border-color: hsl(25 100% 60%) !important;
+    box-shadow: 0 2px 15px hsl(0 0% 100% / 0.2) !important;
+  }
+
+  .theme-dtv button:not([data-radix-collection-item]):not([role="menuitem"]),
+  .theme-dtv [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]) {
+    background: hsl(25 100% 50% / 0.1) !important;
+    color: hsl(25 100% 55%) !important;
+    border: 2px solid hsl(25 100% 50%) !important;
+    border-radius: 0.5rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    backdrop-filter: blur(8px);
+  }
+
+  .theme-dtv button:not([data-radix-collection-item]):not([role="menuitem"]):hover,
+  .theme-dtv [class*="button"]:not([data-radix-collection-item]):not([role="menuitem"]):hover {
+    background: hsl(25 100% 50% / 0.2) !important;
+    border-color: hsl(25 100% 60%) !important;
+    box-shadow: 0 4px 20px hsl(0 0% 100% / 0.3) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .theme-dtv [data-radix-dropdown-menu-content],
+  .theme-dtv [data-radix-popover-content] {
+    background: hsl(0 0% 5% / 0.98) !important;
+    backdrop-filter: blur(16px);
+    border: 1px solid hsl(25 100% 50% / 0.4) !important;
+    z-index: 50 !important;
+  }
+
+  .theme-dtv [role="menuitem"] {
+    background: transparent !important;
+    border: none !important;
+    color: hsl(0 0% 98%) !important;
+    font-weight: normal !important;
+  }
+
+  .theme-dtv [role="menuitem"]:hover {
+    background: hsl(25 100% 50% / 0.2) !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  .theme-dtv .sidebar {
+    border-right: 1px solid hsl(25 100% 50% / 0.4);
+    background: hsl(0 0% 2% / 0.95) !important;
+    backdrop-filter: blur(16px);
+  }
+
+  /* DTV Logo white glow effect */
+  .theme-dtv img[alt="DTV Electronics"] {
+    animation: dtv-glow-pulse 3s ease-in-out infinite;
+  }
+
+  /* Rainbow text animation for supporters */
+  @keyframes rainbow-text {
+    0% { color: hsl(0 100% 60%); }
+    14% { color: hsl(30 100% 60%); }
+    28% { color: hsl(60 100% 50%); }
+    42% { color: hsl(120 100% 50%); }
+    57% { color: hsl(180 100% 50%); }
+    71% { color: hsl(240 100% 60%); }
+    85% { color: hsl(300 100% 60%); }
+    100% { color: hsl(360 100% 60%); }
+  }
+
+  .rainbow-text {
+    animation: rainbow-text 3s linear infinite;
+    font-weight: 700;
+  }
+
   .sidebar-background { background: hsl(var(--sidebar-background)); }
   .sidebar-foreground { color: hsl(var(--sidebar-foreground)); }
 }

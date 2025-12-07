@@ -188,7 +188,13 @@ axe-mobile/
 AxeMobile supports multiple themes:
 - **White Theme**: Clean, minimal design
 - **AMOLED Theme**: Pure black for OLED displays
-- **IxTech Theme**: BURN
+- **IxTech Theme**: 
+- **DTV Electronics Theme**: Our FIrst Supporter
+- **Disco Theme**: 
+- **Bitcoin Theme**: 
+- **PowerMiningh Theme**: 
+- **Bitaxe Theme**: 
+
 
 Themes are configured in `src/index.css` and `tailwind.config.ts`.
 
@@ -213,6 +219,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Open Source Miners United (OSMU)** for community support
 - **Bitaxe & NerdAxe** teams for hardware innovation
 - All contributors to the open-source community
+
+## Donations 
+![Donate QR](./assets/qr.png)
+
+or: bc1qjfr4kr9532h6965jwcu7mc8znyu7el63q8v90x
 
 ---
 

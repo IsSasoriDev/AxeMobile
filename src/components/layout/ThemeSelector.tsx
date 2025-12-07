@@ -17,6 +17,7 @@ const themes = [
   { id: "bitaxe", name: "Bitaxe", className: "theme-bitaxe" },
   { id: "bitcoin", name: "Bitcoin", className: "theme-bitcoin" },
   { id: "powermining", name: "PowerMining", className: "theme-powermining" },
+  { id: "dtv", name: "DTV Electronics", className: "theme-dtv" },
 ];
 
 export function ThemeSelector() {
