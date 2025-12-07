@@ -221,7 +221,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - All contributors to the open-source community
 
 ## Donations 
-![Donate QR](./assets/qr.png)
+![Donate QR](./readmefiles/qr.png)
 
 or: bc1qjfr4kr9532h6965jwcu7mc8znyu7el63q8v90x
 
