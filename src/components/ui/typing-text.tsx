@@ -8,6 +8,8 @@ interface TypingTextProps {
   pauseDuration?: number;
   onComplete?: () => void;
   loop?: boolean;
+  /** When loop=false, call onComplete as soon as typing finishes (no delete phase). */
+  completeOnType?: boolean;
   className?: string;
 }
 
@@ -19,6 +21,7 @@ export function TypingText({
   pauseDuration = 2000,
   onComplete,
   loop = true,
+  completeOnType = false,
   className = ""
 }: TypingTextProps) {
   // Use single text or texts array
@@ -54,13 +57,18 @@ export function TypingText({
         setCurrentText(prev => fullText.slice(0, prev.length + 1));
         
         if (currentText === fullText) {
+          if (!loop && completeOnType) {
+            setIsComplete(true);
+            onComplete?.();
+            return;
+          }
           setTimeout(() => setIsDeleting(true), pauseDuration);
         }
       }
     }, isDeleting ? deletingSpeed : typingSpeed);
 
     return () => clearTimeout(timeout);
-  }, [currentText, isDeleting, currentTextIndex, allTexts, typingSpeed, deletingSpeed, pauseDuration, onComplete, loop, isComplete]);
+  }, [currentText, isDeleting, currentTextIndex, allTexts, typingSpeed, deletingSpeed, pauseDuration, onComplete, loop, completeOnType, isComplete]);
 
   // Cursor blinking effect
   useEffect(() => {

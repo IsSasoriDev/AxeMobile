@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
   "productName": "AxeMobile",
-  "version": "2.1.0",
-  "identifier": "com.eduionita.axemobile",
+  "version": "2.3.0",
+  "identifier": "com.axemobile.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:8080",
@@ -13,8 +13,8 @@
     "windows": [
       {
         "title": "AxeMobile",
-        "width": 1200,
-        "height": 800,
+        "width": 1600,
+        "height": 1200,
         "resizable": true,
         "fullscreen": false,
         "center": true,
@@ -45,7 +45,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://github.com/yourusername/axemobile/releases/latest/download/latest.json"
+        "https://github.com/IsSasoriDev/AxeMobileobile/releases/latest/download/latest.json"
       ],
       "dialog": true,
       "pubkey": "YOUR_PUBLIC_KEY_HERE"

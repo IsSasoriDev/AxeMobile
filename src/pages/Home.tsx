@@ -3,6 +3,7 @@ import { MinerCard } from "@/components/miners/MinerCard";
 import { AddMinerDialog } from "@/components/miners/AddMinerDialog";
 import { WebViewFrame } from "@/components/webview/WebViewFrame";
 import { useNetworkScanner, MinerDevice } from "@/hooks/useNetworkScanner";
+import { useMinerNotifications } from "@/hooks/useMinerNotifications";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import { Activity, Zap, Cpu } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +19,10 @@ export default function Home() {
     totalPower,
     activeDevices
   } = useNetworkScanner();
+  
+  // Enable notifications for block found and temp warnings
+  useMinerNotifications(devices);
+  
   const [webViewMiner, setWebViewMiner] = useState<MinerDevice | null>(null);
 
   const handleOpenWebView = (miner: MinerDevice) => {

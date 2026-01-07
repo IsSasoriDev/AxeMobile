@@ -11,6 +11,8 @@ import { ReloadButton } from "@/components/layout/ReloadButton";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { UpdaterDialog } from "@/components/ui/updater-dialog";
+import { CloseDialog } from "@/components/ui/close-dialog";
+import { useCloseHandler } from "@/hooks/useCloseHandler";
 import Home from "./pages/Home";
 import Stats from "./pages/Stats";
 import FlashFirmware from "./pages/FlashFirmware";
@@ -25,7 +27,8 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => {
+const AppContent = () => {
+  const { showCloseDialog, setShowCloseDialog } = useCloseHandler();
   const [showLoading, setShowLoading] = useState(true);
 
   useEffect(() => {
@@ -46,44 +49,53 @@ const App = () => {
   }
 
   return (
+    <>
+      <Toaster />
+      <Sonner />
+      <UpdaterDialog />
+      <CloseDialog open={showCloseDialog} onOpenChange={setShowCloseDialog} />
+      <BrowserRouter>
+        <SidebarProvider>
+          <div className="min-h-screen flex w-full">
+            <AppSidebar />
+            <div className="flex-1 flex flex-col">
+              <header className="h-14 flex items-center justify-between border-b px-4">
+                <SidebarTrigger />
+                <div className="flex items-center gap-2">
+                  <ReloadButton />
+                  <ThemeSelector />
+                </div>
+              </header>
+              <main className="flex-1 overflow-hidden">
+                <PageTransition>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/stats" element={<Stats />} />
+                    <Route path="/config" element={<Config />} />
+                    <Route path="/achievements" element={<Achievements />} />
+                    <Route path="/flash" element={<FlashFirmware />} />
+                    <Route path="/pools" element={<Pools />} />
+                    <Route path="/pools/:coin" element={<CoinPools />} />
+                    <Route path="/calculator" element={<Calculator />} />
+                    <Route path="/cave" element={<Cave />} />
+                    <Route path="/github" element={<GitHub />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </PageTransition>
+              </main>
+            </div>
+          </div>
+        </SidebarProvider>
+      </BrowserRouter>
+    </>
+  );
+};
+
+const App = () => {
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <UpdaterDialog />
-        <BrowserRouter>
-          <SidebarProvider>
-            <div className="min-h-screen flex w-full">
-              <AppSidebar />
-              <div className="flex-1 flex flex-col">
-                <header className="h-14 flex items-center justify-between border-b px-4">
-                  <SidebarTrigger />
-                  <div className="flex items-center gap-2">
-                    <ReloadButton />
-                    <ThemeSelector />
-                  </div>
-                </header>
-                <main className="flex-1 overflow-hidden">
-                  <PageTransition>
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/stats" element={<Stats />} />
-                      <Route path="/config" element={<Config />} />
-                      <Route path="/achievements" element={<Achievements />} />
-                      <Route path="/flash" element={<FlashFirmware />} />
-                      <Route path="/pools" element={<Pools />} />
-                      <Route path="/pools/:coin" element={<CoinPools />} />
-                      <Route path="/calculator" element={<Calculator />} />
-                      <Route path="/cave" element={<Cave />} />
-                      <Route path="/github" element={<GitHub />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </PageTransition>
-                </main>
-              </div>
-            </div>
-          </SidebarProvider>
-        </BrowserRouter>
+        <AppContent />
       </TooltipProvider>
     </QueryClientProvider>
   );

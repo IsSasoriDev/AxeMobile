@@ -1,233 +1,205 @@
+<div align="center">
+
 # ⛏️ AxeMobile
 
-**Unleash the Open Source power**
+### **Unleash the Open Source Mining Power**
 
-A modern, cross-platform application for managing Bitcoin mining hardware, built for the open-source community. AxeMobile provides an intuitive interface for flashing firmware to Bitaxe and NerdAxe devices, with support for web, mobile, and desktop platforms.
+*A modern, cross-platform application for managing Bitcoin mining hardware*
 
-![AxeMobile](https://img.shields.io/badge/Platform-Web%20%7C%20Android%20%7C%20iOS%20%7C%20Windows%20%7C%20macOS%20%7C%20Linux-blue)
-![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript)
-![Capacitor](https://img.shields.io/badge/Capacitor-6.0+-119EFF?logo=capacitor)
-![Tauri](https://img.shields.io/badge/Tauri-2.0+-FFC131?logo=tauri)
+[![Stars](https://img.shields.io/github/stars/IsSasoriDev/AxeMobile?style=for-the-badge&logo=github&color=f97316)](https://github.com/IsSasoriDev/AxeMobile/stargazers)
+[![Forks](https://img.shields.io/github/forks/IsSasoriDev/AxeMobile?style=for-the-badge&logo=github&color=3b82f6)](https://github.com/IsSasoriDev/AxeMobile/network/members)
+[![Issues](https://img.shields.io/github/issues/IsSasoriDev/AxeMobile?style=for-the-badge&logo=github&color=ef4444)](https://github.com/IsSasoriDev/AxeMobile/issues)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
+
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react)](https://reactjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript)](https://typescriptlang.org)
+[![Tauri](https://img.shields.io/badge/Tauri-2.0-FFC131?style=flat-square&logo=tauri)](https://tauri.app)
+[![Capacitor](https://img.shields.io/badge/Capacitor-7.0-119EFF?style=flat-square&logo=capacitor)](https://capacitorjs.com)
+
+<br />
+
+[**💬 Discord**](https://discord.com/invite/osmu) · [**🐛 Report Bug**](https://github.com/IsSasoriDev/AxeMobile/issues)
+
+<br />
+
+<img src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Windows" />
+<img src="https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS" />
+<img src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux" />
+<img src="https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android" />
+<img src="https://img.shields.io/badge/iOS-000000?style=for-the-badge&logo=ios&logoColor=white" alt="iOS" />
+
+</div>
+
+---
 
 ## ✨ Features
 
-- 🔧 **Firmware Flashing**: Easy firmware updates for Bitaxe and NerdAxe devices
-- 📱 **Cross-Platform**: Web, Android, iOS, Windows, macOS, and Linux support
-- 🎨 **Modern UI**: Beautiful, responsive design with dark/light themes
-- ⚡ **Performance**: Fast and lightweight with optimized builds
-- 🌐 **Progressive Web App**: Installable web app with offline capabilities
+| Feature | Description |
+|---------|-------------|
+| 🔧 **Firmware Flashing** | Easy OTA updates for Bitaxe & NerdAxe devices |
+| 📊 **Real-time Stats** | Monitor hashrate, temperature, and power |
+| 🎨 **7 Themes** | AMOLED, Bitcoin, Bitaxe, DTV, and more |
+| 📱 **Cross-Platform** | Web, Desktop, iOS & Android |
+| ⚡ **Lightweight** | Fast Tauri builds under 10MB |
 
-## 📋 Prerequisites
+---
 
-- **Node.js** 18.0+ and npm
-- **Git** for version control
+## 🚀 Quick Start
 
-### Platform-Specific Requirements:
+### Prerequisites
 
-#### Mobile Development (iOS/Android):
-- **Android**: Android Studio + Android SDK
-- **iOS**: Xcode 14+ (macOS only)
+- [Node.js 18+](https://nodejs.org) 
+- [Git](https://git-scm.com)
 
-#### Desktop Development:
-- **Windows**: Visual Studio Build Tools or Visual Studio Community
-- **macOS**: Xcode Command Line Tools
-- **Linux**: Build essentials (gcc, pkg-config, etc.)
-
-## 🛠️ Installation & Development
-
-### 1. Clone & Install Dependencies
+### Installation
 
 ```bash
+# Clone the repository
 git clone https://github.com/IsSasoriDev/AxeMobile
 cd AxeMobile
+
+# Install dependencies
 npm install
-```
 
-### 2. Development Server
-
-```bash
+# Start development server
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Open **http://localhost:5173** in your browser.
 
-### 3. Build for Production
+---
 
+## 🖥️ Build Desktop App (Tauri)
+
+<details>
+<summary><b>Step 1: Install Rust</b></summary>
+
+#### Windows
+1. Download [rustup-init.exe](https://rustup.rs)
+2. Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with "Desktop development with C++"
+
+#### macOS
 ```bash
-npm run build
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+xcode-select --install
 ```
 
-## 📦 Building for Different Platforms
-
-### 🌐 Web Application
-
+#### Linux (Debian/Ubuntu)
 ```bash
-# Build for web deployment
-npm run build
-
-# Preview production build
-npm run preview
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 ```
 
-### 📱 Mobile Apps (iOS/Android)
+</details>
+
+<details>
+<summary><b>Step 2: Build</b></summary>
 
 ```bash
-# Add mobile platforms
-npx cap add ios
-npx cap add android
-
 # Build web assets
 npm run build
 
-# Sync with native platforms
-npx cap sync
-
-# Run on iOS (macOS only)
-npx cap run ios
-
-# Run on Android
-npx cap run android
+# Build desktop executable
+npx tauri build
 ```
 
-#### iOS Additional Steps:
-1. Open `ios/App/App.xcworkspace` in Xcode
-2. Configure signing & capabilities
-3. Build and deploy
+📦 Output: `src-tauri/target/release/bundle/`
 
-#### Android Additional Steps:
-1. Open `android/` folder in Android Studio
-2. Configure signing if needed
-3. Build APK/AAB
+</details>
 
-### 🖥️ Desktop Apps
-
-#### Tauri (Recommended - Smaller bundle size)
+<details>
+<summary><b>Development Mode</b></summary>
 
 ```bash
-# For Windows build, you need Rust installed
-# Install Rust from: https://rustup.rs/
-
-# Build desktop app
-npm run build
-npx tauri build
-
-# Or for development mode with hot reload
 npx tauri dev
 ```
 
-**Windows Requirements:**
-- Install [Rust](https://rustup.rs/)
-- Install [Microsoft Visual Studio C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-- Install [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (usually pre-installed on Windows 10/11)
+Hot reload enabled for rapid development.
 
-Executables will be in `src-tauri/target/release/bundle/`
+</details>
 
-#### Electron (Alternative)
+---
 
-```bash
-# Install Electron
-npm install electron electron-builder --save-dev
+## 📱 Build Mobile Apps
 
-# Add to package.json scripts:
-# "electron": "electron .",
-# "electron-build": "electron-builder"
-
-# Build
-npm run electron-build
-```
-
-## 🧪 Development Commands
+<details>
+<summary><b>iOS (macOS only)</b></summary>
 
 ```bash
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Lint code
-npm run lint
-
-# Type check
-npm run type-check
-
-# Sync Capacitor (after adding platforms)
-npx cap sync
-
-# Build desktop app with Tauri
-npx tauri build
+npx cap add ios
+npm run build && npx cap sync
+npx cap run ios
 ```
 
-## 📁 Project Structure
+</details>
 
-```
-axe-mobile/
-├── src/
-│   ├── components/        # Reusable UI components
-│   │   ├── layout/       # Layout components (sidebar, navigation)
-│   │   ├── miners/       # Miner-specific components
-│   │   ├── ui/           # Shadcn/ui components
-│   │   └── webview/      # WebView components
-│   ├── pages/            # Route pages
-│   ├── hooks/            # Custom React hooks
-│   ├── lib/              # Utility functions
-│   └── assets/           # Static assets
-├── public/               # Public assets
-├── android/              # Android native code (after cap add)
-├── ios/                  # iOS native code (after cap add)
-├── src-tauri/            # Tauri desktop configuration
-└── capacitor.config.ts   # Capacitor configuration
+<details>
+<summary><b>Android</b></summary>
+
+```bash
+npx cap add android
+npm run build && npx cap sync
+npx cap run android
 ```
 
-## 🎨 Theming
+</details>
 
-AxeMobile supports multiple themes:
-- **White Theme**: Clean, minimal design
-- **AMOLED Theme**: Pure black for OLED displays
-- **IxTech Theme**: 
-- **DTV Electronics Theme**: Our FIrst Supporter
-- **Disco Theme**: 
-- **Bitcoin Theme**: 
-- **PowerMiningh Theme**: 
-- **Bitaxe Theme**:
-- ^ IxTech PowerMining and DTV themes require a refresh oof the app or restart to update properly.
+---
 
+## 🎨 Available Themes
 
-Themes are configured in `src/index.css` and `tailwind.config.ts`.
+| Theme | Style |
+|-------|-------|
+| ☀️ Light | Clean minimal white |
+| 🌑 AMOLED | Pure black for OLED |
+| 🔥 Bitaxe | Red cyberpunk grid |
+| ₿ Bitcoin | Orange & dark gray |
+| 🔵 PowerMining | Blue industrial |
+| 🌌 DTV | Space nebula & comets |
+| 🏭 IxTech | Light industrial |
+
+---
+
+## 📊 Project Stats
+
+<div align="center">
+
+![Repo Size](https://img.shields.io/github/repo-size/IsSasoriDev/AxeMobile?style=for-the-badge&color=8b5cf6)
+![Last Commit](https://img.shields.io/github/last-commit/IsSasoriDev/AxeMobile?style=for-the-badge&color=06b6d4)
+![Contributors](https://img.shields.io/github/contributors/IsSasoriDev/AxeMobile?style=for-the-badge&color=ec4899)
+
+</div>
+
+---
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
+2. Create feature branch: `git checkout -b feature/amazing`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push: `git push origin feature/amazing`
 5. Open a Pull Request
 
-## 🔗 Community
-
-- **Discord**: [Join OSMU Community](https://discord.com/invite/osmu)
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Open Source Miners United (OSMU)** for community support
-- **Bitaxe & NerdAxe** teams for hardware innovation
-- All contributors to the open-source community
-
-## Donations 
-![Donate QR](./readmefiles/qrbtc.jpeg)
-
-or: bc1qn79tnnxtpu5u48tm7f7fd3geeqm0nft5hp44vz
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
-  <strong>⛏️ Built with ❤️ for the Bitcoin mining community</strong>
+
+### 🙏 Acknowledgments
+
+**[Open Source Miners United](https://discord.com/invite/osmu)** • **Bitaxe Team** • **NerdAxe Team** • **DTV Electronics**
+
+<br />
+
+**⛏️ Made with ❤️ for the Bitcoin mining community**
+
+<br />
+
+[FOSS | GTFO]
+
 </div>

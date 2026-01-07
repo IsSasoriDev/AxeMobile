@@ -1,7 +1,16 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager, WindowEvent,
+};
+
+// Global flag to track if we should minimize to tray
+static MINIMIZE_TO_TRAY: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MinerInfo {
@@ -25,6 +34,12 @@ pub struct MinerInfo {
     pub asic_model: Option<String>,
     pub version: Option<String>,
 }
+
+#[tauri::command]
+fn update_miner_pool(pool: String) {
+    println!("Updating miner pool to: {}", pool);
+}
+
 
 #[tauri::command]
 async fn fetch_miner_info(ip: String) -> Result<serde_json::Value, String> {
@@ -98,7 +113,16 @@ async fn restart_miner(ip: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-async fn update_miner_pool(ip: String, pool: Option<String>, password: Option<String>, fan_speed: Option<u8>) -> Result<String, String> {
+async fn update_miner_settings(
+    ip: String,
+    stratum_url: Option<String>,
+    stratum_port: Option<u16>,
+    stratum_user: Option<String>,
+    stratum_password: Option<String>,
+    fan_speed: Option<u8>,
+    frequency: Option<u16>,
+    core_voltage: Option<u16>,
+) -> Result<String, String> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(10))
         .redirect(reqwest::redirect::Policy::none())
@@ -109,18 +133,36 @@ async fn update_miner_pool(ip: String, pool: Option<String>, password: Option<St
     
     let mut payload = serde_json::Map::new();
 
-    // Add pool settings if provided
-    if let Some(p) = pool {
-        payload.insert("stratumURL".to_string(), serde_json::json!(p));
+    // Pool settings - using correct API parameter names
+    if let Some(pool_url) = stratum_url {
+        payload.insert("stratumURL".to_string(), serde_json::json!(pool_url));
     }
-    if let Some(pw) = password {
-        payload.insert("stratumPassword".to_string(), serde_json::json!(pw));
+    if let Some(port) = stratum_port {
+        payload.insert("stratumPort".to_string(), serde_json::json!(port));
+    }
+    if let Some(user) = stratum_user {
+        payload.insert("stratumUser".to_string(), serde_json::json!(user));
+    }
+    if let Some(password) = stratum_password {
+        payload.insert("stratumPassword".to_string(), serde_json::json!(password));
     }
 
-    // Add fan speed if provided
+    // Fan speed (0-100)
     if let Some(speed) = fan_speed {
         payload.insert("fanspeed".to_string(), serde_json::json!(speed));
     }
+
+    // Frequency in MHz
+    if let Some(freq) = frequency {
+        payload.insert("frequency".to_string(), serde_json::json!(freq));
+    }
+
+    // Core voltage in millivolts
+    if let Some(voltage) = core_voltage {
+        payload.insert("coreVoltage".to_string(), serde_json::json!(voltage));
+    }
+
+    println!("Sending PATCH to {} with payload: {:?}", url, payload);
 
     let response = client
         .patch(&url)
@@ -132,9 +174,38 @@ async fn update_miner_pool(ip: String, pool: Option<String>, password: Option<St
         .map_err(|e| e.to_string())?;
 
     if response.status().is_success() {
-        Ok("Settings updated".to_string())
+        Ok("Settings updated successfully".to_string())
     } else {
-        Err(format!("Failed with status: {}", response.status()))
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        Err(format!("Failed with status {}: {}", status, body))
+    }
+}
+
+// Command to set minimize to tray preference
+#[tauri::command]
+fn set_minimize_to_tray(enabled: bool) {
+    MINIMIZE_TO_TRAY.store(enabled, Ordering::SeqCst);
+    println!("Minimize to tray set to: {}", enabled);
+}
+
+// Command to get minimize to tray preference
+#[tauri::command]
+fn get_minimize_to_tray() -> bool {
+    MINIMIZE_TO_TRAY.load(Ordering::SeqCst)
+}
+
+// Command to quit the app
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+    app.exit(0);
+}
+
+// Command to hide to tray
+#[tauri::command]
+fn hide_to_tray(app: tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.hide();
     }
 }
 
@@ -144,7 +215,67 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .invoke_handler(tauri::generate_handler![fetch_miner_info, restart_miner, update_miner_pool])
+        .setup(|app| {
+            // Create tray menu
+            let show_i = MenuItem::with_id(app, "show", "Show AxeMobile", true, None::<&str>)?;
+            let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
+
+            // Build tray icon
+            let _tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&menu)
+                .menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                if MINIMIZE_TO_TRAY.load(Ordering::SeqCst) {
+                    // Hide window instead of closing
+                    let _ = window.hide();
+                    api.prevent_close();
+                }
+                // If not minimizing to tray, let the window close normally
+            }
+        })
+        .invoke_handler(tauri::generate_handler![
+            fetch_miner_info,
+            restart_miner,
+            update_miner_pool,
+            update_miner_settings,
+            set_minimize_to_tray,
+            get_minimize_to_tray,
+            quit_app,
+            hide_to_tray
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

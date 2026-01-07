@@ -781,17 +781,88 @@
     --sidebar-ring: 25 100% 50%;
   }
 
-  /* DTV Interactive Background with Stars */
+  /* DTV Interactive Background with Stars, Nebula and Comets */
   html.theme-dtv {
-    background: hsl(0 0% 2%) !important;
+    background-color: hsl(0 0% 2%) !important;
     min-height: 100vh !important;
+    isolation: isolate;
+    -webkit-font-smoothing: antialiased;
   }
 
+  /* Animated nebula layer */
   html.theme-dtv body {
-    background: hsl(0 0% 2%) !important;
+    background-color: hsl(0 0% 2%) !important;
     min-height: 100vh !important;
     position: relative;
     overflow-x: hidden;
+    isolation: isolate;
+  }
+
+  /* Nebula layer with pulsing animation */
+  html.theme-dtv::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    background: 
+      radial-gradient(ellipse 80% 50% at 20% 30%, hsl(280 60% 15% / 0.4) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 75% 70%, hsl(25 80% 20% / 0.3) 0%, transparent 45%),
+      radial-gradient(ellipse 70% 60% at 50% 50%, hsl(260 50% 12% / 0.25) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 35% at 85% 20%, hsl(25 70% 18% / 0.25) 0%, transparent 40%),
+      radial-gradient(ellipse 45% 30% at 10% 80%, hsl(290 50% 15% / 0.3) 0%, transparent 45%);
+    animation: dtv-nebula-pulse 8s ease-in-out infinite alternate;
+  }
+
+  /* Second nebula layer with offset animation */
+  html.theme-dtv::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    background: 
+      radial-gradient(ellipse 55% 45% at 65% 25%, hsl(280 50% 18% / 0.25) 0%, transparent 50%),
+      radial-gradient(ellipse 70% 55% at 30% 75%, hsl(25 70% 22% / 0.2) 0%, transparent 45%),
+      radial-gradient(ellipse 40% 30% at 90% 60%, hsl(290 60% 15% / 0.2) 0%, transparent 40%);
+    animation: dtv-nebula-pulse-2 10s ease-in-out infinite alternate;
+    animation-delay: 2s;
+  }
+
+  @keyframes dtv-nebula-pulse {
+    0% {
+      opacity: 0.6;
+      transform: scale(1) translateX(0);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05) translateX(1%);
+    }
+    100% {
+      opacity: 0.7;
+      transform: scale(0.98) translateX(-1%);
+    }
+  }
+
+  @keyframes dtv-nebula-pulse-2 {
+    0% {
+      opacity: 0.5;
+      transform: scale(1.02) translateY(0);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(0.97) translateY(1%);
+    }
+    100% {
+      opacity: 0.6;
+      transform: scale(1.03) translateY(-1%);
+    }
   }
 
   /* Static stars layer */
@@ -803,7 +874,7 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 0;
+    z-index: 1;
     background-image:
       radial-gradient(2px 2px at 10% 15%, hsl(0 0% 100%) 100%, transparent),
       radial-gradient(2px 2px at 25% 35%, hsl(0 0% 100% / 0.8) 100%, transparent),
@@ -822,7 +893,11 @@
       radial-gradient(1px 1px at 75% 60%, hsl(0 0% 100% / 0.8) 100%, transparent),
       radial-gradient(2px 2px at 20% 90%, hsl(0 0% 100% / 0.7) 100%, transparent),
       radial-gradient(1px 1px at 60% 5%, hsl(0 0% 100%) 100%, transparent),
-      radial-gradient(2px 2px at 90% 95%, hsl(25 100% 60% / 0.8) 100%, transparent);
+      radial-gradient(2px 2px at 90% 95%, hsl(25 100% 60% / 0.8) 100%, transparent),
+      radial-gradient(1px 1px at 3% 8%, hsl(0 0% 100% / 0.9) 100%, transparent),
+      radial-gradient(2px 2px at 97% 72%, hsl(0 0% 100%) 100%, transparent),
+      radial-gradient(1px 1px at 42% 88%, hsl(25 100% 55%) 100%, transparent),
+      radial-gradient(2px 2px at 68% 12%, hsl(0 0% 100% / 0.85) 100%, transparent);
     background-size: 100% 100%;
     animation: dtv-stars-twinkle 4s ease-in-out infinite alternate;
   }
@@ -836,7 +911,7 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 0;
+    z-index: 1;
     background-image:
       radial-gradient(1px 1px at 8% 22%, hsl(0 0% 100% / 0.9) 100%, transparent),
       radial-gradient(2px 2px at 18% 48%, hsl(25 100% 55%) 100%, transparent),
@@ -849,52 +924,111 @@
       radial-gradient(1px 1px at 38% 92%, hsl(0 0% 100% / 0.7) 100%, transparent),
       radial-gradient(2px 2px at 58% 18%, hsl(0 0% 100% / 0.9) 100%, transparent),
       radial-gradient(1px 1px at 72% 88%, hsl(25 100% 55%) 100%, transparent),
-      radial-gradient(2px 2px at 92% 8%, hsl(0 0% 100% / 0.8) 100%, transparent);
+      radial-gradient(2px 2px at 92% 8%, hsl(0 0% 100% / 0.8) 100%, transparent),
+      radial-gradient(1px 1px at 22% 4%, hsl(0 0% 100% / 0.75) 100%, transparent),
+      radial-gradient(2px 2px at 84% 36%, hsl(25 100% 50%) 100%, transparent),
+      radial-gradient(1px 1px at 56% 94%, hsl(0 0% 100% / 0.8) 100%, transparent),
+      radial-gradient(2px 2px at 4% 62%, hsl(0 0% 100%) 100%, transparent);
     background-size: 100% 100%;
     animation: dtv-stars-twinkle-2 5s ease-in-out infinite alternate;
     animation-delay: 1s;
   }
 
-  /* Shooting star layer */
+  /* Comet 1 - long white trail */
   html.theme-dtv #root::before {
     content: '';
     position: fixed;
     top: 0;
     left: 0;
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: hsl(0 0% 100%);
     box-shadow: 
-      0 0 10px 2px hsl(0 0% 100%),
-      0 0 20px 4px hsl(0 0% 100% / 0.5),
-      -30px 0 15px 1px hsl(0 0% 100% / 0.3),
-      -60px 0 10px 0px hsl(0 0% 100% / 0.1);
+      0 0 12px 3px hsl(0 0% 100%),
+      0 0 25px 6px hsl(0 0% 100% / 0.6),
+      -15px 5px 20px 2px hsl(0 0% 100% / 0.5),
+      -35px 12px 25px 2px hsl(0 0% 100% / 0.4),
+      -60px 20px 30px 1px hsl(0 0% 100% / 0.3),
+      -90px 30px 35px 1px hsl(0 0% 100% / 0.2),
+      -125px 42px 40px 0px hsl(0 0% 100% / 0.1),
+      -165px 55px 45px 0px hsl(0 0% 100% / 0.05);
     pointer-events: none;
-    z-index: 1;
-    animation: dtv-shooting-star 6s ease-in-out infinite;
+    z-index: 2;
+    animation: dtv-comet-1 6s ease-in-out infinite;
     opacity: 0;
   }
 
-  /* Second shooting star */
+  /* Comet 2 - orange trail */
   html.theme-dtv #root::after {
     content: '';
     position: fixed;
     top: 30%;
     left: 0;
-    width: 3px;
-    height: 3px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: hsl(25 100% 65%);
+    box-shadow: 
+      0 0 10px 3px hsl(25 100% 60%),
+      0 0 20px 5px hsl(25 100% 55% / 0.6),
+      15px 4px 18px 2px hsl(25 100% 50% / 0.5),
+      35px 10px 22px 2px hsl(25 100% 45% / 0.4),
+      58px 18px 26px 1px hsl(25 100% 40% / 0.3),
+      85px 28px 30px 1px hsl(25 90% 35% / 0.2),
+      115px 38px 35px 0px hsl(25 80% 30% / 0.1);
+    pointer-events: none;
+    z-index: 2;
+    animation: dtv-comet-2 8s ease-in-out infinite;
+    animation-delay: 3s;
+    opacity: 0;
+  }
+
+  /* Comet 3 via sidebar pseudo */
+  html.theme-dtv .sidebar::before {
+    content: '';
+    position: fixed;
+    top: 60%;
+    left: 110%;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: hsl(0 0% 100%);
+    box-shadow: 
+      0 0 8px 2px hsl(0 0% 100%),
+      0 0 16px 4px hsl(0 0% 100% / 0.5),
+      12px -3px 15px 1px hsl(0 0% 100% / 0.4),
+      28px -8px 20px 1px hsl(0 0% 100% / 0.3),
+      48px -14px 25px 1px hsl(0 0% 100% / 0.2),
+      72px -22px 28px 0px hsl(0 0% 100% / 0.1);
+    pointer-events: none;
+    z-index: 2;
+    animation: dtv-comet-3 10s ease-in-out infinite;
+    animation-delay: 5s;
+    opacity: 0;
+  }
+
+  /* Comet 4 - small fast orange */
+  html.theme-dtv .sidebar::after {
+    content: '';
+    position: fixed;
+    top: 15%;
+    left: -5%;
+    width: 4px;
+    height: 4px;
     border-radius: 50%;
     background: hsl(25 100% 60%);
     box-shadow: 
-      0 0 8px 2px hsl(25 100% 60%),
-      0 0 15px 3px hsl(25 100% 50% / 0.5),
-      -25px 0 12px 1px hsl(25 100% 50% / 0.3),
-      -50px 0 8px 0px hsl(25 100% 50% / 0.1);
+      0 0 8px 2px hsl(25 100% 55%),
+      0 0 16px 4px hsl(25 100% 50% / 0.5),
+      -12px 4px 14px 1px hsl(25 100% 45% / 0.4),
+      -28px 9px 18px 1px hsl(25 100% 40% / 0.3),
+      -48px 16px 22px 1px hsl(25 90% 35% / 0.2),
+      -72px 24px 26px 0px hsl(25 80% 30% / 0.1);
     pointer-events: none;
-    z-index: 1;
-    animation: dtv-shooting-star-2 8s ease-in-out infinite;
-    animation-delay: 3s;
+    z-index: 2;
+    animation: dtv-comet-4 12s ease-in-out infinite;
+    animation-delay: 7s;
     opacity: 0;
   }
 
@@ -910,45 +1044,144 @@
     100% { opacity: 0.6; }
   }
 
-  @keyframes dtv-shooting-star {
+  @keyframes dtv-comet-1 {
     0% {
-      top: 10%;
-      left: -5%;
+      top: 5%;
+      left: -10%;
       opacity: 0;
+      transform: rotate(25deg);
     }
     5% {
       opacity: 1;
     }
     30% {
-      top: 40%;
-      left: 110%;
+      top: 45%;
+      left: 115%;
       opacity: 0;
     }
     100% {
-      top: 40%;
-      left: 110%;
+      top: 45%;
+      left: 115%;
       opacity: 0;
     }
   }
 
-  @keyframes dtv-shooting-star-2 {
+  @keyframes dtv-comet-2 {
     0% {
-      top: 25%;
-      left: 110%;
+      top: 18%;
+      left: 115%;
       opacity: 0;
+      transform: rotate(-25deg);
     }
     5% {
       opacity: 1;
     }
     35% {
-      top: 60%;
+      top: 58%;
+      left: -15%;
+      opacity: 0;
+    }
+    100% {
+      top: 58%;
+      left: -15%;
+      opacity: 0;
+    }
+  }
+
+  @keyframes dtv-comet-3 {
+    0% {
+      top: 70%;
+      left: 115%;
+      opacity: 0;
+      transform: rotate(-20deg);
+    }
+    6% {
+      opacity: 1;
+    }
+    40% {
+      top: 90%;
       left: -10%;
       opacity: 0;
     }
     100% {
-      top: 60%;
+      top: 90%;
       left: -10%;
       opacity: 0;
+    }
+  }
+
+  @keyframes dtv-comet-4 {
+    0% {
+      top: 8%;
+      left: -10%;
+      opacity: 0;
+      transform: rotate(30deg);
+    }
+    5% {
+      opacity: 1;
+    }
+    32% {
+      top: 52%;
+      left: 110%;
+      opacity: 0;
+    }
+    100% {
+      top: 52%;
+      left: 110%;
+      opacity: 0;
+    }
+  }
+
+  /* Mobile optimization for DTV - reduce effects for performance */
+  @media (max-width: 768px) {
+    html.theme-dtv::before {
+      background: 
+        radial-gradient(ellipse 90% 60% at 25% 35%, hsl(280 60% 15% / 0.35) 0%, transparent 50%),
+        radial-gradient(ellipse 70% 50% at 70% 65%, hsl(25 80% 20% / 0.25) 0%, transparent 45%);
+      animation: dtv-nebula-pulse 10s ease-in-out infinite alternate;
+    }
+
+    html.theme-dtv::after {
+      display: none;
+    }
+
+    html.theme-dtv body::before {
+      background-image:
+        radial-gradient(2px 2px at 10% 15%, hsl(0 0% 100%) 100%, transparent),
+        radial-gradient(1px 1px at 40% 10%, hsl(0 0% 100% / 0.6) 100%, transparent),
+        radial-gradient(2px 2px at 55% 45%, hsl(25 100% 60%) 100%, transparent),
+        radial-gradient(1px 1px at 70% 20%, hsl(0 0% 100% / 0.7) 100%, transparent),
+        radial-gradient(2px 2px at 85% 55%, hsl(0 0% 100% / 0.9) 100%, transparent),
+        radial-gradient(1px 1px at 15% 65%, hsl(25 100% 55%) 100%, transparent),
+        radial-gradient(2px 2px at 30% 80%, hsl(0 0% 100% / 0.8) 100%, transparent),
+        radial-gradient(2px 2px at 65% 85%, hsl(25 100% 50%) 100%, transparent);
+    }
+
+    html.theme-dtv body::after {
+      background-image:
+        radial-gradient(1px 1px at 8% 22%, hsl(0 0% 100% / 0.9) 100%, transparent),
+        radial-gradient(2px 2px at 18% 48%, hsl(25 100% 55%) 100%, transparent),
+        radial-gradient(1px 1px at 62% 32%, hsl(25 100% 50% / 0.9) 100%, transparent),
+        radial-gradient(2px 2px at 78% 42%, hsl(0 0% 100%) 100%, transparent),
+        radial-gradient(2px 2px at 58% 18%, hsl(0 0% 100% / 0.9) 100%, transparent),
+        radial-gradient(1px 1px at 72% 88%, hsl(25 100% 55%) 100%, transparent);
+    }
+
+    /* Simplified comets on mobile */
+    html.theme-dtv #root::before {
+      box-shadow: 
+        0 0 10px 2px hsl(0 0% 100%),
+        0 0 20px 4px hsl(0 0% 100% / 0.5),
+        -30px 10px 20px 1px hsl(0 0% 100% / 0.3),
+        -60px 20px 25px 0px hsl(0 0% 100% / 0.1);
+    }
+
+    html.theme-dtv #root::after {
+      box-shadow: 
+        0 0 8px 2px hsl(25 100% 60%),
+        0 0 16px 4px hsl(25 100% 55% / 0.5),
+        25px 8px 18px 1px hsl(25 100% 50% / 0.3),
+        50px 16px 22px 0px hsl(25 100% 45% / 0.1);
     }
   }
 
@@ -965,10 +1198,10 @@
 
   @keyframes dtv-glow-pulse {
     0%, 100% {
-      filter: drop-shadow(0 0 6px hsl(0 0% 100% / 0.5));
+      box-shadow: 0 0 6px hsl(0 0% 100% / 0.5);
     }
     50% {
-      filter: drop-shadow(0 0 15px hsl(0 0% 100% / 0.8));
+      box-shadow: 0 0 15px hsl(0 0% 100% / 0.8);
     }
   }
 

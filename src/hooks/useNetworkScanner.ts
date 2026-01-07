@@ -49,7 +49,7 @@ export const useNetworkScanner = () => {
   // Warn user if running in browser (Tauri commands won't work)
   useEffect(() => {
     if (!isTauri()) {
-      console.warn('⚠️ Running in browser mode - network scanning requires Tauri desktop app');
+      console.warn('⚠️ Running in browser mode - network scanning requires native app');
       console.warn('⚠️ BitAxe devices reject requests from non-private IPs due to CORS security');
     }
   }, []);
@@ -124,8 +124,8 @@ export const useNetworkScanner = () => {
     setIsScanning(true);
 
     if (!isTauri()) {
-      toast.error('Network scanning requires Tauri desktop app', {
-        description: 'BitAxe devices block browser requests due to CORS security. Please use the desktop app.',
+      toast.error('Network scanning requires native app', {
+        description: 'BitAxe devices block browser requests due to CORS security. Please use the Android or desktop app.',
         position: 'bottom-right',
       });
       setIsScanning(false);
@@ -291,7 +291,7 @@ export const useNetworkScanner = () => {
         await invoke('restart_miner', { ip });
         toast.success('Device restart command sent');
       } else {
-        toast.error('Restart requires desktop app');
+        toast.error('Restart requires native app');
       }
     } catch (error) {
       toast.error('Failed to restart device');
