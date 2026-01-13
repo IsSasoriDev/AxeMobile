@@ -46,69 +46,77 @@ export const useNetworkScanner = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
 
-  // Warn user if running in browser (Tauri commands won't work)
+  // Log environment info
   useEffect(() => {
     if (!isTauri()) {
-      console.warn('⚠️ Running in browser mode - network scanning requires native app');
-      console.warn('⚠️ BitAxe devices reject requests from non-private IPs due to CORS security');
+      console.info('ℹ️ Running in browser/Umbrel mode - using direct HTTP requests for local network devices');
     }
   }, []);
 
-  // Get device info using Tauri Rust command (no Origin header)
+  // Get device info - works in both Tauri and browser environments
   const getDeviceInfo = async (ip: string): Promise<MinerDevice> => {
     try {
       const invoke = await getTauriInvoke();
       
-      if (!invoke) {
-        // Fallback for browser - will fail due to CORS but at least attempts
-        console.log(`Attempting browser fetch for ${ip} (will likely fail due to CORS)`);
-        const response = await fetch(`http://${ip}/api/system/info`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          signal: AbortSignal.timeout(5000),
-        });
-        if (!response.ok) throw new Error('Request failed');
-        const data = await response.json();
+      if (invoke) {
+        // Use Tauri Rust command - makes request without Origin header
+        const systemData = await invoke<any>('fetch_miner_info', { ip });
+        
+        console.log(`✓ Connected to ${ip} via Tauri command`, systemData);
+
         return {
           IP: ip,
           isActive: true,
-          name: data.hostname || undefined,
-          hashRate: data.hashRate || 0,
-          temp: data.temp || 0,
-          power: data.power || 0,
-          voltage: data.coreVoltageActual || data.coreVoltage || data.voltage || 0,
-          uptimeSeconds: data.uptimeSeconds || 0,
+          name: systemData.hostname || undefined,
+          hashRate: systemData.hashRate || 0,
+          temp: systemData.temp || 0,
+          power: systemData.power || 0,
+          voltage: systemData.coreVoltageActual || systemData.coreVoltage || systemData.voltage || 0,
+          uptimeSeconds: systemData.uptimeSeconds || 0,
           shares: {
-            accepted: data.sharesAccepted || 0,
-            rejected: data.sharesRejected || 0,
+            accepted: systemData.sharesAccepted || 0,
+            rejected: systemData.sharesRejected || 0,
           },
-          model: data.ASICModel || 'Unknown',
-          version: data.version || 'Unknown',
-          bestDiff: data.bestDiff || data.bestSessionDiff || 0,
+          model: systemData.ASICModel || 'Unknown',
+          version: systemData.version || 'Unknown',
+          bestDiff: systemData.bestDiff || systemData.bestSessionDiff || 0,
         };
       }
 
-      // Use Tauri Rust command - makes request without Origin header
-      const systemData = await invoke<any>('fetch_miner_info', { ip });
+      // Browser/Umbrel mode - direct HTTP request (works on same network)
+      console.log(`Fetching device info for ${ip} via browser fetch`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
       
-      console.log(`✓ Connected to ${ip} via Tauri command`, systemData);
-
+      const response = await fetch(`http://${ip}/api/system/info`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) throw new Error('Request failed');
+      const data = await response.json();
+      
+      console.log(`✓ Connected to ${ip} via browser fetch`, data);
+      
       return {
         IP: ip,
         isActive: true,
-        name: systemData.hostname || undefined,
-        hashRate: systemData.hashRate || 0,
-        temp: systemData.temp || 0,
-        power: systemData.power || 0,
-        voltage: systemData.coreVoltageActual || systemData.coreVoltage || systemData.voltage || 0,
-        uptimeSeconds: systemData.uptimeSeconds || 0,
+        name: data.hostname || undefined,
+        hashRate: data.hashRate || 0,
+        temp: data.temp || 0,
+        power: data.power || 0,
+        voltage: data.coreVoltageActual || data.coreVoltage || data.voltage || 0,
+        uptimeSeconds: data.uptimeSeconds || 0,
         shares: {
-          accepted: systemData.sharesAccepted || 0,
-          rejected: systemData.sharesRejected || 0,
+          accepted: data.sharesAccepted || 0,
+          rejected: data.sharesRejected || 0,
         },
-        model: systemData.ASICModel || 'Unknown',
-        version: systemData.version || 'Unknown',
-        bestDiff: systemData.bestDiff || systemData.bestSessionDiff || 0,
+        model: data.ASICModel || 'Unknown',
+        version: data.version || 'Unknown',
+        bestDiff: data.bestDiff || data.bestSessionDiff || 0,
       };
     } catch (error) {
       console.log(`❌ Device ${ip} not responding:`, error);
@@ -119,18 +127,9 @@ export const useNetworkScanner = () => {
     }
   };
 
-  // Scan network for devices
+  // Scan network for devices - works in both Tauri and browser environments
   const scanNetwork = useCallback(async (baseIP?: string) => {
     setIsScanning(true);
-
-    if (!isTauri()) {
-      toast.error('Network scanning requires native app', {
-        description: 'BitAxe devices block browser requests due to CORS security. Please use the Android or desktop app.',
-        position: 'bottom-right',
-      });
-      setIsScanning(false);
-      return [];
-    }
     
     try {
       // Common mDNS .local hostnames for BitAxe/NerdAxe devices
@@ -211,7 +210,10 @@ export const useNetworkScanner = () => {
         if (activeDevices.length > 0) {
           setDevices(prev => {
             const existing = prev.filter(d => !foundDevices.some(f => f.IP === d.IP));
-            return [...existing, ...foundDevices];
+            const newDevices = [...existing, ...foundDevices];
+            // Persist found devices to localStorage
+            localStorage.setItem('MINER_DEVICES', JSON.stringify(newDevices));
+            return newDevices;
           });
           toast.success(`Found ${activeDevices.length} device(s)!`, {
             position: 'bottom-right',
@@ -283,7 +285,7 @@ export const useNetworkScanner = () => {
     toast.success('Device name updated');
   }, [devices]);
 
-  // Restart device using Tauri command
+  // Restart device - works in both Tauri and browser environments
   const restartDevice = useCallback(async (ip: string) => {
     try {
       const invoke = await getTauriInvoke();
@@ -291,7 +293,16 @@ export const useNetworkScanner = () => {
         await invoke('restart_miner', { ip });
         toast.success('Device restart command sent');
       } else {
-        toast.error('Restart requires native app');
+        // Browser/Umbrel mode - direct HTTP request
+        const response = await fetch(`http://${ip}/api/system/restart`, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' },
+        });
+        if (response.ok) {
+          toast.success('Device restart command sent');
+        } else {
+          throw new Error('Request failed');
+        }
       }
     } catch (error) {
       toast.error('Failed to restart device');

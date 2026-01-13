@@ -111,10 +111,10 @@ export const DeviceScanner = () => {
               </DialogHeader>
               <div className="space-y-4">
                 <div className="bg-muted p-3 rounded-md text-sm">
-                  <p className="font-medium mb-1">⚠️ Network Scanning Notice</p>
+                  <p className="font-medium mb-1">ℹ️ Network Scanning</p>
                   <p className="text-muted-foreground">
-                    Network scanning works best when this app is accessed from a device on your local network (e.g., via Capacitor mobile app or local deployment). 
-                    From a web browser, you may need to manually add device IPs.
+                    Scanning will search for Bitaxe/Nerdaxe miners on your local network. 
+                    Devices found will be saved automatically.
                   </p>
                 </div>
                 <div>
@@ -273,9 +273,9 @@ export const DeviceScanner = () => {
                         </DialogHeader>
                         <div className="space-y-4">
                           <div className="bg-muted p-3 rounded-md text-sm">
-                            <p className="font-medium mb-1">⚠️ Network Scanning Notice</p>
+                            <p className="font-medium mb-1">ℹ️ Network Scanning</p>
                             <p className="text-muted-foreground">
-                              Network scanning works best when this app is accessed from a device on your local network.
+                              Scanning will search for miners on your local network. Found devices are saved automatically.
                             </p>
                           </div>
                           <div>
