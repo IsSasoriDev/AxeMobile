@@ -1,0 +1,49 @@
+manifestVersion: 1
+id: axemobile-app
+category: bitcoin
+name: AxeMobile
+version: "1.0.0"
+tagline: Monitor and manage your Bitaxe miners
+description: >-
+  AxeMobile is a comprehensive dashboard for monitoring and managing your Bitaxe 
+  and Nerdaxe Bitcoin miners. Features include real-time hashrate monitoring, 
+  temperature tracking, pool configuration, firmware updates, and performance tuning.
+  
+  
+  Key Features:
+
+  - Real-time miner statistics and monitoring
+
+  - Multi-miner support with network scanning
+
+  - Pool configuration management
+
+  - Performance presets (Eco, Balanced, Performance, Max OC)
+
+  - Firmware update support
+
+  - Temperature and power monitoring
+
+  - Bitcoin network statistics
+
+  - Mining calculator
+
+  - Achievement system
+developer: IsSasoriDev
+website: https://github.com/IsSasoriDev/AxeMobile
+dependencies: []
+repo: https://github.com/IsSasoriDev/AxeMobile
+support: https://github.com/IsSasoriDev/AxeMobile/issues
+port: 3847
+gallery:
+  - 1.jpg
+  - 2.jpg
+  - 3.jpg
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+torOnly: false
+permissions: []
+releaseNotes: >-
+  Initial Umbrel release featuring full Bitaxe/Nerdaxe miner management,
+  real-time monitoring, and configuration capabilities.
