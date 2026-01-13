@@ -27,6 +27,7 @@
 <img src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux" />
 <img src="https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android" />
 <img src="https://img.shields.io/badge/iOS-000000?style=for-the-badge&logo=ios&logoColor=white" alt="iOS" />
+<img src="https://img.shields.io/badge/Umbrel-5351FB?style=for-the-badge&logo=umbrel&logoColor=white" alt="Umbrel" />
 
 </div>
 
@@ -141,6 +142,58 @@ npx cap add android
 npm run build && npx cap sync
 npx cap run android
 ```
+
+</details>
+
+---
+
+## 🏠 Run on Umbrel
+
+<details>
+<summary><b>Option 1: Community App Store (Recommended)</b></summary>
+
+1. Open your Umbrel dashboard
+2. Go to **App Store** → **Community App Stores**
+3. Add the AxeMobile app store URL (when available)
+4. Install AxeMobile from the store
+
+</details>
+
+<details>
+<summary><b>Option 2: Manual Installation</b></summary>
+
+```bash
+# SSH into your Umbrel
+ssh umbrel@umbrel.local
+
+# Navigate to community apps
+cd ~/umbrel/app-data
+
+# Clone AxeMobile
+git clone https://github.com/IsSasoriDev/AxeMobile axemobile
+
+# Copy Umbrel files
+cp -r axemobile/umbrel/* ~/umbrel/app-data/axemobile/
+
+# Restart Umbrel
+sudo ~/umbrel/scripts/stop && sudo ~/umbrel/scripts/start
+```
+
+</details>
+
+<details>
+<summary><b>Option 3: Docker Compose</b></summary>
+
+```bash
+# Clone the repository
+git clone https://github.com/IsSasoriDev/AxeMobile
+cd AxeMobile
+
+# Build and run with Docker
+docker-compose -f umbrel/docker-compose.yml up -d
+```
+
+Access at **http://umbrel.local:3847**
 
 </details>
 

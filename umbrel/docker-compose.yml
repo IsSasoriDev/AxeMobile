@@ -1,0 +1,26 @@
+version: "3.7"
+
+services:
+  web:
+    image: axemobile:latest
+    build:
+      context: ..
+      dockerfile: umbrel/Dockerfile
+    restart: on-failure
+    stop_grace_period: 1m
+    ports:
+      - "${APP_AXEMOBILE_PORT:-3847}:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.axemobile.rule=Host(`axemobile.${UMBREL_DOMAIN}`)"
+      - "traefik.http.routers.axemobile.entrypoints=web"
+      - "traefik.http.services.axemobile.loadbalancer.server.port=80"
+
+networks:
+  default:
+    name: umbrel_main_network
+    external: true
