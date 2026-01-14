@@ -36,7 +36,7 @@ const ACHIEVEMENTS: AchievementDef[] = [
   { id: "1m-diff", name: "Hash Warrior", description: "Hit 1M difficulty", icon: Flame, targetDiff: 1000000, rarity: "rare" },
   { id: "10m-diff", name: "ASIC Veteran", description: "Hit 10M difficulty", icon: Award, targetDiff: 10000000, rarity: "rare" },
   { id: "100m-diff", name: "Golden Nonce", description: "Hit 100M difficulty", icon: Gem, targetDiff: 100000000, rarity: "epic" },
-  { id: "1b-diff", name: "Hash Lord", description: "Hit 1B difficulty", icon: Crown, targetDiff: 1000000000, rarity: "epic" },
+  { id: "1g-diff", name: "G Club", description: "Hit 1G difficulty", icon: Crown, targetDiff: 1000000000, rarity: "epic" },
   { id: "block-found", name: "BLOCK FOUND!", description: "Find a Bitcoin block - The ultimate achievement", icon: Trophy, isBlockFind: true, rarity: "legendary" },
 ];
 
@@ -89,7 +89,7 @@ const Achievements = () => {
 
   const formatDiff = (diff: number) => {
     if (diff >= 1e12) return `${(diff / 1e12).toFixed(0)}T`;
-    if (diff >= 1e9) return `${(diff / 1e9).toFixed(0)}B`;
+    if (diff >= 1e9) return `${(diff / 1e9).toFixed(0)}G`;
     if (diff >= 1e6) return `${(diff / 1e6).toFixed(0)}M`;
     if (diff >= 1e3) return `${(diff / 1e3).toFixed(0)}K`;
     return diff.toString();

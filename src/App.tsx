@@ -22,6 +22,7 @@ import Calculator from "./pages/Calculator";
 import Cave from "./pages/Cave";
 import Config from "./pages/Config";
 import Achievements from "./pages/Achievements";
+import AxePool from "./pages/AxePool";
 import GitHub from "./pages/GitHub";
 import NotFound from "./pages/NotFound";
 
@@ -71,6 +72,7 @@ const AppContent = () => {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/stats" element={<Stats />} />
+                    <Route path="/axepool" element={<AxePool />} />
                     <Route path="/config" element={<Config />} />
                     <Route path="/achievements" element={<Achievements />} />
                     <Route path="/flash" element={<FlashFirmware />} />

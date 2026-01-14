@@ -1,4 +1,4 @@
-import { Home, Zap, Users, Pickaxe, Waves, Activity, RefreshCw, Calculator, MessageSquare, Mountain, Settings, Trophy, Heart } from "lucide-react";
+import { Home, Zap, Users, Pickaxe, Waves, Activity, RefreshCw, Calculator, MessageSquare, Mountain, Settings, Trophy, Heart, Server } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { SuggestionButton } from "@/components/SuggestionButton";
@@ -25,6 +25,7 @@ import {
 const items = [
   { title: "Miners", url: "/", icon: Home },
   { title: "Stats", url: "/stats", icon: Activity },
+  { title: "AxePool", url: "/axepool", icon: Server },
   { title: "Config", url: "/config", icon: Settings },
   { title: "Achievements", url: "/achievements", icon: Trophy },
   { title: "Flash Firmware", url: "/flash", icon: Zap },

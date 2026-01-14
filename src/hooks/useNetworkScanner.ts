@@ -86,25 +86,42 @@ export const useNetworkScanner = () => {
       // Browser/Umbrel mode - direct HTTP request (works on same network)
       console.log(`Fetching device info for ${ip} via browser fetch`);
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // Increased timeout
       
-      const response = await fetch(`http://${ip}/api/system/info`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        signal: controller.signal,
-      });
+      // Try multiple endpoints that Bitaxe uses
+      const endpoints = [
+        `http://${ip}/api/system/info`,
+        `http://${ip}/api/system`,
+      ];
+      
+      let data = null;
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            signal: controller.signal,
+            mode: 'cors',
+          });
+          
+          if (response.ok) {
+            data = await response.json();
+            console.log(`✓ Connected to ${ip} via ${endpoint}`, data);
+            break;
+          }
+        } catch (e) {
+          // Try next endpoint
+        }
+      }
       
       clearTimeout(timeoutId);
       
-      if (!response.ok) throw new Error('Request failed');
-      const data = await response.json();
-      
-      console.log(`✓ Connected to ${ip} via browser fetch`, data);
+      if (!data) throw new Error('No valid response from device');
       
       return {
         IP: ip,
         isActive: true,
-        name: data.hostname || undefined,
+        name: data.hostname || data.boardVersion || undefined,
         hashRate: data.hashRate || 0,
         temp: data.temp || 0,
         power: data.power || 0,
@@ -114,7 +131,7 @@ export const useNetworkScanner = () => {
           accepted: data.sharesAccepted || 0,
           rejected: data.sharesRejected || 0,
         },
-        model: data.ASICModel || 'Unknown',
+        model: data.ASICModel || data.boardVersion || 'Unknown',
         version: data.version || 'Unknown',
         bestDiff: data.bestDiff || data.bestSessionDiff || 0,
       };
