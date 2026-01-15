@@ -9,6 +9,7 @@ import powerMiningLogo from "@/assets/powermining-logo.png";
 import ixtechLogo from "@/assets/ixtech-logo.png";
 import dtvLogo from "@/assets/dtv-electronics-logo.png";
 import { useTheme } from "@/hooks/useTheme";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import {
   Sidebar,
@@ -22,10 +23,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const items = [
+const baseItems = [
   { title: "Miners", url: "/", icon: Home },
   { title: "Stats", url: "/stats", icon: Activity },
-  { title: "AxePool", url: "/axepool", icon: Server },
+  { title: "AxePool", url: "/axepool", icon: Server, desktopOnly: true },
   { title: "Config", url: "/config", icon: Settings },
   { title: "Achievements", url: "/achievements", icon: Trophy },
   { title: "Flash Firmware", url: "/flash", icon: Zap },
@@ -38,11 +39,15 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const { theme } = useTheme();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
   const isPowerMining = theme === "powermining";
   const isIxTech = theme === "ixtech";
   const isDTV = theme === "dtv";
+
+  // Filter out desktop-only items on mobile
+  const items = baseItems.filter(item => !item.desktopOnly || !isMobile);
 
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive ? "bg-sidebar-accent text-sidebar-primary font-medium" : "hover:bg-sidebar-accent/50";

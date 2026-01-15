@@ -105,11 +105,20 @@ interface SharesDataPoint {
   rejected: number;
 }
 
+// Umbrel host candidates to try for auto-detection
+const UMBREL_HOSTS = [
+  'umbrel.local',
+  'bitcoin.embassy', 
+  '10.21.21.9',
+  'localhost',
+  window.location.hostname,
+];
+
 const AxePool = () => {
-  // Bitcoin Core/Knots RPC Settings
-  const [rpcHost, setRpcHost] = useState(() => localStorage.getItem('AXEPOOL_RPC_HOST') || 'bitcoin.embassy');
+  // RPC settings
+  const [rpcHost, setRpcHost] = useState(() => localStorage.getItem('AXEPOOL_RPC_HOST') || 'umbrel.local');
   const [rpcPort, setRpcPort] = useState(() => localStorage.getItem('AXEPOOL_RPC_PORT') || '8332');
-  const [rpcUser, setRpcUser] = useState(() => localStorage.getItem('AXEPOOL_RPC_USER') || '');
+  const [rpcUser, setRpcUser] = useState(() => localStorage.getItem('AXEPOOL_RPC_USER') || 'umbrel');
   const [rpcPassword, setRpcPassword] = useState(() => localStorage.getItem('AXEPOOL_RPC_PASSWORD') || '');
   
   // Pool Settings
@@ -134,6 +143,8 @@ const AxePool = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [hashrateHistory, setHashrateHistory] = useState<HashRateDataPoint[]>([]);
   const [sharesHistory, setSharesHistory] = useState<SharesDataPoint[]>([]);
+  const [autoConnectAttempted, setAutoConnectAttempted] = useState(false);
+  const [isAutoDetecting, setIsAutoDetecting] = useState(false);
 
   // Save settings to localStorage
   useEffect(() => {
@@ -145,14 +156,17 @@ const AxePool = () => {
     localStorage.setItem('AXEPOOL_DIFFICULTY', poolDifficulty.toString());
   }, [rpcHost, rpcPort, rpcUser, rpcPassword, poolAddress, poolDifficulty]);
 
-  // RPC call helper
-  const rpcCall = useCallback(async (method: string, params: any[] = []) => {
+  // RPC call helper with configurable host
+  const rpcCallWithHost = useCallback(async (host: string, port: string, user: string, pass: string, method: string, params: any[] = []) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
     try {
-      const response = await fetch(`http://${rpcHost}:${rpcPort}`, {
+      const response = await fetch(`http://${host}:${port}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Basic ' + btoa(`${rpcUser}:${rpcPassword}`),
+          'Authorization': 'Basic ' + btoa(`${user}:${pass}`),
         },
         body: JSON.stringify({
           jsonrpc: '1.0',
@@ -160,8 +174,11 @@ const AxePool = () => {
           method,
           params,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -172,10 +189,71 @@ const AxePool = () => {
       }
       return data.result;
     } catch (error) {
-      console.error(`RPC ${method} error:`, error);
+      clearTimeout(timeoutId);
       throw error;
     }
-  }, [rpcHost, rpcPort, rpcUser, rpcPassword]);
+  }, []);
+
+  // RPC call with current settings
+  const rpcCall = useCallback(async (method: string, params: any[] = []) => {
+    return rpcCallWithHost(rpcHost, rpcPort, rpcUser, rpcPassword, method, params);
+  }, [rpcHost, rpcPort, rpcUser, rpcPassword, rpcCallWithHost]);
+
+  // Auto-detect Umbrel node credentials
+  const autoDetectUmbrel = useCallback(async () => {
+    setIsAutoDetecting(true);
+    
+    // Try to fetch credentials from Umbrel's API endpoints
+    const umbrelApiEndpoints = [
+      '/api/v1/bitcoin/info',
+      '/v1/bitcoin/info',
+    ];
+    
+    // Try each host with common credentials
+    for (const host of UMBREL_HOSTS) {
+      // Try fetching from Umbrel's middleware API first
+      for (const endpoint of umbrelApiEndpoints) {
+        try {
+          const response = await fetch(`http://${host}:3005${endpoint}`, {
+            signal: AbortSignal.timeout(3000),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.rpcPassword || data.rpc_password) {
+              const detectedPass = data.rpcPassword || data.rpc_password;
+              setRpcHost(host);
+              setRpcPassword(detectedPass);
+              toast.success(`Auto-detected Umbrel node at ${host}`);
+              setIsAutoDetecting(false);
+              return { host, password: detectedPass };
+            }
+          }
+        } catch {
+          // Continue to next endpoint
+        }
+      }
+      
+      // Try common passwords if API doesn't work
+      const commonPasswords = ['moneyprintergobrrr', 'password', ''];
+      for (const pass of commonPasswords) {
+        try {
+          await rpcCallWithHost(host, '8332', 'umbrel', pass, 'getblockchaininfo');
+          setRpcHost(host);
+          setRpcUser('umbrel');
+          setRpcPassword(pass);
+          toast.success(`Connected to Umbrel node at ${host}`);
+          setIsAutoDetecting(false);
+          return { host, password: pass };
+        } catch {
+          // Continue to next password
+        }
+      }
+    }
+    
+    setIsAutoDetecting(false);
+    toast.info('Could not auto-detect Umbrel node. Please enter credentials manually.');
+    return null;
+  }, [rpcCallWithHost]);
 
   // Connect to Bitcoin node
   const connectToNode = async () => {
@@ -198,7 +276,7 @@ const AxePool = () => {
       toast.success('Connected to Bitcoin node!');
     } catch (error) {
       console.error('Connection error:', error);
-      toast.error('Failed to connect to Bitcoin node. Check your RPC settings.');
+      toast.error('Failed to connect. Check your RPC settings.');
       setIsConnected(false);
     } finally {
       setIsConnecting(false);
@@ -248,6 +326,33 @@ const AxePool = () => {
     }, 10000);
     return () => clearInterval(interval);
   }, [isConnected, refreshNodeInfo]);
+
+  // Auto-detect and connect on mount
+  useEffect(() => {
+    if (autoConnectAttempted) return;
+    setAutoConnectAttempted(true);
+    
+    const tryAutoConnect = async () => {
+      // If we have saved credentials, try them first
+      if (rpcPassword) {
+        try {
+          await connectToNode();
+          return;
+        } catch {
+          // Continue to auto-detect
+        }
+      }
+      
+      // Try auto-detection
+      const detected = await autoDetectUmbrel();
+      if (detected) {
+        // Credentials were updated, try connecting
+        setTimeout(connectToNode, 500);
+      }
+    };
+    
+    tryAutoConnect();
+  }, []);
 
   // Generate mock hashrate history for demo
   useEffect(() => {
@@ -315,155 +420,157 @@ const AxePool = () => {
 
   return (
     <ScrollArea className="h-[calc(100vh-3.5rem)]">
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-orange-500 bg-clip-text text-transparent flex items-center gap-3">
-              <Pickaxe className="h-8 w-8 text-primary" />
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Header - Mobile Optimized */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-orange-500 bg-clip-text text-transparent flex items-center gap-2">
+              <Pickaxe className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               AxePool
             </h1>
-            <p className="text-muted-foreground mt-1">Solo mining pool for your Bitaxe miners</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Badge variant={isConnected ? "default" : "secondary"} className="gap-2">
-              {isConnected ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-              {isConnected ? 'Connected' : 'Disconnected'}
+            <Badge variant={isConnected ? "default" : "secondary"} className="gap-1 text-xs">
+              {isConnected ? <CheckCircle2 className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+              {isConnected ? 'Connected' : 'Offline'}
             </Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-xs sm:text-sm text-muted-foreground">Solo mining pool for Bitaxe</p>
             <Button 
+              size="sm"
               variant={poolEnabled ? "destructive" : "default"}
               onClick={() => setPoolEnabled(!poolEnabled)}
               disabled={!isConnected}
+              className="h-8 text-xs"
             >
-              {poolEnabled ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-              {poolEnabled ? 'Stop Pool' : 'Start Pool'}
+              {poolEnabled ? <Pause className="mr-1 h-3 w-3" /> : <Play className="mr-1 h-3 w-3" />}
+              {poolEnabled ? 'Stop' : 'Start'}
             </Button>
           </div>
         </div>
 
-        <Tabs defaultValue="dashboard" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="miners">Miners</TabsTrigger>
-            <TabsTrigger value="blocks">Blocks</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+        <Tabs defaultValue="dashboard" className="space-y-3 sm:space-y-4">
+          <TabsList className="grid w-full grid-cols-4 h-9">
+            <TabsTrigger value="dashboard" className="text-xs sm:text-sm px-1">Dashboard</TabsTrigger>
+            <TabsTrigger value="miners" className="text-xs sm:text-sm px-1">Miners</TabsTrigger>
+            <TabsTrigger value="blocks" className="text-xs sm:text-sm px-1">Blocks</TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs sm:text-sm px-1">Settings</TabsTrigger>
           </TabsList>
 
           {/* Dashboard Tab */}
-          <TabsContent value="dashboard" className="space-y-6">
-            {/* Node Status Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <TabsContent value="dashboard" className="space-y-4 sm:space-y-6">
+            {/* Node Status Cards - Mobile 2x2 Grid */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
               <Card className="border-primary/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Block Height</CardTitle>
-                  <Blocks className="h-4 w-4 text-primary" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 sm:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Block Height</CardTitle>
+                  <Blocks className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{nodeInfo?.blocks?.toLocaleString() || '---'}</div>
-                  <p className="text-xs text-muted-foreground">
+                <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                  <div className="text-lg sm:text-2xl font-bold">{nodeInfo?.blocks?.toLocaleString() || '---'}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
                     {nodeInfo?.chain === 'main' ? 'Mainnet' : nodeInfo?.chain || 'Unknown'}
                   </p>
                 </CardContent>
               </Card>
 
               <Card className="border-primary/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Network Hashrate</CardTitle>
-                  <Hash className="h-4 w-4 text-primary" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 sm:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Network Hash</CardTitle>
+                  <Hash className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
+                <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                  <div className="text-lg sm:text-2xl font-bold">
                     {miningInfo ? formatHashrate(miningInfo.networkhashps) : '---'}
                   </div>
-                  <p className="text-xs text-muted-foreground">Global hashpower</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Global</p>
                 </CardContent>
               </Card>
 
               <Card className="border-primary/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Difficulty</CardTitle>
-                  <Target className="h-4 w-4 text-primary" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 sm:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Difficulty</CardTitle>
+                  <Target className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
+                <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                  <div className="text-lg sm:text-2xl font-bold">
                     {miningInfo ? formatDifficulty(miningInfo.difficulty) : '---'}
                   </div>
-                  <p className="text-xs text-muted-foreground">Current difficulty</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Current</p>
                 </CardContent>
               </Card>
 
               <Card className="border-primary/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Connections</CardTitle>
-                  <Network className="h-4 w-4 text-primary" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 sm:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Peers</CardTitle>
+                  <Network className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{nodeInfo?.connections || '---'}</div>
-                  <p className="text-xs text-muted-foreground">Peer connections</p>
+                <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                  <div className="text-lg sm:text-2xl font-bold">{nodeInfo?.connections || '---'}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Connected</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Pool Stats */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* Pool Stats - Mobile 2x2 Grid */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
               <Card className="bg-gradient-to-br from-orange-500/10 to-transparent border-orange-500/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pool Hashrate</CardTitle>
-                  <Zap className="h-4 w-4 text-orange-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 sm:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Pool Hash</CardTitle>
+                  <Zap className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-orange-500">
-                    {poolStats.totalHashrate.toFixed(2)} GH/s
+                <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                  <div className="text-lg sm:text-2xl font-bold text-orange-500">
+                    {poolStats.totalHashrate.toFixed(1)} GH/s
                   </div>
-                  <p className="text-xs text-muted-foreground">From {poolStats.activeMiners} miners</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">{poolStats.activeMiners} miners</p>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Shares</CardTitle>
-                  <Activity className="h-4 w-4 text-green-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 sm:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Shares</CardTitle>
+                  <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-500">{poolStats.totalShares.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">All time accepted</p>
+                <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                  <div className="text-lg sm:text-2xl font-bold text-green-500">{poolStats.totalShares.toLocaleString()}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Accepted</p>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Blocks Found</CardTitle>
-                  <Bitcoin className="h-4 w-4 text-blue-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 sm:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">Blocks</CardTitle>
+                  <Bitcoin className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-500">{poolStats.blocksFound}</div>
-                  <p className="text-xs text-muted-foreground">Solo blocks mined</p>
+                <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                  <div className="text-lg sm:text-2xl font-bold text-blue-500">{poolStats.blocksFound}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Found</p>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-purple-500/10 to-transparent border-purple-500/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Time to Block</CardTitle>
-                  <Timer className="h-4 w-4 text-purple-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 sm:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">ETA Block</CardTitle>
+                  <Timer className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-purple-500">{getEstimatedTimeToBlock()}</div>
-                  <p className="text-xs text-muted-foreground">Estimated average</p>
+                <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+                  <div className="text-lg sm:text-2xl font-bold text-purple-500">{getEstimatedTimeToBlock()}</div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Estimate</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Charts */}
-            <div className="grid gap-6 md:grid-cols-2">
+            {/* Charts - Stack on Mobile */}
+            <div className="grid gap-3 sm:gap-6 lg:grid-cols-2">
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    Pool Hashrate (24h)
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                    <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    Hashrate (24h)
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <CardContent className="p-2 sm:p-6 pt-0">
+                  <ChartContainer config={chartConfig} className="h-[180px] sm:h-[250px] w-full">
                     <AreaChart data={hashrateHistory}>
                       <defs>
                         <linearGradient id="hashrateGradient" x1="0" y1="0" x2="0" y2="1">
@@ -472,8 +579,8 @@ const AxePool = () => {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="time" className="text-xs" />
-                      <YAxis className="text-xs" />
+                      <XAxis dataKey="time" className="text-[10px] sm:text-xs" tick={{ fontSize: 10 }} />
+                      <YAxis className="text-[10px] sm:text-xs" tick={{ fontSize: 10 }} width={30} />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Area 
                         type="monotone" 
@@ -488,18 +595,18 @@ const AxePool = () => {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-primary" />
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                    <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     Shares (24h)
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <CardContent className="p-2 sm:p-6 pt-0">
+                  <ChartContainer config={chartConfig} className="h-[180px] sm:h-[250px] w-full">
                     <BarChart data={sharesHistory}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="time" className="text-xs" />
-                      <YAxis className="text-xs" />
+                      <XAxis dataKey="time" className="text-[10px] sm:text-xs" tick={{ fontSize: 10 }} />
+                      <YAxis className="text-[10px] sm:text-xs" tick={{ fontSize: 10 }} width={30} />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Bar dataKey="accepted" fill="hsl(142, 76%, 36%)" stackId="stack" />
                       <Bar dataKey="rejected" fill="hsl(0, 84%, 60%)" stackId="stack" />
@@ -534,180 +641,170 @@ const AxePool = () => {
             )}
           </TabsContent>
 
-          {/* Miners Tab */}
-          <TabsContent value="miners" className="space-y-4">
+          {/* Miners Tab - Mobile Optimized */}
+          <TabsContent value="miners" className="space-y-3">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   Connected Miners
                 </CardTitle>
-                <CardDescription>
-                  Point your miners to: stratum+tcp://{rpcHost}:3333
+                <CardDescription className="text-xs sm:text-sm">
+                  stratum+tcp://{rpcHost}:3333
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-6 pt-0">
                 {miners.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Cpu className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">No miners connected yet</p>
-                    <p className="text-sm mt-2">Configure your Bitaxe miners to connect to this pool</p>
-                    <p className="text-xs mt-4 font-mono bg-muted p-2 rounded">
-                      Pool URL: stratum+tcp://{window.location.hostname}:3333
+                  <div className="text-center py-6 sm:py-12 text-muted-foreground">
+                    <Cpu className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm sm:text-lg font-medium">No miners connected</p>
+                    <p className="text-xs sm:text-sm mt-1">Point your Bitaxe to this pool</p>
+                    <p className="text-[10px] sm:text-xs mt-3 font-mono bg-muted p-2 rounded break-all">
+                      stratum+tcp://{window.location.hostname}:3333
                     </p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Miner</TableHead>
-                        <TableHead>Hashrate</TableHead>
-                        <TableHead>Shares</TableHead>
-                        <TableHead>Last Seen</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {miners.map((miner) => (
-                        <TableRow key={miner.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{miner.name}</div>
-                              <div className="text-xs text-muted-foreground">{miner.address}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{miner.hashrate.toFixed(2)} GH/s</TableCell>
-                          <TableCell>{miner.shares.toLocaleString()}</TableCell>
-                          <TableCell>{miner.lastSeen.toLocaleTimeString()}</TableCell>
-                          <TableCell>
-                            <Badge variant={miner.active ? "default" : "secondary"}>
-                              {miner.active ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="space-y-2">
+                    {miners.map((miner) => (
+                      <div key={miner.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-sm truncate">{miner.name}</div>
+                          <div className="text-xs text-muted-foreground">{miner.hashrate.toFixed(1)} GH/s • {miner.shares} shares</div>
+                        </div>
+                        <Badge variant={miner.active ? "default" : "secondary"} className="text-xs ml-2">
+                          {miner.active ? 'On' : 'Off'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Blocks Tab */}
-          <TabsContent value="blocks" className="space-y-4">
+          {/* Blocks Tab - Mobile Optimized */}
+          <TabsContent value="blocks" className="space-y-3">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Blocks className="h-5 w-5 text-primary" />
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Blocks className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   Block Template
                 </CardTitle>
-                <CardDescription>
-                  Current work being distributed to miners
-                </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-6 pt-0">
                 {blockTemplate ? (
-                  <div className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Height</Label>
-                        <p className="font-mono">{blockTemplate.height?.toLocaleString()}</p>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                      <div className="bg-muted/50 p-2 rounded">
+                        <div className="text-[10px] sm:text-xs text-muted-foreground">Height</div>
+                        <div className="font-mono text-sm sm:text-base">{blockTemplate.height?.toLocaleString()}</div>
                       </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Version</Label>
-                        <p className="font-mono">{blockTemplate.version}</p>
+                      <div className="bg-muted/50 p-2 rounded">
+                        <div className="text-[10px] sm:text-xs text-muted-foreground">TXs</div>
+                        <div className="font-mono text-sm sm:text-base">{blockTemplate.transactions?.length}</div>
                       </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Transactions</Label>
-                        <p className="font-mono">{blockTemplate.transactions?.length}</p>
+                      <div className="bg-muted/50 p-2 rounded">
+                        <div className="text-[10px] sm:text-xs text-muted-foreground">Version</div>
+                        <div className="font-mono text-sm sm:text-base">{blockTemplate.version}</div>
                       </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Coinbase Value</Label>
-                        <p className="font-mono">{(blockTemplate.coinbasevalue / 1e8).toFixed(8)} BTC</p>
+                      <div className="bg-muted/50 p-2 rounded">
+                        <div className="text-[10px] sm:text-xs text-muted-foreground">Reward</div>
+                        <div className="font-mono text-sm sm:text-base">{(blockTemplate.coinbasevalue / 1e8).toFixed(4)}</div>
                       </div>
                     </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Previous Block Hash</Label>
-                      <p className="font-mono text-xs break-all">{blockTemplate.previousblockhash}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Target</Label>
-                      <p className="font-mono text-xs break-all">{blockTemplate.target}</p>
+                    <div className="bg-muted/50 p-2 rounded">
+                      <div className="text-[10px] sm:text-xs text-muted-foreground">Previous Hash</div>
+                      <div className="font-mono text-[10px] sm:text-xs break-all">{blockTemplate.previousblockhash}</div>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Blocks className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Connect to your Bitcoin node to see block template</p>
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Blocks className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Connect to node for block template</p>
                   </div>
                 )}
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bitcoin className="h-5 w-5 text-orange-500" />
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Bitcoin className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
                   Found Blocks
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Bitcoin className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium">No blocks found yet</p>
-                  <p className="text-sm mt-2">Keep mining! Your block will show up here when found.</p>
+              <CardContent className="p-3 sm:p-6 pt-0">
+                <div className="text-center py-6 text-muted-foreground">
+                  <Bitcoin className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm font-medium">No blocks found yet</p>
+                  <p className="text-xs mt-1">Keep mining!</p>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-4">
+          {/* Settings Tab - Mobile Optimized */}
+          <TabsContent value="settings" className="space-y-3">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Server className="h-5 w-5 text-primary" />
-                  Bitcoin Node Connection
-                </CardTitle>
-                <CardDescription>
-                  Connect to Bitcoin Core or Bitcoin Knots on your Umbrel
+              <CardHeader className="p-3 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                    <Server className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    Node Connection
+                  </CardTitle>
+                  <Button 
+                    size="sm"
+                    variant="outline"
+                    onClick={autoDetectUmbrel}
+                    disabled={isAutoDetecting}
+                    className="h-7 text-xs"
+                  >
+                    {isAutoDetecting ? (
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                    ) : (
+                      'Auto-Detect'
+                    )}
+                  </Button>
+                </div>
+                <CardDescription className="text-xs">
+                  Umbrel credentials auto-detected on startup
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="rpc-host">RPC Host</Label>
+              <CardContent className="p-3 sm:p-6 pt-0 space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Host</Label>
                     <Input
-                      id="rpc-host"
-                      placeholder="bitcoin.embassy or localhost"
+                      className="h-8 text-sm"
+                      placeholder="umbrel.local"
                       value={rpcHost}
                       onChange={(e) => setRpcHost(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="rpc-port">RPC Port</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Port</Label>
                     <Input
-                      id="rpc-port"
+                      className="h-8 text-sm"
                       placeholder="8332"
                       value={rpcPort}
                       onChange={(e) => setRpcPort(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="rpc-user">RPC Username</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs">User</Label>
                     <Input
-                      id="rpc-user"
-                      placeholder="Your RPC username"
+                      className="h-8 text-sm"
+                      placeholder="umbrel"
                       value={rpcUser}
                       onChange={(e) => setRpcUser(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="rpc-password">RPC Password</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Password</Label>
                     <Input
-                      id="rpc-password"
+                      className="h-8 text-sm"
                       type="password"
-                      placeholder="Your RPC password"
+                      placeholder="••••••"
                       value={rpcPassword}
                       onChange={(e) => setRpcPassword(e.target.value)}
                     />
@@ -716,87 +813,74 @@ const AxePool = () => {
                 <Button 
                   onClick={connectToNode} 
                   disabled={isConnecting}
-                  className="w-full md:w-auto"
+                  className="w-full h-9 text-sm"
                 >
                   {isConnecting ? (
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
                   ) : (
-                    <Server className="mr-2 h-4 w-4" />
+                    <Server className="mr-2 h-3 w-3" />
                   )}
-                  {isConnecting ? 'Connecting...' : 'Connect to Node'}
+                  {isConnecting ? 'Connecting...' : 'Connect'}
                 </Button>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5 text-primary" />
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   Pool Settings
                 </CardTitle>
-                <CardDescription>
-                  Configure your solo mining pool
-                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="pool-address">Payout Address</Label>
+              <CardContent className="p-3 sm:p-6 pt-0 space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Payout Address</Label>
                   <Input
-                    id="pool-address"
-                    placeholder="Your Bitcoin address for block rewards"
+                    className="h-8 text-sm font-mono"
+                    placeholder="bc1q..."
                     value={poolAddress}
                     onChange={(e) => setPoolAddress(e.target.value)}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    This address will receive block rewards when you find a block
-                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pool-difficulty">Pool Difficulty</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs">Pool Difficulty</Label>
                   <Input
-                    id="pool-difficulty"
+                    className="h-8 text-sm"
                     type="number"
                     placeholder="1"
                     value={poolDifficulty}
                     onChange={(e) => setPoolDifficulty(Number(e.target.value))}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Lower difficulty = more shares but more load on your node
-                  </p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Node Info Card */}
+            {/* Node Info - Compact */}
             {nodeInfo && (
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Cpu className="h-5 w-5 text-primary" />
-                    Node Information
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                    <Cpu className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    Node Info
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Version:</span>{' '}
-                      <span className="font-mono">{nodeInfo.subversion}</span>
+                <CardContent className="p-3 sm:p-6 pt-0">
+                  <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                    <div className="bg-muted/50 p-2 rounded">
+                      <span className="text-muted-foreground">Version</span>
+                      <div className="font-mono truncate">{nodeInfo.subversion}</div>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Chain:</span>{' '}
-                      <span className="font-mono">{nodeInfo.chain}</span>
+                    <div className="bg-muted/50 p-2 rounded">
+                      <span className="text-muted-foreground">Chain</span>
+                      <div className="font-mono">{nodeInfo.chain}</div>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Pruned:</span>{' '}
-                      <span className="font-mono">{nodeInfo.pruned ? 'Yes' : 'No'}</span>
+                    <div className="bg-muted/50 p-2 rounded">
+                      <span className="text-muted-foreground">Pruned</span>
+                      <div className="font-mono">{nodeInfo.pruned ? 'Yes' : 'No'}</div>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Size on Disk:</span>{' '}
-                      <span className="font-mono">{((nodeInfo.size_on_disk || 0) / 1e9).toFixed(2)} GB</span>
-                    </div>
-                    <div className="md:col-span-2">
-                      <span className="text-muted-foreground">Best Block:</span>{' '}
-                      <span className="font-mono text-xs break-all">{nodeInfo.bestblockhash}</span>
+                    <div className="bg-muted/50 p-2 rounded">
+                      <span className="text-muted-foreground">Size</span>
+                      <div className="font-mono">{((nodeInfo.size_on_disk || 0) / 1e9).toFixed(1)} GB</div>
                     </div>
                   </div>
                 </CardContent>
