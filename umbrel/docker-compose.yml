@@ -12,6 +12,9 @@ services:
       - "${APP_AXEMOBILE_PORT:-3847}:80"
     environment:
       - NODE_ENV=production
+      - AXEPOOL_API_URL=http://axepool-stratum:3334
+    depends_on:
+      - axepool-stratum
     networks:
       - default
     labels:
@@ -19,6 +22,34 @@ services:
       - "traefik.http.routers.axemobile.rule=Host(`axemobile.${UMBREL_DOMAIN}`)"
       - "traefik.http.routers.axemobile.entrypoints=web"
       - "traefik.http.services.axemobile.loadbalancer.server.port=80"
+
+  axepool-stratum:
+    build:
+      context: axepool-stratum
+      dockerfile: Dockerfile
+    restart: on-failure
+    stop_grace_period: 30s
+    ports:
+      - "${APP_AXEPOOL_STRATUM_PORT:-3333}:3333"
+      - "${APP_AXEPOOL_STATS_PORT:-3334}:3334"
+    environment:
+      - BITCOIN_RPC_HOST=${BITCOIN_RPC_HOST:-10.21.21.9}
+      - BITCOIN_RPC_PORT=${BITCOIN_RPC_PORT:-8332}
+      - BITCOIN_RPC_USER=${BITCOIN_RPC_USER:-umbrel}
+      - BITCOIN_RPC_PASS=${BITCOIN_RPC_PASS:-}
+      - POOL_ADDRESS=${POOL_ADDRESS:-}
+      - STATS_PORT=3334
+    volumes:
+      - axepool-data:/data/ckpool
+    networks:
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.axepool-stats.rule=Host(`axepool-stats.${UMBREL_DOMAIN}`)"
+      - "traefik.http.services.axepool-stats.loadbalancer.server.port=3334"
+
+volumes:
+  axepool-data:
 
 networks:
   default:

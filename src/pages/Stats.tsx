@@ -95,17 +95,18 @@ export default function Stats() {
   const daysToFindBlock = probabilityPerDay > 0 ? 1 / probabilityPerDay : Infinity;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Activity className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold">Miner Statistics</h1>
+          <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+          <h1 className="text-xl sm:text-3xl font-bold">Miner Statistics</h1>
         </div>
-        <Button 
-          onClick={refreshBitcoinStats} 
+        <Button
+          size="sm"
+          onClick={refreshBitcoinStats}
           disabled={bitcoinLoading}
           variant="outline"
-          className="gap-2"
+          className="gap-2 h-9 text-xs sm:text-sm"
         >
           <RefreshCw className={`h-4 w-4 ${bitcoinLoading ? 'animate-spin' : ''}`} />
           Refresh Bitcoin Stats
@@ -159,7 +160,7 @@ export default function Stats() {
                 )}
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Network Difficulty</p>
                   <p className="text-lg font-semibold">{(networkDifficulty / 1e12).toFixed(2)}T</p>
@@ -179,7 +180,7 @@ export default function Stats() {
               </div>
               
               {bitcoinStats && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-4 border-t">
                   <div>
                     <p className="text-sm text-muted-foreground">Next Difficulty Adjustment</p>
                     <p className="text-lg font-semibold">{bitcoinStats.nextDifficultyAdjustment} blocks</p>

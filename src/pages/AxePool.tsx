@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,8 @@ import {
   Target
 } from "lucide-react";
 import { toast } from "sonner";
+import { useNetworkScanner } from "@/hooks/useNetworkScanner";
+import { useAxePoolStats } from "@/hooks/useAxePoolStats";
 
 interface NodeInfo {
   chain: string;
@@ -115,6 +117,9 @@ const UMBREL_HOSTS = [
 ];
 
 const AxePool = () => {
+  const { devices, totalHashRate, activeDevices } = useNetworkScanner();
+  const axePoolApi = useAxePoolStats();
+
   // RPC settings
   const [rpcHost, setRpcHost] = useState(() => localStorage.getItem('AXEPOOL_RPC_HOST') || 'umbrel.local');
   const [rpcPort, setRpcPort] = useState(() => localStorage.getItem('AXEPOOL_RPC_PORT') || '8332');
@@ -146,6 +151,9 @@ const AxePool = () => {
   const [autoConnectAttempted, setAutoConnectAttempted] = useState(false);
   const [isAutoDetecting, setIsAutoDetecting] = useState(false);
 
+  const activeMinerDevices = useMemo(() => devices.filter((d) => d.isActive), [devices]);
+  const sharesBaselineRef = useRef<Record<string, { accepted: number; rejected: number }>>({});
+
   // Save settings to localStorage
   useEffect(() => {
     localStorage.setItem('AXEPOOL_RPC_HOST', rpcHost);
@@ -155,6 +163,63 @@ const AxePool = () => {
     localStorage.setItem('AXEPOOL_ADDRESS', poolAddress);
     localStorage.setItem('AXEPOOL_DIFFICULTY', poolDifficulty.toString());
   }, [rpcHost, rpcPort, rpcUser, rpcPassword, poolAddress, poolDifficulty]);
+
+  // Derive pool + miner stats from real API or fallback to device-derived
+  useEffect(() => {
+    // If AxePool API is available, use its data
+    if (axePoolApi.isApiAvailable && axePoolApi.poolStats) {
+      const apiData = axePoolApi.poolStats;
+      
+      setMiners(apiData.miners.map(m => ({
+        ...m,
+        lastSeen: new Date(m.lastSeen)
+      })));
+      
+      setPoolStats({
+        totalHashrate: apiData.stats.totalHashrate,
+        activeMiners: apiData.stats.activeMiners,
+        totalShares: apiData.stats.totalShares,
+        blocksFound: apiData.stats.blocksFound,
+        lastBlockTime: apiData.stats.lastBlockTime ? new Date(apiData.stats.lastBlockTime) : null,
+        poolDifficulty: apiData.stats.difficulty,
+      });
+
+      // Use API history if available
+      if (axePoolApi.hashrateHistory.length > 0) {
+        setHashrateHistory(axePoolApi.hashrateHistory);
+      }
+      if (axePoolApi.sharesHistory.length > 0) {
+        setSharesHistory(axePoolApi.sharesHistory);
+      }
+      
+      return;
+    }
+    
+    // Fallback: derive from detected devices
+    const now = new Date();
+
+    const mapped: PoolMiner[] = activeMinerDevices.map((d) => ({
+      id: d.IP,
+      address: d.IP,
+      name: d.name || d.IP,
+      hashrate: d.hashRate || 0,
+      shares: d.shares?.accepted || 0,
+      lastSeen: now,
+      active: true,
+    }));
+
+    setMiners(mapped);
+
+    const totalAccepted = activeMinerDevices.reduce((sum, d) => sum + (d.shares?.accepted || 0), 0);
+
+    setPoolStats((prev) => ({
+      ...prev,
+      totalHashrate: totalHashRate,
+      activeMiners: activeDevices,
+      totalShares: totalAccepted,
+      poolDifficulty,
+    }));
+  }, [axePoolApi.isApiAvailable, axePoolApi.poolStats, axePoolApi.hashrateHistory, axePoolApi.sharesHistory, activeMinerDevices, totalHashRate, activeDevices, poolDifficulty]);
 
   // RPC call helper with configurable host
   const rpcCallWithHost = useCallback(async (host: string, port: string, user: string, pass: string, method: string, params: any[] = []) => {
@@ -354,29 +419,59 @@ const AxePool = () => {
     tryAutoConnect();
   }, []);
 
-  // Generate mock hashrate history for demo
+  // Live hashrate + share deltas (1h window, 10s samples) - only when API not available
   useEffect(() => {
-    const now = new Date();
-    const history: HashRateDataPoint[] = [];
-    const sharesHist: SharesDataPoint[] = [];
+    // Skip if using API data
+    if (axePoolApi.isApiAvailable) return;
     
-    for (let i = 23; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 3600000);
-      history.push({
-        time: time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        hashrate: Math.random() * 500 + 100,
-        shares: Math.floor(Math.random() * 50),
+    const formatTime = (d: Date) =>
+      d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+
+    const sample = () => {
+      const now = new Date();
+      const time = formatTime(now);
+
+      let deltaAccepted = 0;
+      let deltaRejected = 0;
+
+      const nextBaseline: Record<string, { accepted: number; rejected: number }> = {
+        ...sharesBaselineRef.current,
+      };
+
+      for (const dev of activeMinerDevices) {
+        const accepted = dev.shares?.accepted || 0;
+        const rejected = dev.shares?.rejected || 0;
+        const prev = sharesBaselineRef.current[dev.IP];
+
+        if (prev) {
+          deltaAccepted += Math.max(0, accepted - prev.accepted);
+          deltaRejected += Math.max(0, rejected - prev.rejected);
+        }
+
+        nextBaseline[dev.IP] = { accepted, rejected };
+      }
+
+      sharesBaselineRef.current = nextBaseline;
+
+      setHashrateHistory((prev) => {
+        const next = [...prev, { time, hashrate: totalHashRate, shares: deltaAccepted }];
+        return next.slice(-360);
       });
-      sharesHist.push({
-        time: time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        accepted: Math.floor(Math.random() * 45 + 5),
-        rejected: Math.floor(Math.random() * 3),
+
+      setSharesHistory((prev) => {
+        const next = [...prev, { time, accepted: deltaAccepted, rejected: deltaRejected }];
+        return next.slice(-360);
       });
-    }
-    
-    setHashrateHistory(history);
-    setSharesHistory(sharesHist);
-  }, []);
+    };
+
+    // Prime baseline + first datapoint
+    sample();
+    const id = setInterval(sample, 10_000);
+    return () => clearInterval(id);
+  }, [axePoolApi.isApiAvailable, activeMinerDevices, totalHashRate]);
+
+  // Get found blocks from API
+  const foundBlocks = axePoolApi.blocks;
 
   // Calculate estimated time to block
   const getEstimatedTimeToBlock = () => {
@@ -449,8 +544,8 @@ const AxePool = () => {
         </div>
 
         <Tabs defaultValue="dashboard" className="space-y-3 sm:space-y-4">
-          <TabsList className="grid w-full grid-cols-4 h-9">
-            <TabsTrigger value="dashboard" className="text-xs sm:text-sm px-1">Dashboard</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-9">
+            <TabsTrigger value="dashboard" className="text-xs sm:text-sm px-1">Dash</TabsTrigger>
             <TabsTrigger value="miners" className="text-xs sm:text-sm px-1">Miners</TabsTrigger>
             <TabsTrigger value="blocks" className="text-xs sm:text-sm px-1">Blocks</TabsTrigger>
             <TabsTrigger value="settings" className="text-xs sm:text-sm px-1">Settings</TabsTrigger>
@@ -566,7 +661,7 @@ const AxePool = () => {
                 <CardHeader className="p-3 sm:p-6">
                   <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                     <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                    Hashrate (24h)
+                    Hashrate (live)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 sm:p-6 pt-0">
@@ -598,7 +693,7 @@ const AxePool = () => {
                 <CardHeader className="p-3 sm:p-6">
                   <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                     <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                    Shares (24h)
+                    Shares (live)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 sm:p-6 pt-0">
@@ -617,7 +712,7 @@ const AxePool = () => {
             </div>
 
             {/* Sync Progress */}
-            {nodeInfo && !nodeInfo.initialblockdownload === false && (
+            {nodeInfo && nodeInfo.initialblockdownload && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -730,15 +825,41 @@ const AxePool = () => {
               <CardHeader className="p-3 sm:p-6">
                 <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                   <Bitcoin className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
-                  Found Blocks
+                  Found Blocks ({foundBlocks.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3 sm:p-6 pt-0">
-                <div className="text-center py-6 text-muted-foreground">
-                  <Bitcoin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm font-medium">No blocks found yet</p>
-                  <p className="text-xs mt-1">Keep mining!</p>
-                </div>
+                {foundBlocks.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Bitcoin className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm font-medium">No blocks found yet</p>
+                    <p className="text-xs mt-1">Keep mining!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {foundBlocks.slice(-10).reverse().map((block, i) => (
+                      <div key={i} className="flex items-center justify-between p-2 bg-gradient-to-r from-orange-500/10 to-transparent rounded-lg border border-orange-500/20">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-sm flex items-center gap-1">
+                            <Bitcoin className="h-3 w-3 text-orange-500" />
+                            Block #{block.height?.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {block.hash?.slice(0, 16)}...
+                          </div>
+                        </div>
+                        <div className="text-right ml-2">
+                          <div className="text-sm font-bold text-orange-500">
+                            {(block.reward / 1e8).toFixed(4)} BTC
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {new Date(block.time).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

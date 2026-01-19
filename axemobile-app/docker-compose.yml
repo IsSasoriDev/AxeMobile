@@ -9,3 +9,32 @@ services:
       - "${APP_AXEMOBILE_APP_PORT:-3847}:80"
     environment:
       - NODE_ENV=production
+      - AXEPOOL_API_URL=http://axepool-stratum:3334
+    depends_on:
+      - axepool-stratum
+    networks:
+      - default
+
+  axepool-stratum:
+    image: ghcr.io/issasoridev/axepool-stratum:latest
+    restart: on-failure
+    stop_grace_period: 30s
+    ports:
+      - "${APP_AXEPOOL_STRATUM_PORT:-3333}:3333"
+      - "${APP_AXEPOOL_STATS_PORT:-3334}:3334"
+    environment:
+      - BITCOIN_RPC_HOST=${APP_BITCOIN_NODE_IP:-10.21.21.9}
+      - BITCOIN_RPC_PORT=8332
+      - BITCOIN_RPC_USER=umbrel
+      - BITCOIN_RPC_PASS=${APP_BITCOIN_RPC_PASS:-}
+      - POOL_ADDRESS=${APP_POOL_ADDRESS:-}
+      - STATS_PORT=3334
+    volumes:
+      - ${APP_DATA_DIR}/axepool:/data/ckpool
+    networks:
+      - default
+
+networks:
+  default:
+    name: umbrel_main_network
+    external: true
