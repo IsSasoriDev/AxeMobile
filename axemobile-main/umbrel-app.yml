@@ -1,0 +1,60 @@
+manifestVersion: 1
+id: axemobile-main
+category: bitcoin
+name: AxeMobile
+version: "1.1.0"
+tagline: Monitor miners & run your own solo mining pool
+description: >-
+  AxeMobile is a comprehensive dashboard for monitoring and managing your Bitaxe 
+  and Nerdaxe Bitcoin miners. Now includes AxePool - a built-in solo mining 
+  pool that connects directly to your Umbrel Bitcoin node!
+  
+
+  Key Features:
+
+  - AxePool Solo Mining - Run your own stratum pool on port 3333
+
+  - Real-time miner statistics and monitoring
+
+  - Multi-miner support with network scanning
+
+  - Pool configuration management
+
+  - Performance presets (Eco, Balanced, Performance, Max OC)
+
+  - Firmware update support
+
+  - Temperature and power monitoring
+
+  - Bitcoin network statistics
+
+  - Mining calculator
+
+  - Achievement system
+
+
+  AxePool Setup:
+  
+  Point your Bitaxe miners to stratum+tcp://umbrel.local:3333 with your 
+  Bitcoin address as the username. All shares and stats are tracked in real-time!
+
+developer: IsSasoriDev
+website: https://github.com/IsSasoriDev/AxeMobile
+dependencies:
+  - bitcoin
+repo: https://github.com/IsSasoriDev/AxeMobile
+support: https://github.com/IsSasoriDev/AxeMobile/issues
+port: 3847
+gallery:
+  - 1.jpg
+  - 2.jpg
+  - 3.jpg
+  - 4.jpg
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+torOnly: false
+permissions: []
+releaseNotes: >-
+  v1.1.0: Added AxePool - a built-in solo mining pool with stratum server.
+  Connect your Bitaxe miners directly to your Umbrel node!
