@@ -12,9 +12,9 @@ RUN apk add --no-cache \
     curl \
     bash
 
-# Build ckpool from source
+# Build ckpool from source (using GitHub mirror as bitbucket can be unreliable)
 WORKDIR /tmp
-RUN git clone https://bitbucket.org/ckolivas/ckpool.git && \
+RUN git clone https://github.com/ckolivas/ckpool.git && \
     cd ckpool && \
     ./autogen.sh && \
     ./configure --without-ckdb && \

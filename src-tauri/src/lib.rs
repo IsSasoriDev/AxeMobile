@@ -36,12 +36,6 @@ pub struct MinerInfo {
 }
 
 #[tauri::command]
-fn update_miner_pool(pool: String) {
-    println!("Updating miner pool to: {}", pool);
-}
-
-
-#[tauri::command]
 async fn fetch_miner_info(ip: String) -> Result<serde_json::Value, String> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
@@ -269,7 +263,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             fetch_miner_info,
             restart_miner,
-            update_miner_pool,
             update_miner_settings,
             set_minimize_to_tray,
             get_minimize_to_tray,
