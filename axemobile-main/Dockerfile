@@ -3,23 +3,28 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files FROM SUBDIR
-COPY axemobile-main/package.json axemobile-main/package-lock.json ./
+# Copy package files
+COPY package*.json ./
+COPY bun.lockb ./
 
+# Install dependencies
 RUN npm ci
 
-# Copy app source
-COPY axemobile-main/ .
+# Copy source files
+COPY . .
 
+# Build the app
 RUN npm run build
 
-# Runtime stage
+# Production stage
 FROM nginx:alpine
 
+# Copy built files
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# nginx config
-COPY axemobile-main/nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx config
+COPY --from=builder /app/axemobile-main/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]
