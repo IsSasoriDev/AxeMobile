@@ -5,6 +5,7 @@ RUN apk add --no-cache \
     nodejs \
     npm \
     git \
+    ca-certificates \
     build-base \
     autoconf \
     automake \
@@ -14,13 +15,39 @@ RUN apk add --no-cache \
 
 # Build ckpool from source (using GitHub mirror as bitbucket can be unreliable)
 WORKDIR /tmp
-RUN git clone https://github.com/ckolivas/ckpool.git && \
-    cd ckpool && \
-    ./autogen.sh && \
-    ./configure --without-ckdb && \
-    make && \
-    make install && \
-    cd / && rm -rf /tmp/ckpool
+RUN set -eux; \
+    update-ca-certificates; \
+    rm -rf /tmp/ckpool /tmp/ckpool.tar.gz; \
+    \
+    # Prefer downloading a tarball (avoids flaky git transport in CI), with retries.
+    if curl -fsSL \
+        --retry 5 \
+        --retry-all-errors \
+        --connect-timeout 20 \
+        -o /tmp/ckpool.tar.gz \
+        https://codeload.github.com/ckolivas/ckpool/tar.gz/refs/heads/master; then \
+      mkdir -p /tmp/ckpool; \
+      tar -xzf /tmp/ckpool.tar.gz --strip-components=1 -C /tmp/ckpool; \
+    else \
+      echo "Tarball download failed; falling back to git clone..." >&2; \
+      for i in 1 2 3; do \
+        rm -rf /tmp/ckpool; \
+        if git -c http.version=HTTP/1.1 clone --depth 1 https://github.com/ckolivas/ckpool.git /tmp/ckpool; then \
+          break; \
+        fi; \
+        echo "git clone failed (attempt ${i}/3), retrying..." >&2; \
+        sleep 5; \
+      done; \
+      test -d /tmp/ckpool; \
+    fi; \
+    \
+    cd /tmp/ckpool; \
+    ./autogen.sh; \
+    ./configure --without-ckdb; \
+    make; \
+    make install; \
+    cd /; \
+    rm -rf /tmp/ckpool /tmp/ckpool.tar.gz
 
 # Create app directory
 WORKDIR /app

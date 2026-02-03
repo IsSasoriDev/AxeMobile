@@ -3,7 +3,7 @@ version: "3.7"
 services:
   app_proxy:
     environment:
-      APP_HOST: axemobile-main_web_1
+      APP_HOST: web
       APP_PORT: 80
 
   web:
@@ -12,7 +12,7 @@ services:
     stop_grace_period: 1m
     environment:
       - NODE_ENV=production
-      - AXEPOOL_API_URL=http://axemobile-main_axepool-stratum_1:3334
+      - AXEPOOL_API_URL=http://axepool-stratum:3334
     depends_on:
       - axepool-stratum
 
