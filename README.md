@@ -4,7 +4,7 @@
 
 ### **Unleash the Open Source Mining Power**
 
-*A modern, cross-platform application for managing Bitcoin mining hardware*
+*A modern, cross-platform application for managing Open-Source mining hardware*
 
 [![Stars](https://img.shields.io/github/stars/IsSasoriDev/AxeMobile?style=for-the-badge&logo=github&color=f97316)](https://github.com/IsSasoriDev/AxeMobile/stargazers)
 [![Forks](https://img.shields.io/github/forks/IsSasoriDev/AxeMobile?style=for-the-badge&logo=github&color=3b82f6)](https://github.com/IsSasoriDev/AxeMobile/network/members)
