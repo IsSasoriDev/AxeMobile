@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.edunita.axemobile',
+  appId: 'dev.issasori.axemobile',
   appName: 'AxeMobile',
   webDir: 'dist',
   plugins: {

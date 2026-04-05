@@ -2,12 +2,16 @@
 
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{
-    menu::{Menu, MenuItem},
+    menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager, WindowEvent,
+    Manager, WindowEvent, Emitter,
 };
+
+// Store miner IPs so menu click handlers can trigger restarts
+static MINER_IPS: Mutex<Vec<String>> = Mutex::new(Vec::new());
 
 // Global flag to track if we should minimize to tray
 static MINIMIZE_TO_TRAY: AtomicBool = AtomicBool::new(false);
@@ -189,6 +193,90 @@ fn get_minimize_to_tray() -> bool {
     MINIMIZE_TO_TRAY.load(Ordering::SeqCst)
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TrayMinerInfo {
+    pub ip: String,
+    pub name: String,
+    #[serde(rename = "hashRate")]
+    pub hash_rate: f64,
+    pub temp: f64,
+    pub power: f64,
+    #[serde(rename = "isActive")]
+    pub is_active: bool,
+}
+
+// Command to update tray tooltip and dynamic context menu with per-miner stats
+#[tauri::command]
+fn update_tray_stats(app: tauri::AppHandle, stats_text: String, miners: Vec<TrayMinerInfo>) {
+    // Update tooltip
+    if let Some(tray) = app.tray_by_id("main-tray") {
+        let _ = tray.set_tooltip(Some(&stats_text));
+    }
+
+    // Store IPs for restart handler
+    if let Ok(mut ips) = MINER_IPS.lock() {
+        *ips = miners.iter().map(|m| m.ip.clone()).collect();
+    }
+
+    // Rebuild tray menu with per-miner entries
+    let _ = rebuild_tray_menu(&app, &miners);
+}
+
+fn rebuild_tray_menu(app: &tauri::AppHandle, miners: &[TrayMinerInfo]) -> Result<(), Box<dyn std::error::Error>> {
+    let show_i = MenuItem::with_id(app, "show", "Show AxeMobile", true, None::<&str>)?;
+    let sep1 = PredefinedMenuItem::separator(app)?;
+
+    let mut items: Vec<Box<dyn tauri::menu::IsMenuItem<tauri::Wry>>> = Vec::new();
+    items.push(Box::new(show_i));
+    items.push(Box::new(sep1));
+
+    if miners.is_empty() {
+        let no_miners = MenuItem::with_id(app, "no-miners", "No miners connected", false, None::<&str>)?;
+        items.push(Box::new(no_miners));
+    } else {
+        for (i, miner) in miners.iter().enumerate() {
+            let status = if miner.is_active { "🟢" } else { "🔴" };
+            let label = if miner.is_active {
+                format!(
+                    "{} {} — {:.1} GH/s | {:.0}°C | {:.0}W",
+                    status, miner.name, miner.hash_rate, miner.temp, miner.power
+                )
+            } else {
+                format!("{} {} — Offline", status, miner.name)
+            };
+
+            let info_item = MenuItem::with_id(app, format!("miner-info-{}", i), &label, false, None::<&str>)?;
+            items.push(Box::new(info_item));
+
+            if miner.is_active {
+                let restart_item = MenuItem::with_id(
+                    app,
+                    format!("restart-{}", i),
+                    format!("   ↻ Restart {}", miner.name),
+                    true,
+                    None::<&str>,
+                )?;
+                items.push(Box::new(restart_item));
+            }
+        }
+    }
+
+    let sep2 = PredefinedMenuItem::separator(app)?;
+    let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+    items.push(Box::new(sep2));
+    items.push(Box::new(quit_i));
+
+    // Build refs for Menu::with_items
+    let refs: Vec<&dyn tauri::menu::IsMenuItem<tauri::Wry>> = items.iter().map(|b| b.as_ref()).collect();
+    let menu = Menu::with_items(app, &refs)?;
+
+    if let Some(tray) = app.tray_by_id("main-tray") {
+        let _ = tray.set_menu(Some(menu));
+    }
+
+    Ok(())
+}
+
 // Command to quit the app
 #[tauri::command]
 fn quit_app(app: tauri::AppHandle) {
@@ -216,21 +304,41 @@ pub fn run() {
             let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
 
             // Build tray icon
-            let _tray = TrayIconBuilder::new()
+            let _tray = TrayIconBuilder::with_id("main-tray")
                 .icon(app.default_window_icon().unwrap().clone())
+                .tooltip("AxeMobile - No miners connected")
                 .menu(&menu)
-                .menu_on_left_click(false)
-                .on_menu_event(|app, event| match event.id.as_ref() {
-                    "show" => {
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| {
+                    let id = event.id.0.as_str();
+                    match id {
+                        "show" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
                         }
+                        "quit" => {
+                            app.exit(0);
+                        }
+                        _ if id.starts_with("restart-") => {
+                            if let Ok(idx) = id.trim_start_matches("restart-").parse::<usize>() {
+                                let ip = MINER_IPS.lock().ok().and_then(|ips| ips.get(idx).cloned());
+                                if let Some(ip) = ip {
+                                    let app = app.clone();
+                                    tauri::async_runtime::spawn(async move {
+                                        match restart_miner(ip.clone()).await {
+                                            Ok(_) => println!("✓ Restarted miner at {}", ip),
+                                            Err(e) => println!("✗ Failed to restart {}: {}", ip, e),
+                                        }
+                                        // Emit event to frontend
+                                        let _ = app.emit("miner-restarted", ip);
+                                    });
+                                }
+                            }
+                        }
+                        _ => {}
                     }
-                    "quit" => {
-                        app.exit(0);
-                    }
-                    _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
                     if let TrayIconEvent::Click {
@@ -266,6 +374,7 @@ pub fn run() {
             update_miner_settings,
             set_minimize_to_tray,
             get_minimize_to_tray,
+            update_tray_stats,
             quit_app,
             hide_to_tray
         ])

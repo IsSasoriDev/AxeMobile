@@ -6,7 +6,7 @@ const isMuted = () => localStorage.getItem('caveSoundMuted') === 'true';
 
 export const useMiningSound = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
-  const ambientIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const ambientIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Initialize Web Audio API

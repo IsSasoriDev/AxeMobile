@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   app_proxy:
     environment:
@@ -10,24 +8,3 @@ services:
     image: ghcr.io/issasoridev/axemobile:latest
     restart: on-failure
     stop_grace_period: 1m
-    environment:
-      - NODE_ENV=production
-      - AXEPOOL_API_URL=http://axepool-stratum:3334
-    depends_on:
-      - axepool-stratum
-
-  axepool-stratum:
-    image: ghcr.io/issasoridev/axepool-stratum:latest
-    restart: on-failure
-    stop_grace_period: 30s
-    ports:
-      - "3333:3333"
-    environment:
-      - BITCOIN_RPC_HOST=${APP_BITCOIN_NODE_IP}
-      - BITCOIN_RPC_PORT=8332
-      - BITCOIN_RPC_USER=${APP_BITCOIN_RPC_USER}
-      - BITCOIN_RPC_PASS=${APP_BITCOIN_RPC_PASS}
-      - POOL_ADDRESS=${APP_POOL_ADDRESS:-}
-      - STATS_PORT=3334
-    volumes:
-      - ${APP_DATA_DIR}/axepool:/data/ckpool

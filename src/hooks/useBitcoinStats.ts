@@ -45,7 +45,7 @@ export function useBitcoinStats() {
   const loadStoredStats = async () => {
     try {
       const { data, error } = await supabase
-        .from('bitcoin_network_stats')
+        .from('bitcoin_network_stats' as any)
         .select('*')
         .eq('id', 'current')
         .maybeSingle();
@@ -53,16 +53,17 @@ export function useBitcoinStats() {
       if (error) throw error;
       
       if (data) {
+        const d = data as any;
         setStats({
-          difficulty: data.difficulty,
-          hashrate: data.hashrate,
-          blockReward: data.block_reward,
-          priceUsd: data.price_usd,
-          marketCapUsd: data.market_cap_usd,
-          nextDifficultyAdjustment: data.next_difficulty_adjustment,
-          mempoolCount: data.mempool_count,
-          mempoolVsize: data.mempool_vsize,
-          updatedAt: data.updated_at
+          difficulty: d.difficulty,
+          hashrate: d.hashrate,
+          blockReward: d.block_reward,
+          priceUsd: d.price_usd,
+          marketCapUsd: d.market_cap_usd,
+          nextDifficultyAdjustment: d.next_difficulty_adjustment,
+          mempoolCount: d.mempool_count,
+          mempoolVsize: d.mempool_vsize,
+          updatedAt: d.updated_at
         });
       }
     } catch (err) {

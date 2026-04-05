@@ -1,0 +1,16 @@
+node_modules
+dist
+.git
+src-tauri
+resources
+android
+ios
+*.md
+bun.lock
+bun.lockb
+package-lock.json
+.env.local
+.env.*.local
+playwright.config.ts
+playwright-fixture.ts
+capacitor.config.ts

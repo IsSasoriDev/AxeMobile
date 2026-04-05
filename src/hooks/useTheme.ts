@@ -9,7 +9,7 @@ export function useTheme() {
     const root = document.documentElement;
     
     // Remove all theme classes
-    root.classList.remove("theme-amoled", "theme-disco", "theme-ixtech", "theme-bitaxe", "theme-bitcoin", "theme-powermining", "theme-dtv");
+    root.classList.remove("theme-amoled", "theme-disco", "theme-ixtech", "theme-bitaxe", "theme-bitcoin", "theme-powermining", "theme-dtv", "theme-atlas");
     
     // Add current theme class
     if (theme === "amoled") {
@@ -26,6 +26,8 @@ export function useTheme() {
       root.classList.add("theme-powermining");
     } else if (theme === "dtv") {
       root.classList.add("theme-dtv");
+    } else if (theme === "atlas") {
+      root.classList.add("theme-atlas");
     }
     
     localStorage.setItem("axemobile-theme", theme);

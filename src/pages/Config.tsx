@@ -1,906 +1,591 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Settings, Send, Loader2, Fan, Cpu, Zap, Server, Bell, Thermometer, Trophy, Volume2, Save, Trash2, RotateCcw, X } from "lucide-react";
+import { Settings, Loader2, Fan, Cpu, Zap, Server, Bell, Thermometer, Trophy, Volume2, Save, Trash2, RotateCcw, X, Clock, AlertTriangle, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { useNetworkScanner, MinerDevice } from "@/hooks/useNetworkScanner";
 
-// Custom preset interface
-interface CustomPreset {
-  name: string;
-  fan: number;
-  frequency: number;
-  voltage: number;
-}
+interface CustomPreset { name: string; fan: number; frequency: number; voltage: number; }
+interface NotificationSettings { blockFoundEnabled: boolean; tempWarningEnabled: boolean; tempThreshold: number; soundEnabled: boolean; }
+interface ScheduledOC { enabled: boolean; startHour: number; endHour: number; preset: string; originalSettings: { fan: number; frequency: number; voltage: number } | null; }
+interface DualPool { enabled: boolean; pool1Url: string; pool1Port: string; pool1User: string; pool2Url: string; pool2Port: string; pool2User: string; pool1Percent: number; }
 
-// Performance presets
 const DEFAULT_PRESETS = {
-  eco: { name: "Eco Mode", icon: "🌱", fan: 50, frequency: 350, voltage: 1000, description: "Low power, quiet operation" },
-  balanced: { name: "Balanced", icon: "⚖️", fan: 75, frequency: 485, voltage: 1200, description: "Default settings" },
-  performance: { name: "Performance", icon: "🚀", fan: 100, frequency: 575, voltage: 1300, description: "Higher hashrate" },
-  max: { name: "Max OC", icon: "⚡", fan: 100, frequency: 650, voltage: 1400, description: "Maximum overclock" },
+  eco: { name: "Eco", icon: "🌱", fan: 50, frequency: 350, voltage: 1000, description: "Low power" },
+  balanced: { name: "Balanced", icon: "⚖️", fan: 75, frequency: 485, voltage: 1200, description: "Default" },
+  performance: { name: "Performance", icon: "🚀", fan: 100, frequency: 575, voltage: 1300, description: "High hashrate" },
+  max: { name: "Max OC", icon: "⚡", fan: 100, frequency: 650, voltage: 1400, description: "Maximum" },
 };
-
-// Notification settings interface
-interface NotificationSettings {
-  blockFoundEnabled: boolean;
-  tempWarningEnabled: boolean;
-  tempThreshold: number;
-  soundEnabled: boolean;
-}
 
 const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
-  blockFoundEnabled: true,
-  tempWarningEnabled: true,
-  tempThreshold: 70,
-  soundEnabled: true,
+  blockFoundEnabled: true, tempWarningEnabled: true, tempThreshold: 70, soundEnabled: true,
 };
 
-// Play test sound
 const playTestSound = (type: 'block' | 'warning') => {
   try {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
     if (type === 'block') {
-      const notes = [523.25, 659.25, 783.99, 1046.5];
-      notes.forEach((freq, i) => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.15);
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + i * 0.15);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.15 + 0.4);
-        oscillator.start(audioContext.currentTime + i * 0.15);
-        oscillator.stop(audioContext.currentTime + i * 0.15 + 0.4);
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+        const o = audioContext.createOscillator(); const g = audioContext.createGain();
+        o.connect(g); g.connect(audioContext.destination); o.type = 'sine';
+        o.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.15);
+        g.gain.setValueAtTime(0.3, audioContext.currentTime + i * 0.15);
+        g.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.15 + 0.4);
+        o.start(audioContext.currentTime + i * 0.15); o.stop(audioContext.currentTime + i * 0.15 + 0.4);
       });
     } else {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      oscillator.type = 'square';
-      oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
-      oscillator.frequency.linearRampToValueAtTime(440, audioContext.currentTime + 0.15);
-      oscillator.frequency.setValueAtTime(880, audioContext.currentTime + 0.2);
-      oscillator.frequency.linearRampToValueAtTime(440, audioContext.currentTime + 0.35);
-      gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + 0.5);
+      const o = audioContext.createOscillator(); const g = audioContext.createGain();
+      o.connect(g); g.connect(audioContext.destination); o.type = 'square';
+      o.frequency.setValueAtTime(880, audioContext.currentTime);
+      o.frequency.linearRampToValueAtTime(440, audioContext.currentTime + 0.15);
+      g.gain.setValueAtTime(0.2, audioContext.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      o.start(); o.stop(audioContext.currentTime + 0.5);
     }
-  } catch (error) {
-    console.error('Failed to play sound:', error);
-  }
+  } catch (e) { console.error('Sound failed:', e); }
 };
 
 const Config = () => {
   const { devices } = useNetworkScanner();
-  
-  // Pool settings
   const [poolAddress, setPoolAddress] = useState("");
   const [port, setPort] = useState("3333");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("x");
-  
-  // Performance settings
   const [fanSpeed, setFanSpeed] = useState(100);
   const [frequency, setFrequency] = useState(485);
   const [coreVoltage, setCoreVoltage] = useState(1200);
   const [activePreset, setActivePreset] = useState<string | null>("balanced");
-  
-  // Custom presets
   const [customPresets, setCustomPresets] = useState<CustomPreset[]>([]);
   const [customPresetName, setCustomPresetName] = useState("");
   const [showSaveInput, setShowSaveInput] = useState(false);
-  
-  // Notification settings
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
-  
-  // Selection
   const [selectedMiners, setSelectedMiners] = useState<Set<string>>(new Set());
-  
-  // Loading states
   const [sendingPool, setSendingPool] = useState(false);
   const [sendingPerformance, setSendingPerformance] = useState(false);
-  
-  // Restart countdown state
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [pendingRestartMiners, setPendingRestartMiners] = useState<MinerDevice[]>([]);
   const [restartType, setRestartType] = useState<'pool' | 'performance'>('pool');
-  const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const [ocWarningAccepted, setOcWarningAccepted] = useState(false);
+  const countdownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
 
-  // Load notification settings and custom presets from localStorage
+  // Scheduled OC
+  const [scheduledOC, setScheduledOC] = useState<ScheduledOC>(() => {
+    const saved = localStorage.getItem("SCHEDULED_OC");
+    if (saved) try { return JSON.parse(saved); } catch {}
+    return { enabled: false, startHour: 22, endHour: 6, preset: "performance", originalSettings: null };
+  });
+
+  // Dual Pool (NerdAxe)
+  const [dualPool, setDualPool] = useState<DualPool>(() => {
+    const saved = localStorage.getItem("DUAL_POOL");
+    if (saved) try { return JSON.parse(saved); } catch {}
+    return { enabled: false, pool1Url: "", pool1Port: "3333", pool1User: "", pool2Url: "", pool2Port: "3333", pool2User: "", pool1Percent: 70 };
+  });
+
   useEffect(() => {
-    const storedNotifications = localStorage.getItem('NOTIFICATION_SETTINGS');
-    if (storedNotifications) {
-      try {
-        setNotificationSettings({ ...DEFAULT_NOTIFICATION_SETTINGS, ...JSON.parse(storedNotifications) });
-      } catch (e) {
-        console.error('Failed to parse notification settings:', e);
-      }
-    }
-    
-    const storedPresets = localStorage.getItem('CUSTOM_PRESETS');
-    if (storedPresets) {
-      try {
-        setCustomPresets(JSON.parse(storedPresets));
-      } catch (e) {
-        console.error('Failed to parse custom presets:', e);
-      }
-    }
+    const sn = localStorage.getItem('NOTIFICATION_SETTINGS');
+    if (sn) try { setNotificationSettings({ ...DEFAULT_NOTIFICATION_SETTINGS, ...JSON.parse(sn) }); } catch {}
+    const sp = localStorage.getItem('CUSTOM_PRESETS');
+    if (sp) try { setCustomPresets(JSON.parse(sp)); } catch {}
   }, []);
 
-  // Save notification settings
-  const updateNotificationSettings = (updates: Partial<NotificationSettings>) => {
-    const newSettings = { ...notificationSettings, ...updates };
-    setNotificationSettings(newSettings);
-    localStorage.setItem('NOTIFICATION_SETTINGS', JSON.stringify(newSettings));
-    toast.success("Notification settings saved");
+  const updateNotificationSettings = (u: Partial<NotificationSettings>) => {
+    const n = { ...notificationSettings, ...u };
+    setNotificationSettings(n);
+    localStorage.setItem('NOTIFICATION_SETTINGS', JSON.stringify(n));
+    toast.success("Settings saved");
   };
 
-  // Select all miners by default when devices load
-  useEffect(() => {
-    if (devices.length > 0 && selectedMiners.size === 0) {
-      setSelectedMiners(new Set(devices.map(m => m.IP)));
+  const updateScheduledOC = (u: Partial<ScheduledOC>) => {
+    const n = { ...scheduledOC, ...u };
+    setScheduledOC(n);
+    localStorage.setItem('SCHEDULED_OC', JSON.stringify(n));
+    if (u.enabled !== undefined) toast.success(u.enabled ? "Scheduled OC enabled" : "Scheduled OC disabled");
+  };
+
+  const updateDualPool = (u: Partial<DualPool>) => {
+    const n = { ...dualPool, ...u };
+    setDualPool(n);
+    localStorage.setItem('DUAL_POOL', JSON.stringify(n));
+  };
+
+  useEffect(() => { if (devices.length > 0 && selectedMiners.size === 0) setSelectedMiners(new Set(devices.map(m => m.IP))); }, [devices]);
+
+  const applyPreset = (key: string) => {
+    if ((key === 'max' || key === 'performance') && !ocWarningAccepted) {
+      toast.error("Accept the overclocking warning first");
+      return;
     }
-  }, [devices]);
-
-  // Apply preset (default or custom)
-  const applyPreset = (presetKey: string) => {
-    const preset = DEFAULT_PRESETS[presetKey as keyof typeof DEFAULT_PRESETS];
-    if (preset) {
-      setFanSpeed(preset.fan);
-      setFrequency(preset.frequency);
-      setCoreVoltage(preset.voltage);
-      setActivePreset(presetKey);
-      toast.success(`Applied ${preset.name} preset`);
-    }
+    const p = DEFAULT_PRESETS[key as keyof typeof DEFAULT_PRESETS];
+    if (p) { setFanSpeed(p.fan); setFrequency(p.frequency); setCoreVoltage(p.voltage); setActivePreset(key); toast.success(`Applied ${p.name}`); }
   };
 
-  const applyCustomPreset = (preset: CustomPreset, index: number) => {
-    setFanSpeed(preset.fan);
-    setFrequency(preset.frequency);
-    setCoreVoltage(preset.voltage);
-    setActivePreset(`custom-${index}`);
-    toast.success(`Applied ${preset.name} preset`);
+  const applyCustomPreset = (p: CustomPreset, i: number) => {
+    setFanSpeed(p.fan); setFrequency(p.frequency); setCoreVoltage(p.voltage); setActivePreset(`custom-${i}`); toast.success(`Applied ${p.name}`);
   };
 
-  // Save current settings as custom preset
   const saveCustomPreset = () => {
-    if (!customPresetName.trim()) {
-      toast.error("Please enter a preset name");
-      return;
-    }
-    
-    const newPreset: CustomPreset = {
-      name: customPresetName.trim(),
-      fan: fanSpeed,
-      frequency: frequency,
-      voltage: coreVoltage,
-    };
-    
-    const updatedPresets = [...customPresets, newPreset];
-    setCustomPresets(updatedPresets);
-    localStorage.setItem('CUSTOM_PRESETS', JSON.stringify(updatedPresets));
-    setCustomPresetName("");
-    setShowSaveInput(false);
-    toast.success(`Saved "${newPreset.name}" preset`);
+    if (!customPresetName.trim()) { toast.error("Enter a name"); return; }
+    const np: CustomPreset = { name: customPresetName.trim(), fan: fanSpeed, frequency, voltage: coreVoltage };
+    const up = [...customPresets, np];
+    setCustomPresets(up); localStorage.setItem('CUSTOM_PRESETS', JSON.stringify(up));
+    setCustomPresetName(""); setShowSaveInput(false); toast.success(`Saved "${np.name}"`);
   };
 
-  // Delete custom preset
-  const deleteCustomPreset = (index: number) => {
-    const updatedPresets = customPresets.filter((_, i) => i !== index);
-    setCustomPresets(updatedPresets);
-    localStorage.setItem('CUSTOM_PRESETS', JSON.stringify(updatedPresets));
-    toast.success("Preset deleted");
+  const deleteCustomPreset = (i: number) => {
+    const up = customPresets.filter((_, idx) => idx !== i);
+    setCustomPresets(up); localStorage.setItem('CUSTOM_PRESETS', JSON.stringify(up)); toast.success("Deleted");
   };
 
-  // Check if current values match any preset
   useEffect(() => {
-    const matchingDefault = Object.entries(DEFAULT_PRESETS).find(
-      ([_, preset]) => 
-        preset.fan === fanSpeed && 
-        preset.frequency === frequency && 
-        preset.voltage === coreVoltage
-    );
-    
-    if (matchingDefault) {
-      setActivePreset(matchingDefault[0]);
-      return;
-    }
-    
-    const matchingCustomIndex = customPresets.findIndex(
-      preset => 
-        preset.fan === fanSpeed && 
-        preset.frequency === frequency && 
-        preset.voltage === coreVoltage
-    );
-    
-    if (matchingCustomIndex !== -1) {
-      setActivePreset(`custom-${matchingCustomIndex}`);
-      return;
-    }
-    
-    setActivePreset(null);
+    const md = Object.entries(DEFAULT_PRESETS).find(([_, p]) => p.fan === fanSpeed && p.frequency === frequency && p.voltage === coreVoltage);
+    if (md) { setActivePreset(md[0]); return; }
+    const mc = customPresets.findIndex(p => p.fan === fanSpeed && p.frequency === frequency && p.voltage === coreVoltage);
+    setActivePreset(mc !== -1 ? `custom-${mc}` : null);
   }, [fanSpeed, frequency, coreVoltage, customPresets]);
 
-  const toggleMiner = (ip: string) => {
-    setSelectedMiners(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(ip)) {
-        newSet.delete(ip);
-      } else {
-        newSet.add(ip);
-      }
-      return newSet;
-    });
-  };
-
-  const selectAll = () => {
-    setSelectedMiners(new Set(devices.map(m => m.IP)));
-  };
-
-  const selectNone = () => {
-    setSelectedMiners(new Set());
-  };
+  const toggleMiner = (ip: string) => setSelectedMiners(prev => { const n = new Set(prev); n.has(ip) ? n.delete(ip) : n.add(ip); return n; });
 
   const restartMiners = async (miners: MinerDevice[]) => {
-    let restartedCount = 0;
-    for (const miner of miners) {
-      try {
-        await invoke("restart_miner", { ip: miner.IP });
-        restartedCount++;
-      } catch (error) {
-        console.error(`Failed to restart ${miner.name || miner.IP}:`, error);
-      }
-    }
-    return restartedCount;
+    let c = 0;
+    for (const m of miners) { try { await invoke("restart_miner", { ip: m.IP }); c++; } catch {} }
+    return c;
   };
 
   const startCountdown = useCallback((miners: MinerDevice[], type: 'pool' | 'performance') => {
-    setPendingRestartMiners(miners);
-    setRestartType(type);
-    setCountdown(5);
-    setShowCountdown(true);
-    cancelledRef.current = false;
+    setPendingRestartMiners(miners); setRestartType(type); setCountdown(5); setShowCountdown(true); cancelledRef.current = false;
   }, []);
 
   const cancelRestart = useCallback(() => {
     cancelledRef.current = true;
-    if (countdownRef.current) {
-      clearInterval(countdownRef.current);
-      countdownRef.current = null;
-    }
-    setShowCountdown(false);
-    setPendingRestartMiners([]);
-    toast.info("Restart cancelled - settings saved without restart");
-    setSendingPool(false);
-    setSendingPerformance(false);
+    if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+    setShowCountdown(false); setPendingRestartMiners([]); toast.info("Restart cancelled");
+    setSendingPool(false); setSendingPerformance(false);
   }, []);
 
   const executeRestart = useCallback(async () => {
     setShowCountdown(false);
-    const miners = pendingRestartMiners;
-    const type = restartType;
-    
-    toast.info(`Restarting ${miners.length} miner(s)...`);
-    const restartedCount = await restartMiners(miners);
-    toast.success(`Restarted ${restartedCount} miner(s)`);
-    
+    toast.info(`Restarting ${pendingRestartMiners.length} miner(s)...`);
+    const c = await restartMiners(pendingRestartMiners);
+    toast.success(`Restarted ${c} miner(s)`);
     setPendingRestartMiners([]);
-    if (type === 'pool') {
-      setSendingPool(false);
-    } else {
-      setSendingPerformance(false);
-    }
+    restartType === 'pool' ? setSendingPool(false) : setSendingPerformance(false);
   }, [pendingRestartMiners, restartType]);
 
-  // Countdown effect
   useEffect(() => {
     if (showCountdown && countdown > 0) {
-      countdownRef.current = setTimeout(() => {
-        if (!cancelledRef.current) {
-          setCountdown(prev => prev - 1);
-        }
-      }, 1000);
-      
-      return () => {
-        if (countdownRef.current) {
-          clearTimeout(countdownRef.current);
-        }
-      };
-    } else if (showCountdown && countdown === 0 && !cancelledRef.current) {
-      executeRestart();
-    }
+      countdownRef.current = setTimeout(() => { if (!cancelledRef.current) setCountdown(p => p - 1); }, 1000);
+      return () => { if (countdownRef.current) clearTimeout(countdownRef.current); };
+    } else if (showCountdown && countdown === 0 && !cancelledRef.current) executeRestart();
   }, [showCountdown, countdown, executeRestart]);
 
   const sendPoolSettings = async () => {
-    if (!poolAddress.trim()) {
-      toast.error("Please enter a pool address");
-      return;
-    }
-    if (!port.trim()) {
-      toast.error("Please enter a port");
-      return;
-    }
-    if (selectedMiners.size === 0) {
-      toast.error("Please select at least one miner");
-      return;
-    }
-
+    if (!poolAddress.trim()) { toast.error("Enter pool address"); return; }
+    if (selectedMiners.size === 0) { toast.error("Select miners"); return; }
     setSendingPool(true);
     const selected = devices.filter(m => selectedMiners.has(m.IP));
-    let successCount = 0;
-    let failCount = 0;
-    const successfulMiners: MinerDevice[] = [];
-
-    for (const miner of selected) {
+    let ok = 0, fail = 0; const good: MinerDevice[] = [];
+    for (const m of selected) {
       try {
-        await invoke("update_miner_settings", {
-          ip: miner.IP,
-          stratumUrl: `stratum+tcp://${poolAddress}`,
-          stratumPort: parseInt(port, 10),
-          stratumUser: username || null,
-          stratumPassword: password || "x",
-          fanSpeed: null,
-          frequency: null,
-          coreVoltage: null,
-        });
-        successCount++;
-        successfulMiners.push(miner);
-      } catch (error) {
-        console.error(`Failed to update ${miner.name || miner.IP}:`, error);
-        failCount++;
-      }
+        const clean = poolAddress.replace(/^stratum\+tcp:\/\//i, '');
+        await invoke("update_miner_settings", { ip: m.IP, stratumUrl: clean, stratumPort: parseInt(port, 10), stratumUser: username || null, stratumPassword: password || "x", fanSpeed: null, frequency: null, coreVoltage: null });
+        ok++; good.push(m);
+      } catch { fail++; }
     }
-
-    if (failCount > 0) {
-      toast.error(`Failed to update ${failCount} miner(s)`);
-    }
-
-    // Start countdown for restart
-    if (successfulMiners.length > 0) {
-      toast.success(`Saved pool settings on ${successCount} miner(s)`);
-      startCountdown(successfulMiners, 'pool');
-    } else {
-      setSendingPool(false);
-    }
+    if (fail > 0) toast.error(`Failed: ${fail} miner(s)`);
+    if (good.length > 0) { toast.success(`Saved on ${ok} miner(s)`); startCountdown(good, 'pool'); } else setSendingPool(false);
   };
 
   const sendPerformanceSettings = async () => {
-    if (selectedMiners.size === 0) {
-      toast.error("Please select at least one miner");
+    if (selectedMiners.size === 0) { toast.error("Select miners"); return; }
+    if ((frequency > 575 || coreVoltage > 1300) && !ocWarningAccepted) {
+      toast.error("Accept the overclocking warning first");
       return;
     }
-
     setSendingPerformance(true);
     const selected = devices.filter(m => selectedMiners.has(m.IP));
-    let successCount = 0;
-    let failCount = 0;
-    const successfulMiners: MinerDevice[] = [];
-
-    for (const miner of selected) {
+    let ok = 0, fail = 0; const good: MinerDevice[] = [];
+    for (const m of selected) {
       try {
-        await invoke("update_miner_settings", {
-          ip: miner.IP,
-          stratumUrl: null,
-          stratumPort: null,
-          stratumUser: null,
-          stratumPassword: null,
-          fanSpeed: fanSpeed,
-          frequency: frequency,
-          coreVoltage: coreVoltage,
-        });
-        successCount++;
-        successfulMiners.push(miner);
-      } catch (error) {
-        console.error(`Failed to update performance on ${miner.name || miner.IP}:`, error);
-        failCount++;
-      }
+        await invoke("update_miner_settings", { ip: m.IP, stratumUrl: null, stratumPort: null, stratumUser: null, stratumPassword: null, fanSpeed, frequency, coreVoltage });
+        ok++; good.push(m);
+      } catch { fail++; }
     }
-
-    if (failCount > 0) {
-      toast.error(`Failed to update ${failCount} miner(s)`);
-    }
-
-    // Start countdown for restart
-    if (successfulMiners.length > 0) {
-      toast.success(`Saved performance settings on ${successCount} miner(s)`);
-      startCountdown(successfulMiners, 'performance');
-    } else {
-      setSendingPerformance(false);
-    }
+    if (fail > 0) toast.error(`Failed: ${fail} miner(s)`);
+    if (good.length > 0) { toast.success(`Saved on ${ok} miner(s)`); startCountdown(good, 'performance'); } else setSendingPerformance(false);
   };
 
   return (
     <>
-      {/* Restart Countdown Dialog */}
       <Dialog open={showCountdown} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <RotateCcw className="h-5 w-5 text-primary animate-spin" />
-              Restarting Miners
+            <DialogTitle className="flex items-center gap-2 font-mono">
+              <RotateCcw className="h-4 w-4 text-primary animate-spin" /> Restarting Miners
             </DialogTitle>
-            <DialogDescription>
-              Settings saved successfully. Miners will restart in {countdown} seconds.
-            </DialogDescription>
+            <DialogDescription className="font-mono text-xs">Miners restart in {countdown}s</DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="text-center">
-              <div className="text-6xl font-bold text-primary mb-4">{countdown}</div>
-              <Progress value={(5 - countdown) * 20} className="h-2" />
-            </div>
-            
-            <div className="text-sm text-muted-foreground">
-              <p className="font-medium mb-2">Miners to restart ({pendingRestartMiners.length}):</p>
-              <div className="max-h-24 overflow-auto space-y-1">
-                {pendingRestartMiners.map((miner) => (
-                  <div key={miner.IP} className="flex items-center gap-2 text-xs">
-                    <span className="w-2 h-2 rounded-full bg-primary" />
-                    {miner.name || miner.IP}
-                  </div>
-                ))}
-              </div>
+          <div className="py-4 text-center">
+            <div className="text-5xl font-black font-mono text-primary mb-3">{countdown}</div>
+            <Progress value={(5 - countdown) * 20} className="h-1.5" />
+            <div className="mt-3 text-[10px] text-muted-foreground font-mono">
+              {pendingRestartMiners.map(m => m.name || m.IP).join(', ')}
             </div>
           </div>
-          
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={cancelRestart}>
-              <X className="h-4 w-4 mr-2" />
-              Cancel Restart
-            </Button>
-            <Button onClick={executeRestart}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Restart Now
-            </Button>
+            <Button variant="outline" size="sm" onClick={cancelRestart} className="font-mono text-xs"><X className="h-3 w-3 mr-1" />Cancel</Button>
+            <Button size="sm" onClick={executeRestart} className="font-mono text-xs"><RotateCcw className="h-3 w-3 mr-1" />Now</Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      <div className="h-full overflow-auto p-4 md:p-6 space-y-4 md:space-y-6 animate-slide-up">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 md:p-3 rounded-xl bg-primary/20">
-          <Settings className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+      <div className="h-full overflow-y-auto p-4 md:p-6 space-y-4">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+            <Settings className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold font-mono tracking-tight">Configuration</h1>
+            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">Pool · Performance · Schedule</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Miner Config</h1>
-          <p className="text-sm text-muted-foreground">Configure pool, performance, and notifications</p>
-        </div>
-      </div>
 
-      {/* Miner Selection */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+        {/* Miner Selection */}
+        <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Server className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Select Miners</CardTitle>
+              <Server className="h-3.5 w-3.5 text-primary" />
+              <h2 className="text-xs font-bold font-mono uppercase tracking-widest text-muted-foreground">Select Miners</h2>
             </div>
-            <span className="text-sm text-muted-foreground">
-              {selectedMiners.size}/{devices.length}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-muted-foreground">{selectedMiners.size}/{devices.length}</span>
+              <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] font-mono" onClick={() => setSelectedMiners(new Set(devices.map(m => m.IP)))}>All</Button>
+              <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] font-mono" onClick={() => setSelectedMiners(new Set())}>None</Button>
+            </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={selectAll}>All</Button>
-            <Button variant="outline" size="sm" onClick={selectNone}>None</Button>
-          </div>
-          
           {devices.length === 0 ? (
-            <p className="text-muted-foreground text-sm py-4 text-center">
-              No miners found. Add miners from the Stats page.
-            </p>
+            <p className="text-xs text-muted-foreground text-center py-3 font-mono">No miners found</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-auto">
-              {devices.map((miner) => (
-                <div
-                  key={miner.IP}
-                  className={`flex items-center gap-2 p-2.5 rounded-lg border transition-colors cursor-pointer ${
-                    selectedMiners.has(miner.IP) 
-                      ? 'bg-primary/10 border-primary/50' 
-                      : 'bg-card hover:bg-accent/50'
-                  }`}
-                  onClick={() => toggleMiner(miner.IP)}
-                >
-                  <Checkbox
-                    checked={selectedMiners.has(miner.IP)}
-                    onCheckedChange={() => toggleMiner(miner.IP)}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{miner.name || miner.IP}</p>
-                    <p className="text-xs text-muted-foreground truncate">{miner.IP}</p>
-                  </div>
-                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${miner.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 max-h-32 overflow-auto">
+              {devices.map(m => (
+                <div key={m.IP} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors text-xs font-mono ${
+                  selectedMiners.has(m.IP) ? 'bg-primary/8 border-primary/30' : 'border-border/30 hover:bg-secondary/30'
+                }`} onClick={() => toggleMiner(m.IP)}>
+                  <Checkbox checked={selectedMiners.has(m.IP)} onCheckedChange={() => toggleMiner(m.IP)} className="h-3.5 w-3.5" />
+                  <span className="truncate flex-1">{m.name || m.IP}</span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${m.isActive ? 'bg-accent' : 'bg-destructive'}`} />
                 </div>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Settings Grid */}
-      <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
-        {/* Pool Settings */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Server className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Pool Settings</CardTitle>
-            </div>
-            <CardDescription>Configure stratum pool connection</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="pool">Pool Address</Label>
-                <Input
-                  id="pool"
-                  placeholder="solo.ckpool.org"
-                  value={poolAddress}
-                  onChange={(e) => setPoolAddress(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">Without stratum+tcp://</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="port">Port</Label>
-                <Input
-                  id="port"
-                  placeholder="3333"
-                  value={port}
-                  onChange={(e) => setPort(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="username">Username/Worker</Label>
-                <Input
-                  id="username"
-                  placeholder="bc1q..."
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  placeholder="x"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <Button 
-              className="w-full"
-              onClick={sendPoolSettings} 
-              disabled={sendingPool || selectedMiners.size === 0}
-            >
-              {sendingPool ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving & Restarting...
-                </>
-              ) : (
-                <>
-                  <RotateCcw className="h-4 w-4" />
-                  Save & Restart Miners
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Tabs */}
+        <Tabs defaultValue="pool" className="space-y-3">
+          <TabsList className="grid grid-cols-4 h-8">
+            <TabsTrigger value="pool" className="text-[10px] font-mono">Pool</TabsTrigger>
+            <TabsTrigger value="performance" className="text-[10px] font-mono">Performance</TabsTrigger>
+            <TabsTrigger value="schedule" className="text-[10px] font-mono">Schedule</TabsTrigger>
+            <TabsTrigger value="dualpool" className="text-[10px] font-mono">Dual Pool</TabsTrigger>
+          </TabsList>
 
-        {/* Performance Settings */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Cpu className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Performance</CardTitle>
+          {/* Pool Tab */}
+          <TabsContent value="pool">
+            <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Server className="h-3.5 w-3.5 text-primary" />
+                <h2 className="text-xs font-bold font-mono uppercase tracking-widest text-muted-foreground">Pool Settings</h2>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="sm:col-span-2 space-y-1">
+                  <Label className="text-[10px] font-mono uppercase text-muted-foreground">Pool Address</Label>
+                  <Input placeholder="solo.ckpool.org" value={poolAddress} onChange={e => setPoolAddress(e.target.value)} className="h-8 text-xs font-mono" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-mono uppercase text-muted-foreground">Port</Label>
+                  <Input placeholder="3333" value={port} onChange={e => setPort(e.target.value)} className="h-8 text-xs font-mono" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-mono uppercase text-muted-foreground">Username</Label>
+                  <Input placeholder="bc1q..." value={username} onChange={e => setUsername(e.target.value)} className="h-8 text-xs font-mono" />
+                </div>
+                <div className="sm:col-span-2 space-y-1">
+                  <Label className="text-[10px] font-mono uppercase text-muted-foreground">Password</Label>
+                  <Input placeholder="x" value={password} onChange={e => setPassword(e.target.value)} className="h-8 text-xs font-mono" />
+                </div>
+              </div>
+              <Button className="w-full h-8 text-xs font-mono" onClick={sendPoolSettings} disabled={sendingPool || selectedMiners.size === 0}>
+                {sendingPool ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Saving...</> : <><RotateCcw className="h-3 w-3 mr-1" />Save & Restart</>}
+              </Button>
             </div>
-            <CardDescription>Adjust fan, frequency, and voltage</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {/* Default Presets */}
-            <div className="space-y-2">
-              <Label>Quick Presets</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {Object.entries(DEFAULT_PRESETS).map(([key, preset]) => (
-                  <button
-                    key={key}
-                    onClick={() => applyPreset(key)}
-                    className={`p-2 rounded-lg border text-center transition-all ${
-                      activePreset === key
-                        ? 'bg-primary/20 border-primary text-primary'
-                        : 'bg-card hover:bg-accent/50 border-border'
-                    }`}
-                  >
-                    <span className="text-lg">{preset.icon}</span>
-                    <p className="text-xs font-medium mt-1">{preset.name}</p>
+          </TabsContent>
+
+          {/* Performance Tab */}
+          <TabsContent value="performance">
+            <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Cpu className="h-3.5 w-3.5 text-primary" />
+                <h2 className="text-xs font-bold font-mono uppercase tracking-widest text-muted-foreground">Performance</h2>
+              </div>
+
+              {/* OC Warning */}
+              <div className={`p-3 rounded-lg border ${ocWarningAccepted ? 'border-warning/30 bg-warning/5' : 'border-destructive/30 bg-destructive/5'}`}>
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-[10px] font-bold font-mono text-warning">Overclocking Warning</p>
+                    <p className="text-[9px] text-muted-foreground font-mono mt-0.5">
+                      Overclocking can damage your hardware, void warranty, and cause instability. You proceed at your own risk.
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Checkbox id="oc-accept" checked={ocWarningAccepted} onCheckedChange={c => setOcWarningAccepted(c === true)} className="h-3.5 w-3.5" />
+                      <label htmlFor="oc-accept" className="text-[10px] font-mono font-bold text-warning cursor-pointer">
+                        I understand the risks and accept responsibility
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Presets */}
+              <div className="grid grid-cols-4 gap-1.5">
+                {Object.entries(DEFAULT_PRESETS).map(([key, p]) => (
+                  <button key={key} onClick={() => applyPreset(key)} className={`p-2 rounded-lg border text-center transition-all text-[10px] font-mono ${
+                    activePreset === key ? 'bg-primary/15 border-primary/40 text-primary' : 'border-border/30 hover:bg-secondary/30'
+                  } ${(key === 'max' || key === 'performance') && !ocWarningAccepted ? 'opacity-40 cursor-not-allowed' : ''}`}
+                  disabled={(key === 'max' || key === 'performance') && !ocWarningAccepted}>
+                    <span className="text-base">{p.icon}</span>
+                    <p className="mt-0.5 font-medium">{p.name}</p>
                   </button>
                 ))}
               </div>
-            </div>
 
-            {/* Custom Presets */}
-            <div className="space-y-2">
+              {/* Custom presets */}
               <div className="flex items-center justify-between">
-                <Label>Custom Presets</Label>
+                <span className="text-[10px] font-mono text-muted-foreground uppercase">Custom</span>
                 {!showSaveInput && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setShowSaveInput(true)}
-                    className="h-7 text-xs"
-                  >
-                    <Save className="h-3 w-3 mr-1" />
-                    Save Current
+                  <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[9px] font-mono" onClick={() => setShowSaveInput(true)}>
+                    <Save className="h-2.5 w-2.5 mr-0.5" />Save
                   </Button>
                 )}
               </div>
-              
               {showSaveInput && (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Preset name..."
-                    value={customPresetName}
-                    onChange={(e) => setCustomPresetName(e.target.value)}
-                    className="h-8 text-sm"
-                    onKeyDown={(e) => e.key === 'Enter' && saveCustomPreset()}
-                  />
-                  <Button size="sm" onClick={saveCustomPreset} className="h-8">
-                    <Save className="h-3 w-3" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => { setShowSaveInput(false); setCustomPresetName(""); }}
-                    className="h-8"
-                  >
-                    ✕
-                  </Button>
+                <div className="flex gap-1">
+                  <Input placeholder="Name..." value={customPresetName} onChange={e => setCustomPresetName(e.target.value)} className="h-7 text-[10px] font-mono" onKeyDown={e => e.key === 'Enter' && saveCustomPreset()} />
+                  <Button size="sm" onClick={saveCustomPreset} className="h-7 px-2"><Save className="h-3 w-3" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowSaveInput(false); setCustomPresetName(""); }} className="h-7 px-2">✕</Button>
                 </div>
               )}
-              
-              {customPresets.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {customPresets.map((preset, index) => (
-                    <div
-                      key={index}
-                      className={`group relative p-2 rounded-lg border text-center transition-all cursor-pointer ${
-                        activePreset === `custom-${index}`
-                          ? 'bg-primary/20 border-primary text-primary'
-                          : 'bg-card hover:bg-accent/50 border-border'
-                      }`}
-                      onClick={() => applyCustomPreset(preset, index)}
-                    >
-                      <span className="text-lg">⚙️</span>
-                      <p className="text-xs font-medium mt-1 truncate">{preset.name}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {preset.frequency}MHz • {preset.voltage}mV
-                      </p>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); deleteCustomPreset(index); }}
-                        className="absolute -top-1 -right-1 p-1 rounded-full bg-destructive/80 text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="h-3 w-3" />
+              {customPresets.length > 0 && (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {customPresets.map((p, i) => (
+                    <div key={i} className={`group relative p-1.5 rounded-lg border text-center transition-all cursor-pointer text-[10px] font-mono ${
+                      activePreset === `custom-${i}` ? 'bg-primary/15 border-primary/40' : 'border-border/30 hover:bg-secondary/30'
+                    }`} onClick={() => applyCustomPreset(p, i)}>
+                      <p className="font-medium truncate">{p.name}</p>
+                      <p className="text-[8px] text-muted-foreground">{p.frequency}MHz</p>
+                      <button onClick={(e) => { e.stopPropagation(); deleteCustomPreset(i); }} className="absolute -top-1 -right-1 p-0.5 rounded-full bg-destructive/80 text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Trash2 className="h-2.5 w-2.5" />
                       </button>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground text-center py-2">
-                  No custom presets. Adjust sliders and save your settings.
-                </p>
               )}
-            </div>
 
-            {/* Fan Speed */}
-            <div className="space-y-2">
+              {/* Sliders */}
+              {[
+                { icon: Fan, label: "Fan", value: fanSpeed, set: setFanSpeed, min: 0, max: 100, step: 5, unit: "%" },
+                { icon: Cpu, label: "Frequency", value: frequency, set: setFrequency, min: 300, max: 650, step: 5, unit: "MHz" },
+                { icon: Zap, label: "Voltage", value: coreVoltage, set: setCoreVoltage, min: 850, max: 1400, step: 10, unit: "mV" },
+              ].map(s => (
+                <div key={s.label} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-mono uppercase text-muted-foreground flex items-center gap-1"><s.icon className="h-3 w-3" />{s.label}</Label>
+                    <span className="text-[10px] font-mono bg-secondary/50 px-1.5 py-0.5 rounded">{s.value}{s.unit}</span>
+                  </div>
+                  <Slider value={[s.value]} onValueChange={v => s.set(v[0])} min={s.min} max={s.max} step={s.step} />
+                </div>
+              ))}
+
+              <Button className="w-full h-8 text-xs font-mono" onClick={sendPerformanceSettings} disabled={sendingPerformance || selectedMiners.size === 0}>
+                {sendingPerformance ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Saving...</> : <><RotateCcw className="h-3 w-3 mr-1" />Save & Restart</>}
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Schedule Tab */}
+          <TabsContent value="schedule">
+            <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <Fan className="h-4 w-4" />
-                  Fan Speed
-                </Label>
-                <span className="text-sm font-mono bg-secondary px-2 py-0.5 rounded">
-                  {fanSpeed}%
-                </span>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-primary" />
+                  <h2 className="text-xs font-bold font-mono uppercase tracking-widest text-muted-foreground">Scheduled OC</h2>
+                </div>
+                <Switch checked={scheduledOC.enabled} onCheckedChange={v => updateScheduledOC({ enabled: v })} />
               </div>
-              <Slider
-                value={[fanSpeed]}
-                onValueChange={(v) => setFanSpeed(v[0])}
-                min={0}
-                max={100}
-                step={5}
-                className="w-full"
-              />
+              <p className="text-[10px] text-muted-foreground font-mono">
+                Automatically apply a performance preset during selected hours, then revert to original settings.
+              </p>
+              
+              <div className={`space-y-3 ${!scheduledOC.enabled ? 'opacity-40 pointer-events-none' : ''}`}>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] font-mono uppercase text-muted-foreground">Start Hour</Label>
+                    <Select value={String(scheduledOC.startHour)} onValueChange={v => updateScheduledOC({ startHour: Number(v) })}>
+                      <SelectTrigger className="h-8 text-xs font-mono"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <SelectItem key={i} value={String(i)}>{String(i).padStart(2, '0')}:00</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] font-mono uppercase text-muted-foreground">End Hour</Label>
+                    <Select value={String(scheduledOC.endHour)} onValueChange={v => updateScheduledOC({ endHour: Number(v) })}>
+                      <SelectTrigger className="h-8 text-xs font-mono"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <SelectItem key={i} value={String(i)}>{String(i).padStart(2, '0')}:00</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-mono uppercase text-muted-foreground">Preset to Apply</Label>
+                  <Select value={scheduledOC.preset} onValueChange={v => updateScheduledOC({ preset: v })}>
+                    <SelectTrigger className="h-8 text-xs font-mono"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(DEFAULT_PRESETS).map(([key, p]) => (
+                        <SelectItem key={key} value={key}>{p.icon} {p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="p-2 rounded-lg bg-primary/5 border border-primary/15">
+                  <p className="text-[9px] text-muted-foreground font-mono">
+                    ⏰ Active: {String(scheduledOC.startHour).padStart(2, '0')}:00 → {String(scheduledOC.endHour).padStart(2, '0')}:00 · 
+                    Applies <span className="text-primary font-bold">{DEFAULT_PRESETS[scheduledOC.preset as keyof typeof DEFAULT_PRESETS]?.name || scheduledOC.preset}</span> then reverts
+                  </p>
+                </div>
+              </div>
             </div>
+          </TabsContent>
 
-            {/* Frequency */}
-            <div className="space-y-2">
+          {/* Dual Pool Tab */}
+          <TabsContent value="dualpool">
+            <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <Cpu className="h-4 w-4" />
-                  Frequency
-                </Label>
-                <span className="text-sm font-mono bg-secondary px-2 py-0.5 rounded">
-                  {frequency} MHz
-                </span>
+                <div className="flex items-center gap-2">
+                  <Layers className="h-3.5 w-3.5 text-primary" />
+                  <h2 className="text-xs font-bold font-mono uppercase tracking-widest text-muted-foreground">Dual Pool</h2>
+                </div>
+                <Switch checked={dualPool.enabled} onCheckedChange={v => updateDualPool({ enabled: v })} />
               </div>
-              <Slider
-                value={[frequency]}
-                onValueChange={(v) => setFrequency(v[0])}
-                min={300}
-                max={650}
-                step={5}
-                className="w-full"
-              />
-            </div>
 
-            {/* Voltage */}
-            <div className="space-y-2">
+              <div className="p-2 rounded-lg bg-warning/5 border border-warning/20">
+                <p className="text-[9px] text-warning font-mono font-bold">⚠️ NerdAxe / NerdMiner Only</p>
+                <p className="text-[9px] text-muted-foreground font-mono mt-0.5">Dual pool mining only works on NerdMiner-based devices.</p>
+              </div>
+
+              <div className={`space-y-3 ${!dualPool.enabled ? 'opacity-40 pointer-events-none' : ''}`}>
+                {/* Pool distribution slider */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-mono uppercase text-muted-foreground">Distribution</Label>
+                    <span className="text-[10px] font-mono bg-secondary/50 px-1.5 py-0.5 rounded">
+                      Pool 1: {dualPool.pool1Percent}% · Pool 2: {100 - dualPool.pool1Percent}%
+                    </span>
+                  </div>
+                  <Slider value={[dualPool.pool1Percent]} onValueChange={v => updateDualPool({ pool1Percent: v[0] })} min={10} max={90} step={5} />
+                </div>
+
+                <div className="grid gap-3 lg:grid-cols-2">
+                  {/* Pool 1 */}
+                  <div className="space-y-2 p-3 rounded-lg border border-primary/20 bg-primary/5">
+                    <p className="text-[10px] font-mono font-bold text-primary">Pool 1 ({dualPool.pool1Percent}%)</p>
+                    <div className="space-y-1">
+                      <Input placeholder="Pool address" value={dualPool.pool1Url} onChange={e => updateDualPool({ pool1Url: e.target.value })} className="h-7 text-[10px] font-mono" />
+                      <div className="grid grid-cols-2 gap-1">
+                        <Input placeholder="Port" value={dualPool.pool1Port} onChange={e => updateDualPool({ pool1Port: e.target.value })} className="h-7 text-[10px] font-mono" />
+                        <Input placeholder="Username" value={dualPool.pool1User} onChange={e => updateDualPool({ pool1User: e.target.value })} className="h-7 text-[10px] font-mono" />
+                      </div>
+                    </div>
+                  </div>
+                  {/* Pool 2 */}
+                  <div className="space-y-2 p-3 rounded-lg border border-accent/20 bg-accent/5">
+                    <p className="text-[10px] font-mono font-bold text-accent">Pool 2 ({100 - dualPool.pool1Percent}%)</p>
+                    <div className="space-y-1">
+                      <Input placeholder="Pool address" value={dualPool.pool2Url} onChange={e => updateDualPool({ pool2Url: e.target.value })} className="h-7 text-[10px] font-mono" />
+                      <div className="grid grid-cols-2 gap-1">
+                        <Input placeholder="Port" value={dualPool.pool2Port} onChange={e => updateDualPool({ pool2Port: e.target.value })} className="h-7 text-[10px] font-mono" />
+                        <Input placeholder="Username" value={dualPool.pool2User} onChange={e => updateDualPool({ pool2User: e.target.value })} className="h-7 text-[10px] font-mono" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Button className="w-full h-8 text-xs font-mono" disabled={selectedMiners.size === 0 || !dualPool.pool1Url || !dualPool.pool2Url}>
+                  <RotateCcw className="h-3 w-3 mr-1" /> Apply Dual Pool
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Notifications */}
+        <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Bell className="h-3.5 w-3.5 text-primary" />
+            <h2 className="text-xs font-bold font-mono uppercase tracking-widest text-muted-foreground">Notifications</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="flex items-center justify-between p-3 rounded-lg border border-border/30 bg-secondary/20">
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-warning" />
+                <div><p className="text-[10px] font-mono font-medium">Block Found</p></div>
+              </div>
+              <Switch checked={notificationSettings.blockFoundEnabled} onCheckedChange={c => updateNotificationSettings({ blockFoundEnabled: c })} />
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border border-border/30 bg-secondary/20">
+              <div className="flex items-center gap-2">
+                <Thermometer className="h-4 w-4 text-destructive" />
+                <div><p className="text-[10px] font-mono font-medium">Temp Warning</p></div>
+              </div>
+              <Switch checked={notificationSettings.tempWarningEnabled} onCheckedChange={c => updateNotificationSettings({ tempWarningEnabled: c })} />
+            </div>
+            <div className="p-3 rounded-lg border border-border/30 bg-secondary/20 space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Core Voltage
-                </Label>
-                <span className="text-sm font-mono bg-secondary px-2 py-0.5 rounded">
-                  {coreVoltage} mV
-                </span>
+                <p className="text-[10px] font-mono font-medium">Threshold</p>
+                <span className="text-[10px] font-mono bg-secondary px-1.5 py-0.5 rounded">{notificationSettings.tempThreshold}°C</span>
               </div>
-              <Slider
-                value={[coreVoltage]}
-                onValueChange={(v) => setCoreVoltage(v[0])}
-                min={850}
-                max={1400}
-                step={10}
-                className="w-full"
-              />
+              <Slider value={[notificationSettings.tempThreshold]} onValueChange={v => updateNotificationSettings({ tempThreshold: v[0] })} min={50} max={90} step={5} />
             </div>
-
-            {activePreset === 'max' && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                <p className="text-xs text-destructive font-medium">
-                  ⚠️ Max OC may damage your device. Use at your own risk.
-                </p>
+            <div className="p-3 rounded-lg border border-border/30 bg-secondary/20 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1"><Volume2 className="h-3 w-3" /><p className="text-[10px] font-mono font-medium">Sound</p></div>
+                <Switch checked={notificationSettings.soundEnabled} onCheckedChange={c => updateNotificationSettings({ soundEnabled: c })} />
               </div>
-            )}
-            
-            <Button 
-              className="w-full"
-              onClick={sendPerformanceSettings} 
-              disabled={sendingPerformance || selectedMiners.size === 0}
-            >
-              {sendingPerformance ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving & Restarting...
-                </>
-              ) : (
-                <>
-                  <RotateCcw className="h-4 w-4" />
-                  Save & Restart Miners
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Notification Settings */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Notification Settings</CardTitle>
-            </div>
-            <CardDescription>Configure alerts for block found and temperature warnings</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {/* Block Found Toggle */}
-              <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-yellow-500/20">
-                    <Trophy className="h-5 w-5 text-yellow-500" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">Block Found</p>
-                    <p className="text-xs text-muted-foreground">Alert on new best diff</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={notificationSettings.blockFoundEnabled}
-                  onCheckedChange={(checked) => updateNotificationSettings({ blockFoundEnabled: checked })}
-                />
-              </div>
-
-              {/* Temperature Warning Toggle */}
-              <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-red-500/20">
-                    <Thermometer className="h-5 w-5 text-red-500" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">Temp Warning</p>
-                    <p className="text-xs text-muted-foreground">Alert when too hot</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={notificationSettings.tempWarningEnabled}
-                  onCheckedChange={(checked) => updateNotificationSettings({ tempWarningEnabled: checked })}
-                />
-              </div>
-
-              {/* Temperature Threshold */}
-              <div className="p-4 rounded-lg border bg-card space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-sm">Temp Threshold</p>
-                  <span className="text-sm font-mono bg-secondary px-2 py-0.5 rounded">
-                    {notificationSettings.tempThreshold}°C
-                  </span>
-                </div>
-                <Slider
-                  value={[notificationSettings.tempThreshold]}
-                  onValueChange={(v) => updateNotificationSettings({ tempThreshold: v[0] })}
-                  min={50}
-                  max={90}
-                  step={5}
-                  className="w-full"
-                />
-              </div>
-
-              {/* Sound Toggle & Test */}
-              <div className="p-4 rounded-lg border bg-card space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Volume2 className="h-4 w-4" />
-                    <p className="font-medium text-sm">Sound Effects</p>
-                  </div>
-                  <Switch
-                    checked={notificationSettings.soundEnabled}
-                    onCheckedChange={(checked) => updateNotificationSettings({ soundEnabled: checked })}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1 text-xs"
-                    onClick={() => playTestSound('block')}
-                    disabled={!notificationSettings.soundEnabled}
-                  >
-                    🎉 Test Block
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1 text-xs"
-                    onClick={() => playTestSound('warning')}
-                    disabled={!notificationSettings.soundEnabled}
-                  >
-                    ⚠️ Test Warn
-                  </Button>
-                </div>
+              <div className="flex gap-1">
+                <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 font-mono" onClick={() => playTestSound('block')} disabled={!notificationSettings.soundEnabled}>🎉 Block</Button>
+                <Button variant="outline" size="sm" className="flex-1 text-[9px] h-6 font-mono" onClick={() => playTestSound('warning')} disabled={!notificationSettings.soundEnabled}>⚠️ Warn</Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
       </div>
     </>
   );

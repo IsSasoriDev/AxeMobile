@@ -39,6 +39,11 @@ export interface MinerDevice {
   model?: string;
   version?: string;
   bestDiff?: number;
+  deviceType?: 'bitaxe' | 'nerdaxe' | 'avalon' | 'unknown';
+  // Avalon-specific fields
+  frequency?: number;
+  fanSpeed?: number;
+  chipCount?: number;
 }
 
 export const useNetworkScanner = () => {
@@ -53,6 +58,84 @@ export const useNetworkScanner = () => {
     }
   }, []);
 
+  // Try Avalon Nano CGMiner API (port 4028)
+  const getAvalonInfo = async (ip: string): Promise<MinerDevice | null> => {
+    try {
+      // Avalon Nano uses CGMiner API on port 4028
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+      // Try the CGMiner API summary endpoint
+      const response = await fetch(`http://${ip}:4028/summary`, {
+        signal: controller.signal,
+        mode: 'cors',
+      });
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        const summary = data?.SUMMARY?.[0] || data;
+        
+        return {
+          IP: ip,
+          isActive: true,
+          name: `Avalon Nano - ${ip}`,
+          hashRate: (summary['MHS 5s'] || summary['GHS 5s'] * 1000 || 0) / 1000, // Convert to GH/s
+          temp: summary['Temperature'] || 0,
+          power: summary['Power'] || 0,
+          shares: {
+            accepted: summary['Accepted'] || 0,
+            rejected: summary['Rejected'] || 0,
+          },
+          model: summary['Type'] || 'Avalon Nano',
+          version: summary['Miner'] || 'CGMiner',
+          bestDiff: summary['Best Share'] || 0,
+          deviceType: 'avalon',
+          frequency: summary['Frequency'] || 0,
+          fanSpeed: summary['Fan Speed In'] || summary['fan1'] || 0,
+          chipCount: summary['chip_count'] || 0,
+        };
+      }
+    } catch {}
+    
+    // Also try the Canaan web API format
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const response = await fetch(`http://${ip}/api/summary`, {
+        signal: controller.signal,
+        mode: 'cors',
+      });
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && (data.model?.toLowerCase().includes('avalon') || data.type?.toLowerCase().includes('avalon'))) {
+          return {
+            IP: ip,
+            isActive: true,
+            name: data.hostname || `Avalon Nano - ${ip}`,
+            hashRate: data.hashrate || (data.mhs_5s || 0) / 1000,
+            temp: data.temp || data.temperature || 0,
+            power: data.power || 0,
+            shares: {
+              accepted: data.accepted || 0,
+              rejected: data.rejected || 0,
+            },
+            model: data.model || 'Avalon Nano',
+            version: data.version || 'Unknown',
+            bestDiff: data.bestDiff || 0,
+            deviceType: 'avalon',
+            frequency: data.frequency || 0,
+            fanSpeed: data.fanSpeed || 0,
+          };
+        }
+      }
+    } catch {}
+    
+    return null;
+  };
+
   // Get device info - works in both Tauri and browser environments
   const getDeviceInfo = async (ip: string): Promise<MinerDevice> => {
     try {
@@ -63,6 +146,11 @@ export const useNetworkScanner = () => {
         const systemData = await invoke<any>('fetch_miner_info', { ip });
         
         console.log(`✓ Connected to ${ip} via Tauri command`, systemData);
+
+        // Detect if this is an Avalon device
+        const isAvalon = systemData.Type?.toLowerCase().includes('avalon') || 
+                         systemData.model?.toLowerCase().includes('avalon') ||
+                         systemData.Miner?.toLowerCase().includes('cgminer');
 
         return {
           IP: ip,
@@ -80,13 +168,20 @@ export const useNetworkScanner = () => {
           model: systemData.ASICModel || 'Unknown',
           version: systemData.version || 'Unknown',
           bestDiff: systemData.bestDiff || systemData.bestSessionDiff || 0,
+          deviceType: isAvalon ? 'avalon' : 'bitaxe',
+          frequency: systemData.frequency || 0,
+          fanSpeed: systemData.fanSpeed || 0,
         };
       }
 
-      // Browser/Umbrel mode - direct HTTP request (works on same network)
+      // Browser/Umbrel mode - try Avalon first, then BitAxe
+      const avalonResult = await getAvalonInfo(ip);
+      if (avalonResult) return avalonResult;
+
+      // Browser/Umbrel mode - direct HTTP request for BitAxe (works on same network)
       console.log(`Fetching device info for ${ip} via browser fetch`);
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // Increased timeout
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       
       // Try multiple endpoints that Bitaxe uses
       const endpoints = [
@@ -134,6 +229,7 @@ export const useNetworkScanner = () => {
         model: data.ASICModel || data.boardVersion || 'Unknown',
         version: data.version || 'Unknown',
         bestDiff: data.bestDiff || data.bestSessionDiff || 0,
+        deviceType: 'bitaxe',
       };
     } catch (error) {
       console.log(`❌ Device ${ip} not responding:`, error);
@@ -153,12 +249,16 @@ export const useNetworkScanner = () => {
       const mdnsHostnames = [
         'bitaxe.local',
         'nerdaxe.local',
+        'avalon.local',
+        'avalonano.local',
         'bitaxe-01.local',
         'bitaxe-02.local',
         'bitaxe-03.local',
         'nerdaxe-01.local',
         'nerdaxe-02.local',
         'nerdaxe-03.local',
+        'avalon-01.local',
+        'avalon-02.local',
       ];
 
       // Determine base IP for scanning
@@ -338,18 +438,30 @@ export const useNetworkScanner = () => {
     localStorage.setItem('MINER_DEVICES', JSON.stringify(updatedDevices));
   }, [devices]);
 
-  // Load devices from localStorage on init
+  // Load devices from localStorage on init — always restore saved IPs even if offline
   useEffect(() => {
     const loadStoredDevices = async () => {
       setIsLoading(true);
       try {
         const stored = localStorage.getItem('MINER_DEVICES');
         if (stored) {
-          const storedDevices = JSON.parse(stored);
+          const storedDevices: MinerDevice[] = JSON.parse(stored);
+          // Immediately show stored devices (possibly stale) so they never disappear
+          setDevices(storedDevices);
+
+          // Then refresh their status in background
           const refreshedDevices = await Promise.all(
-            storedDevices.map((device: MinerDevice) => getDeviceInfo(device.IP))
+            storedDevices.map(async (device) => {
+              try {
+                return await getDeviceInfo(device.IP);
+              } catch {
+                // Keep the stored device data but mark inactive
+                return { ...device, isActive: false };
+              }
+            })
           );
           setDevices(refreshedDevices);
+          localStorage.setItem('MINER_DEVICES', JSON.stringify(refreshedDevices));
         } else if (isTauri()) {
           await scanNetwork();
         }

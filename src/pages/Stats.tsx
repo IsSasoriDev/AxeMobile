@@ -1,7 +1,6 @@
 import { useBitcoinStats } from "@/hooks/useBitcoinStats";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Bitcoin, RefreshCw, Trophy } from "lucide-react";
+import { Activity, Bitcoin, RefreshCw, Trophy, Cpu, TrendingUp, Clock } from "lucide-react";
 import { DeviceScanner } from "@/components/miners/DeviceScanner";
 import { useNetworkScanner } from "@/hooks/useNetworkScanner";
 import { useState, useEffect } from "react";
@@ -79,136 +78,123 @@ export default function Stats() {
     return diff.toString();
   };
 
-  // Use live Bitcoin network statistics
   const networkDifficulty = bitcoinStats?.difficulty || 126271300000000;
-  const networkHashrate = bitcoinStats?.hashrate || 898; // in EH/s
+  const networkHashrate = bitcoinStats?.hashrate || 898;
   const blockReward = bitcoinStats?.blockReward || 3.125;
   const bitcoinPrice = bitcoinStats?.priceUsd || 0;
-  const secondsInDay = 86400;
-  const blocksPerDay = secondsInDay / 600; // ~144 blocks per day (10 min average)
-  
-  // Calculate probability of finding a block (more accurate calculation)
-  const hashesPerSecond = totalHashRate * 1000000000; // Convert GH/s to H/s
-  const networkHashesPerSecond = networkHashrate * 1000000000000; // Convert EH/s to H/s
+  const hashesPerSecond = totalHashRate * 1000000000;
+  const networkHashesPerSecond = networkHashrate * 1000000000000;
   const probabilityPerBlock = totalHashRate > 0 ? hashesPerSecond / networkHashesPerSecond : 0;
-  const probabilityPerDay = probabilityPerBlock * blocksPerDay;
+  const probabilityPerDay = probabilityPerBlock * 144;
   const daysToFindBlock = probabilityPerDay > 0 ? 1 / probabilityPerDay : Infinity;
 
   return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-          <h1 className="text-xl sm:text-3xl font-bold">Miner Statistics</h1>
+    <div className="h-full overflow-y-auto p-4 md:p-6 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+            <Activity className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold font-mono tracking-tight">Statistics</h1>
+            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">Miner & Network Stats</p>
+          </div>
         </div>
-        <Button
-          size="sm"
-          onClick={refreshBitcoinStats}
-          disabled={bitcoinLoading}
-          variant="outline"
-          className="gap-2 h-9 text-xs sm:text-sm"
-        >
-          <RefreshCw className={`h-4 w-4 ${bitcoinLoading ? 'animate-spin' : ''}`} />
-          Refresh Bitcoin Stats
+        <Button size="sm" onClick={refreshBitcoinStats} disabled={bitcoinLoading} variant="outline" className="gap-1.5 font-mono text-xs h-8">
+          <RefreshCw className={`h-3 w-3 ${bitcoinLoading ? 'animate-spin' : ''}`} /> Refresh
         </Button>
       </div>
 
-      {/* Device Scanner and Management */}
+      {/* Device Scanner */}
       <DeviceScanner />
 
-      {/* Best Difficulty Card */}
-      <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-amber-500" />
-            Best Difficulty Achieved
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-3xl font-bold text-amber-500">{formatDiff(bestDiff)}</p>
-              {bestDiffMiner && (
-                <p className="text-sm text-muted-foreground mt-1">Achieved by: {bestDiffMiner}</p>
-              )}
+      {/* Best Difficulty */}
+      <div className="rounded-xl border border-warning/20 bg-warning/5 backdrop-blur-sm p-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-warning/15">
+            <Trophy className="h-5 w-5 text-warning" />
+          </div>
+          <div className="flex-1">
+            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">Best Difficulty Achieved</p>
+            <p className="text-2xl font-black font-mono text-warning">{formatDiff(bestDiff)}</p>
+            {bestDiffMiner && <p className="text-[10px] text-muted-foreground font-mono mt-0.5">by {bestDiffMiner}</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Bitcoin Network */}
+      <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bitcoin className="h-4 w-4 text-primary" />
+            <h2 className="text-xs font-bold font-mono uppercase tracking-widest text-muted-foreground">Bitcoin Network</h2>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className={`w-1.5 h-1.5 rounded-full ${bitcoinStats ? 'bg-accent' : 'bg-warning'}`} />
+            <span className="text-[9px] text-muted-foreground font-mono">
+              {bitcoinStats ? new Date(bitcoinStats.updatedAt).toLocaleTimeString() : 'Loading...'}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {[
+            { label: "Difficulty", value: `${(networkDifficulty / 1e12).toFixed(2)}T`, icon: TrendingUp },
+            { label: "Hashrate", value: `${networkHashrate.toFixed(0)} EH/s`, icon: Cpu },
+            { label: "Block Reward", value: `${blockReward} BTC`, icon: Bitcoin },
+            { label: "BTC Price", value: bitcoinPrice > 0 ? `$${bitcoinPrice.toLocaleString()}` : "—", icon: TrendingUp },
+          ].map(item => (
+            <div key={item.label} className="p-3 rounded-lg bg-secondary/30 border border-border/20 text-center">
+              <p className="text-[8px] text-muted-foreground font-mono uppercase tracking-wider mb-1">{item.label}</p>
+              <p className="text-base font-bold font-mono">{item.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {bitcoinStats && (
+          <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/20">
+            <div className="text-center p-2">
+              <p className="text-[8px] text-muted-foreground font-mono uppercase">Next Adjustment</p>
+              <p className="text-sm font-bold font-mono">{bitcoinStats.nextDifficultyAdjustment} blk</p>
+            </div>
+            <div className="text-center p-2">
+              <p className="text-[8px] text-muted-foreground font-mono uppercase">Mempool</p>
+              <p className="text-sm font-bold font-mono">{(bitcoinStats.mempoolCount || 0).toLocaleString()}</p>
+            </div>
+            <div className="text-center p-2">
+              <p className="text-[8px] text-muted-foreground font-mono uppercase">Market Cap</p>
+              <p className="text-sm font-bold font-mono">${(bitcoinStats.marketCapUsd / 1e12).toFixed(2)}T</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        )}
 
-      {/* Bitcoin Network Info */}
-      <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bitcoin className="h-5 w-5" />
-                Bitcoin Network Statistics
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${bitcoinStats ? 'bg-green-500' : 'bg-yellow-500'}`} />
-                  <span className="text-sm text-muted-foreground">
-                    {bitcoinStats ? `Last updated: ${new Date(bitcoinStats.updatedAt).toLocaleTimeString()}` : 'Loading...'}
-                  </span>
-                </div>
-                {bitcoinPrice > 0 && (
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Bitcoin Price</p>
-                    <p className="text-lg font-semibold">${bitcoinPrice.toLocaleString()} USD</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Network Difficulty</p>
-                  <p className="text-lg font-semibold">{(networkDifficulty / 1e12).toFixed(2)}T</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Network Hashrate</p>
-                  <p className="text-lg font-semibold">{networkHashrate.toFixed(0)} EH/s</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Block Reward</p>
-                  <p className="text-lg font-semibold">{blockReward} BTC</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Your Network Share</p>
-                  <p className="text-lg font-semibold">{(probabilityPerBlock * 100).toExponential(2)}%</p>
-                </div>
-              </div>
-              
-              {bitcoinStats && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-4 border-t">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Next Difficulty Adjustment</p>
-                    <p className="text-lg font-semibold">{bitcoinStats.nextDifficultyAdjustment} blocks</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Mempool Transactions</p>
-                    <p className="text-lg font-semibold">{(bitcoinStats.mempoolCount || 0).toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Market Cap</p>
-                    <p className="text-lg font-semibold">${(bitcoinStats.marketCapUsd / 1e12).toFixed(2)}T</p>
-                  </div>
-                </div>
-              )}
-              <div className="pt-4 border-t">
-                <p className="text-sm text-muted-foreground mb-2">Block Finding Probability</p>
-                <div className="space-y-1">
-                  <p>Per Block: {(probabilityPerBlock * 100).toExponential(6)}%</p>
-                  <p>Per Day: {(probabilityPerDay * 100).toExponential(6)}%</p>
-                  <p>Expected Time: {
-                    daysToFindBlock === Infinity ? 'Never (insufficient hashrate)' :
-                    daysToFindBlock > 365 ? `${(daysToFindBlock / 365).toFixed(1)} years` :
-                    `${daysToFindBlock.toFixed(1)} days`
-                  }</p>
-                </div>
-              </div>
-        </CardContent>
-      </Card>
+        {/* Block finding probability */}
+        <div className="pt-3 border-t border-border/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">Block Finding Probability</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="p-2 rounded-lg bg-secondary/20 text-center">
+              <p className="text-[8px] text-muted-foreground font-mono">Per Block</p>
+              <p className="text-xs font-bold font-mono">{(probabilityPerBlock * 100).toExponential(2)}%</p>
+            </div>
+            <div className="p-2 rounded-lg bg-secondary/20 text-center">
+              <p className="text-[8px] text-muted-foreground font-mono">Per Day</p>
+              <p className="text-xs font-bold font-mono">{(probabilityPerDay * 100).toExponential(2)}%</p>
+            </div>
+            <div className="p-2 rounded-lg bg-secondary/20 text-center">
+              <p className="text-[8px] text-muted-foreground font-mono">Expected Time</p>
+              <p className="text-xs font-bold font-mono">
+                {daysToFindBlock === Infinity ? '∞' :
+                daysToFindBlock > 365 ? `${(daysToFindBlock / 365).toFixed(1)}y` :
+                `${daysToFindBlock.toFixed(1)}d`}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

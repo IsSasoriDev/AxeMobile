@@ -14,26 +14,30 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AddMinerDialogProps {
-  onAddMiner: (miner: { name: string; ipAddress: string; model: 'bitaxe' | 'nerdaxe' }) => void;
+  onAddMiner: (miner: { name: string; ipAddress: string; model: 'bitaxe' | 'nerdaxe' | 'avalon' }) => void;
 }
+
+const MODEL_LABELS: Record<string, string> = {
+  bitaxe: 'BitAxe',
+  nerdaxe: 'NerdAxe',
+  avalon: 'Avalon Nano',
+};
 
 export function AddMinerDialog({ onAddMiner }: AddMinerDialogProps) {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
   const [ipAddress, setIpAddress] = useState("");
-  const [model, setModel] = useState<'bitaxe' | 'nerdaxe'>('bitaxe');
+  const [model, setModel] = useState<'bitaxe' | 'nerdaxe' | 'avalon'>('bitaxe');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (name.trim() && ipAddress.trim()) {
+    if (ipAddress.trim()) {
       onAddMiner({
-        name: name.trim(),
+        name: `${MODEL_LABELS[model]} - ${ipAddress.trim()}`,
         ipAddress: ipAddress.trim(),
         model,
       });
       
-      setName("");
       setIpAddress("");
       setModel('bitaxe');
       setOpen(false);
@@ -53,22 +57,25 @@ export function AddMinerDialog({ onAddMiner }: AddMinerDialogProps) {
         <DialogHeader>
           <DialogTitle>Add New Miner</DialogTitle>
           <DialogDescription>
-            Enter your miner's details to add it to your dashboard.
+            Select your miner type and enter its IP address.
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Miner Name</Label>
-            <Input
-              id="name"
-              placeholder="e.g., BitAxe Pro #1"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
+            <Label htmlFor="model">Miner Type</Label>
+            <Select value={model} onValueChange={(value: 'bitaxe' | 'nerdaxe' | 'avalon') => setModel(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bitaxe">BitAxe</SelectItem>
+                <SelectItem value="nerdaxe">NerdAxe</SelectItem>
+                <SelectItem value="avalon">Avalon Nano</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="ipAddress">IP Address</Label>
             <Input
@@ -78,19 +85,6 @@ export function AddMinerDialog({ onAddMiner }: AddMinerDialogProps) {
               onChange={(e) => setIpAddress(e.target.value)}
               required
             />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="model">Miner Model</Label>
-            <Select value={model} onValueChange={(value: 'bitaxe' | 'nerdaxe') => setModel(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="bitaxe">Bitaxe</SelectItem>
-                <SelectItem value="nerdaxe">NerdAxe</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           
           <div className="flex gap-2 pt-4">

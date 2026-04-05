@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { ExternalLink, RotateCcw, Trash2, Activity, AlertCircle, CheckCircle, Pencil } from "lucide-react";
+import { ExternalLink, RotateCcw, Trash2, Activity, AlertCircle, CheckCircle, Pencil, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { MinerDevice } from "@/hooks/useNetworkScanner";
+import { MinerDetailDialog } from "./MinerDetailDialog";
 import { toast } from "sonner";
 
 interface MinerCardProps {
@@ -18,6 +19,7 @@ interface MinerCardProps {
 
 export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView, onUpdateName }: MinerCardProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [editName, setEditName] = useState(miner.name || '');
 
   const handleSaveName = () => {
@@ -52,6 +54,15 @@ export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView, onUpd
                        style={{ textShadow: '0 0 20px hsl(var(--primary) / 0.2)' }}>
               {miner.name || miner.IP}
             </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDetailOpen(true)}
+              className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-all hover:scale-110 hover:bg-primary/10"
+              title="View details"
+            >
+              <Info className="h-3.5 w-3.5 text-primary" />
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -119,6 +130,21 @@ export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView, onUpd
               </span>
             </div>
           )}
+
+          {/* Avalon-specific fields */}
+          {miner.deviceType === 'avalon' && miner.frequency && (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+              <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Frequency</span>
+              <span className="text-sm font-bold">{miner.frequency} MHz</span>
+            </div>
+          )}
+
+          {miner.deviceType === 'avalon' && miner.fanSpeed && (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+              <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Fan Speed</span>
+              <span className="text-sm font-bold">{miner.fanSpeed} RPM</span>
+            </div>
+          )}
         </div>
         
         <div className="flex gap-3 pt-2">
@@ -132,15 +158,17 @@ export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView, onUpd
             Refresh
           </Button>
           
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => onOpenWebView(miner)}
-            className="flex-1 hover:scale-105 transition-all duration-300 font-semibold shadow-glow"
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Open
-          </Button>
+          {miner.deviceType !== 'avalon' && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => onOpenWebView(miner)}
+              className="flex-1 hover:scale-105 transition-all duration-300 font-semibold shadow-glow"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open
+            </Button>
+          )}
         </div>
       </CardContent>
 
@@ -172,6 +200,12 @@ export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView, onUpd
           </div>
         </DialogContent>
       </Dialog>
+      <MinerDetailDialog
+        miner={miner}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onRefresh={() => onStatusCheck(miner)}
+      />
     </Card>
   );
 }

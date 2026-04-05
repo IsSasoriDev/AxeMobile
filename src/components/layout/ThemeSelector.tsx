@@ -18,6 +18,7 @@ const themes = [
   { id: "bitcoin", name: "Bitcoin", className: "theme-bitcoin" },
   { id: "powermining", name: "PowerMining", className: "theme-powermining" },
   { id: "dtv", name: "DTV Electronics", className: "theme-dtv" },
+  { id: "atlas", name: "AtlasPool", className: "theme-atlas" },
 ];
 
 export function ThemeSelector() {

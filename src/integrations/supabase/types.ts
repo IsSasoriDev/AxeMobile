@@ -10,243 +10,190 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
-      app_updates: {
+      announcements: {
         Row: {
+          active: boolean
           created_at: string
-          download_url: string | null
+          expires_at: string | null
           id: string
-          is_latest: boolean | null
-          release_notes: string | null
-          updated_at: string
-          version: string
+          image_url: string | null
+          message: string
+          title: string
+          type: string
         }
         Insert: {
+          active?: boolean
           created_at?: string
-          download_url?: string | null
+          expires_at?: string | null
           id?: string
-          is_latest?: boolean | null
-          release_notes?: string | null
-          updated_at?: string
-          version: string
+          image_url?: string | null
+          message: string
+          title: string
+          type?: string
         }
         Update: {
+          active?: boolean
           created_at?: string
-          download_url?: string | null
+          expires_at?: string | null
           id?: string
-          is_latest?: boolean | null
-          release_notes?: string | null
-          updated_at?: string
-          version?: string
+          image_url?: string | null
+          message?: string
+          title?: string
+          type?: string
         }
         Relationships: []
       }
-      bitcoin_network_stats: {
+      blog_posts: {
         Row: {
-          block_reward: number
+          content: string
+          cover_image_url: string | null
           created_at: string
-          difficulty: number
-          hashrate: number
+          excerpt: string | null
           id: string
-          market_cap_usd: number
-          mempool_count: number
-          mempool_vsize: number
-          next_difficulty_adjustment: number
-          price_usd: number
+          published: boolean
+          slug: string
+          tags: string[]
+          title: string
           updated_at: string
         }
         Insert: {
-          block_reward?: number
+          content?: string
+          cover_image_url?: string | null
           created_at?: string
-          difficulty: number
-          hashrate: number
+          excerpt?: string | null
           id?: string
-          market_cap_usd?: number
-          mempool_count?: number
-          mempool_vsize?: number
-          next_difficulty_adjustment?: number
-          price_usd?: number
+          published?: boolean
+          slug: string
+          tags?: string[]
+          title: string
           updated_at?: string
         }
         Update: {
-          block_reward?: number
+          content?: string
+          cover_image_url?: string | null
           created_at?: string
+          excerpt?: string | null
+          id?: string
+          published?: boolean
+          slug?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pool_blocks: {
+        Row: {
+          finder: string
+          found_at: string
+          hash: string
+          height: number
+          id: string
+          reward: number
+        }
+        Insert: {
+          finder?: string
+          found_at?: string
+          hash?: string
+          height: number
+          id?: string
+          reward?: number
+        }
+        Update: {
+          finder?: string
+          found_at?: string
+          hash?: string
+          height?: number
+          id?: string
+          reward?: number
+        }
+        Relationships: []
+      }
+      pool_config: {
+        Row: {
+          difficulty: number
+          id: string
+          pool_name: string
+          started_at: string
+          stratum_port: number
+        }
+        Insert: {
           difficulty?: number
+          id?: string
+          pool_name?: string
+          started_at?: string
+          stratum_port?: number
+        }
+        Update: {
+          difficulty?: number
+          id?: string
+          pool_name?: string
+          started_at?: string
+          stratum_port?: number
+        }
+        Relationships: []
+      }
+      pool_history: {
+        Row: {
+          accepted_shares: number
+          active_miners: number
+          id: string
+          recorded_at: string
+          rejected_shares: number
+          total_hashrate: number
+        }
+        Insert: {
+          accepted_shares?: number
+          active_miners?: number
+          id?: string
+          recorded_at?: string
+          rejected_shares?: number
+          total_hashrate?: number
+        }
+        Update: {
+          accepted_shares?: number
+          active_miners?: number
+          id?: string
+          recorded_at?: string
+          rejected_shares?: number
+          total_hashrate?: number
+        }
+        Relationships: []
+      }
+      pool_miners: {
+        Row: {
+          active: boolean
+          address: string
+          created_at: string
+          hashrate: number
+          id: string
+          last_seen: string
+          shares: number
+          worker_name: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string
+          created_at?: string
           hashrate?: number
           id?: string
-          market_cap_usd?: number
-          mempool_count?: number
-          mempool_vsize?: number
-          next_difficulty_adjustment?: number
-          price_usd?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      firmware_releases: {
-        Row: {
-          created_at: string
-          download_url: string | null
-          id: string
-          is_latest: boolean | null
-          model: string
-          release_notes: string | null
-          release_url: string | null
-          updated_at: string
-          version: string
-        }
-        Insert: {
-          created_at?: string
-          download_url?: string | null
-          id?: string
-          is_latest?: boolean | null
-          model: string
-          release_notes?: string | null
-          release_url?: string | null
-          updated_at?: string
-          version: string
+          last_seen?: string
+          shares?: number
+          worker_name: string
         }
         Update: {
+          active?: boolean
+          address?: string
           created_at?: string
-          download_url?: string | null
+          hashrate?: number
           id?: string
-          is_latest?: boolean | null
-          model?: string
-          release_notes?: string | null
-          release_url?: string | null
-          updated_at?: string
-          version?: string
-        }
-        Relationships: []
-      }
-      influx_instances: {
-        Row: {
-          bucket: string
-          created_at: string
-          id: string
-          influx_url: string
-          measurement: string
-          org: string
-          status: string
-          token: string
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          bucket: string
-          created_at?: string
-          id?: string
-          influx_url: string
-          measurement?: string
-          org: string
-          status?: string
-          token: string
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          bucket?: string
-          created_at?: string
-          id?: string
-          influx_url?: string
-          measurement?: string
-          org?: string
-          status?: string
-          token?: string
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      miner_stats: {
-        Row: {
-          hashrate: number | null
-          id: string
-          miner_id: string
-          power: number | null
-          recorded_at: string
-          shares_accepted: number | null
-          shares_rejected: number | null
-          temperature: number | null
-          uptime_seconds: number | null
-          user_id: string | null
-          voltage: number | null
-        }
-        Insert: {
-          hashrate?: number | null
-          id?: string
-          miner_id: string
-          power?: number | null
-          recorded_at?: string
-          shares_accepted?: number | null
-          shares_rejected?: number | null
-          temperature?: number | null
-          uptime_seconds?: number | null
-          user_id?: string | null
-          voltage?: number | null
-        }
-        Update: {
-          hashrate?: number | null
-          id?: string
-          miner_id?: string
-          power?: number | null
-          recorded_at?: string
-          shares_accepted?: number | null
-          shares_rejected?: number | null
-          temperature?: number | null
-          uptime_seconds?: number | null
-          user_id?: string | null
-          voltage?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "miner_stats_miner_id_fkey"
-            columns: ["miner_id"]
-            isOneToOne: false
-            referencedRelation: "miners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      miners: {
-        Row: {
-          created_at: string
-          firmware_version: string | null
-          id: string
-          ip_address: string
-          last_seen: string | null
-          model: string
-          name: string
-          status: string
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          firmware_version?: string | null
-          id?: string
-          ip_address: string
-          last_seen?: string | null
-          model: string
-          name: string
-          status?: string
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          firmware_version?: string | null
-          id?: string
-          ip_address?: string
-          last_seen?: string | null
-          model?: string
-          name?: string
-          status?: string
-          updated_at?: string
-          user_id?: string | null
+          last_seen?: string
+          shares?: number
+          worker_name?: string
         }
         Relationships: []
       }

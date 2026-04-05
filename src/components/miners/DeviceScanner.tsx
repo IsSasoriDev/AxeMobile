@@ -86,12 +86,12 @@ export const DeviceScanner = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header with controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Network className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-bold">Network Devices</h2>
+          <Network className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+          <h2 className="text-lg md:text-2xl font-bold font-mono">Network Devices</h2>
         </div>
         <div className="flex gap-2">
           <Dialog>
@@ -99,9 +99,10 @@ export const DeviceScanner = () => {
               <Button 
                 disabled={isScanning}
                 variant="outline"
-                className="gap-2"
+                size="sm"
+                className="gap-1.5 text-xs"
               >
-                <Search className={`h-4 w-4 ${isScanning ? 'animate-spin' : ''}`} />
+                <Search className={`h-3.5 w-3.5 ${isScanning ? 'animate-spin' : ''}`} />
                 {isScanning ? 'Scanning...' : 'Scan Network'}
               </Button>
             </DialogTrigger>
@@ -143,19 +144,11 @@ export const DeviceScanner = () => {
               </div>
             </DialogContent>
           </Dialog>
-          <Button 
-            onClick={refreshDevices} 
-            disabled={isLoading}
-            variant="outline"
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
+              <Button size="sm" className="gap-1.5 text-xs">
+                <Plus className="h-3.5 w-3.5" />
                 Add Device
               </Button>
             </DialogTrigger>
@@ -195,14 +188,14 @@ export const DeviceScanner = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Hashrate</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatHashRate(totalHashRate)}</div>
+            <div className="text-lg md:text-2xl font-bold">{formatHashRate(totalHashRate)}</div>
           </CardContent>
         </Card>
 
@@ -212,7 +205,7 @@ export const DeviceScanner = () => {
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalPower.toFixed(0)} W</div>
+            <div className="text-lg md:text-2xl font-bold">{totalPower.toFixed(0)} W</div>
           </CardContent>
         </Card>
 
@@ -222,7 +215,7 @@ export const DeviceScanner = () => {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeDevices}</div>
+            <div className="text-lg md:text-2xl font-bold">{activeDevices}</div>
             <p className="text-xs text-muted-foreground">of {totalDevices} total</p>
           </CardContent>
         </Card>
@@ -233,7 +226,7 @@ export const DeviceScanner = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalEfficiency.toFixed(2)} W/TH</div>
+            <div className="text-lg md:text-2xl font-bold">{totalEfficiency.toFixed(2)} W/TH</div>
           </CardContent>
         </Card>
       </div>
@@ -307,6 +300,7 @@ export const DeviceScanner = () => {
                   </div>
                 </div>
               ) : (
+                <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -419,6 +413,7 @@ export const DeviceScanner = () => {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>

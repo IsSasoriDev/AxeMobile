@@ -54,10 +54,16 @@ export function TypingText({
           }
         }
       } else {
-        setCurrentText(prev => fullText.slice(0, prev.length + 1));
+        const nextText = fullText.slice(0, currentText.length + 1);
+        setCurrentText(nextText);
         
-        if (currentText === fullText) {
+        if (nextText === fullText) {
           if (!loop && completeOnType) {
+            setIsComplete(true);
+            onComplete?.();
+            return;
+          }
+          if (!loop) {
             setIsComplete(true);
             onComplete?.();
             return;

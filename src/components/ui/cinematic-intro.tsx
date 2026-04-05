@@ -21,7 +21,7 @@ export function CinematicIntro({ onComplete }: CinematicIntroProps) {
 
   // Single timeline for all phase transitions
   useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
     
     // Phase 1: Blackhole idle (1.5s)
     timers.push(setTimeout(() => setPhase('growing'), 1500));

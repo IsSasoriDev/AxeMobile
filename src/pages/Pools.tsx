@@ -1,257 +1,104 @@
 import { useState } from "react";
-import { Bitcoin, ChevronDown, Copy, CheckCircle, XCircle, Clock } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Bitcoin, Copy, CheckCircle, XCircle, Clock, Waves, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 
 interface Pool {
-  id: string;
-  name: string;
-  description: string;
-  stratumUrl: string;
-  port: number;
-  fees: string;
-  status: "active" | "offline" | "warning";
-  password?: string;
+  id: string; name: string; description: string; stratumUrl: string;
+  port: number; fees: string; status: "active" | "offline" | "warning"; password?: string;
 }
 
-interface CryptoCoin {
-  id: string;
-  name: string;
-  symbol: string;
-  description: string;
-  icon: any;
-  color: string;
-  pools: Pool[];
-}
-
-const coins: CryptoCoin[] = [
-  {
-    id: "bitcoin",
-    name: "Bitcoin",
-    symbol: "BTC",
-    description: "The original cryptocurrency and most secure blockchain network",
-    icon: Bitcoin,
-    color: "text-orange-500",
-    pools: [
-      {
-        id: "public-pool",
-        name: "Public Pool",
-        description: "Open source, no fees, transparent mining pool",
-        stratumUrl: "public-pool.io",
-        port: 21496,
-        fees: "0% fees",
-        status: "active",
-      },
-      {
-        id: "solo-ck",
-        name: "Solo CK Pool",
-        description: "Solo mining pool by ckpool, 98% block reward",
-        stratumUrl: "solo.ckpool.org",
-        port: 3333,
-        fees: "2% fee",
-        status: "active",
-      },
-      {
-        id: "letsmine",
-        name: "Letsmine.it",
-        description: "European Bitcoin mining pool with low latency",
-        stratumUrl: "de1.letsmine.it",
-        port: 3332,
-        fees: "1% fee",
-        status: "active",
-        password: "diff=auto"
-      },
-      {
-        id: "solo-cat",
-        name: "Solo.cat Pool",
-        description: "Solo mining pool with instant payouts",
-        stratumUrl: "solo.cat",
-        port: 3333,
-        fees: "1% fee",
-        status: "active",
-      }
-    ]
-  }
+const pools: Pool[] = [
+  { id: "public-pool", name: "Public Pool", description: "Open source, no fees, transparent", stratumUrl: "public-pool.io", port: 21496, fees: "0%", status: "active" },
+  { id: "solo-ck", name: "Solo CK Pool", description: "Solo mining, 98% block reward", stratumUrl: "solo.ckpool.org", port: 3333, fees: "2%", status: "active" },
+  { id: "atlas-pool", name: "AtlasPool", description: "Reliable, performant, globally deployed solo mining", stratumUrl: "solo.atlaspool.io", port: 3333, fees: "0%", status: "active" },
+  { id: "letsmine", name: "Letsmine.it", description: "European pool, low latency", stratumUrl: "de1.letsmine.it", port: 3332, fees: "1%", status: "active", password: "diff=auto" },
+  { id: "solo-cat", name: "Solo.cat", description: "Solo mining with instant payouts", stratumUrl: "solo.cat", port: 3333, fees: "1%", status: "active" },
 ];
 
-const getStatusIcon = (status: Pool["status"]) => {
-  switch (status) {
-    case "active":
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
-    case "offline":
-      return <XCircle className="h-4 w-4 text-red-500" />;
-    case "warning":
-      return <Clock className="h-4 w-4 text-yellow-500" />;
-  }
-};
-
-const getStatusColor = (status: Pool["status"]) => {
-  switch (status) {
-    case "active":
-      return "bg-green-500/10 text-green-500 border-green-500/20";
-    case "offline":
-      return "bg-red-500/10 text-red-500 border-red-500/20";
-    case "warning":
-      return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
-  }
+const statusIcon = (s: Pool["status"]) => {
+  if (s === "active") return <CheckCircle className="h-3 w-3 text-accent" />;
+  if (s === "offline") return <XCircle className="h-3 w-3 text-destructive" />;
+  return <Clock className="h-3 w-3 text-warning" />;
 };
 
 export default function Pools() {
-  const [openCoin, setOpenCoin] = useState<string | null>(null);
   const [copiedPool, setCopiedPool] = useState<string | null>(null);
-  const [copiedPassword, setCopiedPassword] = useState<string | null>(null);
 
-  const handleCopyStratum = async (pool: Pool) => {
-    const stratumString = `${pool.stratumUrl}:${pool.port}`;
-    try {
-      await navigator.clipboard.writeText(stratumString);
-      setCopiedPool(pool.id);
-      toast.success(`Copied ${pool.name} stratum address!`);
-      setTimeout(() => setCopiedPool(null), 2000);
-    } catch (err) {
-      toast.error("Failed to copy to clipboard");
-    }
-  };
-
-  const handleCopyPassword = async (pool: Pool) => {
-    if (!pool.password) return;
-    try {
-      await navigator.clipboard.writeText(pool.password);
-      setCopiedPassword(pool.id);
-      toast.success(`Copied ${pool.name} password!`);
-      setTimeout(() => setCopiedPassword(null), 2000);
-    } catch (err) {
-      toast.error("Failed to copy to clipboard");
-    }
+  const handleCopy = async (pool: Pool, type: 'stratum' | 'password') => {
+    const text = type === 'stratum' ? `${pool.stratumUrl}:${pool.port}` : pool.password || '';
+    await navigator.clipboard.writeText(text);
+    setCopiedPool(`${pool.id}-${type}`);
+    toast.success(`Copied ${type === 'stratum' ? 'stratum address' : 'password'}!`);
+    setTimeout(() => setCopiedPool(null), 2000);
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-          Mining Pools
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Click on a cryptocurrency to see available mining pools
-        </p>
+    <div className="h-full overflow-y-auto p-4 md:p-6 space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+          <Waves className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-lg font-bold font-mono tracking-tight">Mining Pools</h1>
+          <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">Bitcoin Pool Directory</p>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {coins.map((coin) => (
-          <Collapsible
-            key={coin.id}
-            open={openCoin === coin.id}
-            onOpenChange={(open) => setOpenCoin(open ? coin.id : null)}
+      {/* Pool list */}
+      <div className="space-y-2">
+        {pools.map((pool) => (
+          <div
+            key={pool.id}
+            className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 hover:border-primary/20 transition-all duration-200"
           >
-            <Card className="shadow-card hover:shadow-glow transition-all duration-300">
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer select-none transition-colors hover:bg-muted/30">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-3">
-                      <coin.icon className={`h-10 w-10 ${coin.color}`} />
-                      <div>
-                        <div className="text-2xl">{coin.name}</div>
-                        <div className="text-sm text-muted-foreground font-normal">{coin.symbol}</div>
-                      </div>
-                    </CardTitle>
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="text-muted-foreground">
-                        {coin.pools.length} pools
-                      </Badge>
-                      <ChevronDown 
-                        className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ease-out ${
-                          openCoin === coin.id ? "rotate-180" : ""
-                        }`} 
-                      />
-                    </div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <div className="p-2 rounded-lg bg-primary/8 border border-primary/15 mt-0.5">
+                  <Bitcoin className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-sm font-mono">{pool.name}</h3>
+                    {statusIcon(pool.status)}
+                    <Badge variant="outline" className={`text-[9px] px-1.5 py-0 font-mono ${pool.fees === "0%" ? "border-accent/30 text-accent" : "border-warning/30 text-warning"}`}>
+                      {pool.fees} fee
+                    </Badge>
                   </div>
-                  <CardDescription className="mt-2">
-                    {coin.description}
-                  </CardDescription>
-                </CardHeader>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent>
-                <CardContent className="pt-0 space-y-3">
-                  <div className="border-t border-border/50 pt-4" />
-                  {coin.pools.map((pool, index) => (
-                    <div
-                      key={pool.id}
-                      className="bg-muted/30 rounded-lg p-4 space-y-3 animate-fade-in"
-                      style={{ animationDelay: `${index * 50}ms` }}
+                  <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{pool.description}</p>
+
+                  {/* Stratum address */}
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    <code className="text-[11px] font-mono bg-secondary/40 px-2 py-1 rounded border border-border/30">
+                      {pool.stratumUrl}:{pool.port}
+                    </code>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-[10px] font-mono gap-1"
+                      onClick={() => handleCopy(pool, 'stratum')}
                     >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-semibold flex items-center gap-2">
-                            {pool.name}
-                            {getStatusIcon(pool.status)}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">{pool.description}</p>
-                        </div>
-                        <Badge variant="outline" className={getStatusColor(pool.status)}>
-                          {pool.status}
-                        </Badge>
-                      </div>
-                      
-                      <div className="bg-background/50 rounded p-2">
-                        <div className="text-xs text-muted-foreground mb-1">Stratum Address</div>
-                        <div className="font-mono text-sm">{pool.stratumUrl}:{pool.port}</div>
-                      </div>
-
-                      {pool.password && (
-                        <div className="bg-background/50 rounded p-2">
-                          <div className="text-xs text-muted-foreground mb-1">Password</div>
-                          <div className="font-mono text-sm">{pool.password}</div>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between pt-2">
-                        <span className="text-sm">
-                          <span className="text-muted-foreground">Fees: </span>
-                          <span className={pool.fees.includes("0%") ? "text-green-500 font-medium" : "text-orange-500"}>
-                            {pool.fees}
-                          </span>
-                        </span>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCopyStratum(pool)}
-                            className="gap-2"
-                          >
-                            {copiedPool === pool.id ? (
-                              <CheckCircle className="h-4 w-4" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                            {copiedPool === pool.id ? "Copied!" : "Copy"}
-                          </Button>
-                          {pool.password && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCopyPassword(pool)}
-                              className="gap-2"
-                            >
-                              {copiedPassword === pool.id ? (
-                                <CheckCircle className="h-4 w-4" />
-                              ) : (
-                                <Copy className="h-4 w-4" />
-                              )}
-                              {copiedPassword === pool.id ? "Copied!" : "Password"}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+                      {copiedPool === `${pool.id}-stratum` ? <CheckCircle className="h-3 w-3 text-accent" /> : <Copy className="h-3 w-3" />}
+                      {copiedPool === `${pool.id}-stratum` ? "Copied" : "Copy"}
+                    </Button>
+                    {pool.password && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-[10px] font-mono gap-1"
+                        onClick={() => handleCopy(pool, 'password')}
+                      >
+                        {copiedPool === `${pool.id}-password` ? <CheckCircle className="h-3 w-3 text-accent" /> : <Copy className="h-3 w-3" />}
+                        pw: {pool.password}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>
