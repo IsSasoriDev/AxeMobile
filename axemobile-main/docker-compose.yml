@@ -3,10 +3,10 @@ version: "3.7"
 services:
   app_proxy:
     environment:
-      APP_HOST: axemobile_web_1
+      APP_HOST: axemobile-main_web_1
       APP_PORT: 80
 
   web:
-    image: ghcr.io/issasoridev/axemobile:latest
+    image: ghcr.io/issasoridev/axemobile:latest@sha256:78ad944893ed98eeb4e12128daf2e5b65c64968aab6d8a9742f2ac367c406bf8
     restart: on-failure
     stop_grace_period: 1m
