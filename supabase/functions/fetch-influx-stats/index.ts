@@ -5,6 +5,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function isPrivateHost(urlStr: string): boolean {
+  try {
+    const url = new URL(urlStr);
+    const host = url.hostname;
+    // Check for IP-based hosts
+    const parts = host.split('.');
+    if (parts.length === 4 && parts.every(p => !isNaN(Number(p)))) {
+      const [a, b] = parts.map(Number);
+      if (a === 10) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      if (a === 192 && b === 168) return true;
+      if (a === 127) return true;
+      if (a === 169 && b === 254) return true;
+      if (a === 0) return true;
+    }
+    // Block localhost variants
+    if (host === 'localhost' || host === '[::1]') return true;
+    // Block metadata endpoints
+    if (host === '169.254.169.254') return true;
+    return false;
+  } catch {
+    return true; // Invalid URL, reject
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -16,24 +41,29 @@ serve(async (req) => {
     if (!influxUrl || !token || !bucket || !org) {
       return new Response(
         JSON.stringify({ error: 'Missing required InfluxDB configuration' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    // InfluxDB query to get latest stats
+    if (typeof influxUrl !== 'string' || isPrivateHost(influxUrl)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or private InfluxDB URL' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    // Sanitize bucket and measurement to prevent Flux injection
+    const safeBucket = bucket.replace(/[^a-zA-Z0-9_\-]/g, '');
+    const safeMeasurement = measurement.replace(/[^a-zA-Z0-9_\-]/g, '');
+
     const query = `
-      from(bucket: "${bucket}")
+      from(bucket: "${safeBucket}")
         |> range(start: -5m)
-        |> filter(fn: (r) => r._measurement == "${measurement}")
+        |> filter(fn: (r) => r._measurement == "${safeMeasurement}")
         |> last()
     `;
 
-    console.log('Querying InfluxDB:', { influxUrl, bucket, org, query });
-
-    const response = await fetch(`${influxUrl}/api/v2/query?org=${org}`, {
+    const response = await fetch(`${influxUrl}/api/v2/query?org=${encodeURIComponent(org)}`, {
       method: 'POST',
       headers: {
         'Authorization': `Token ${token}`,
@@ -44,39 +74,25 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('InfluxDB error:', errorText);
       return new Response(
         JSON.stringify({ error: `InfluxDB error: ${response.status}` }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
 
     const csvData = await response.text();
-    console.log('InfluxDB response:', csvData);
-
-    // Parse CSV response
     const stats = parseInfluxCSV(csvData);
 
     return new Response(
       JSON.stringify({ stats }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
 
   } catch (error) {
     console.error('Error fetching InfluxDB stats:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
-      }
+      JSON.stringify({ error: 'Internal server error' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
@@ -85,15 +101,13 @@ function parseInfluxCSV(csv: string) {
   const lines = csv.split('\n');
   const stats: Record<string, any> = {};
   
-  // Skip header lines and parse data
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (line && !line.startsWith('#') && !line.startsWith('_result')) {
       const fields = line.split(',');
       if (fields.length >= 6) {
-        // Extract field name and value from CSV
-        const field = fields[5]?.replace(/"/g, ''); // _field column
-        const value = fields[6]?.replace(/"/g, ''); // _value column
+        const field = fields[5]?.replace(/"/g, '');
+        const value = fields[6]?.replace(/"/g, '');
         
         if (field && value) {
           switch (field) {
@@ -126,7 +140,6 @@ function parseInfluxCSV(csv: string) {
     }
   }
 
-  // Set defaults if no data found
   return {
     hashrate: stats.hashrate || 0,
     temperature: stats.temperature || 0,

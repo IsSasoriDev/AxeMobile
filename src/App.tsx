@@ -34,6 +34,7 @@ import GitHub from "./pages/GitHub";
 import Admin from "./pages/Admin";
 import AtlasPool from "./pages/AtlasPool";
 import NotFound from "./pages/NotFound";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const Blog = lazy(() => import("./pages/Blog"));
 
@@ -83,6 +84,7 @@ const DesktopLayout = () => (
               <Route path="/github" element={<GitHub />} />
               <Route path="/atlaspool" element={<AtlasPool />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
               
               <Route path="/blog" element={<Suspense fallback={<div className="flex items-center justify-center h-full text-muted-foreground">Loading...</div>}><Blog /></Suspense>} />
               <Route path="*" element={<NotFound />} />

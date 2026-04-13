@@ -4,7 +4,7 @@
 
 # Keep JavaScript interface for Capacitor
 -keep class com.getcapacitor.** { *; }
--keep class dev.issasori.axemobile.** { *; }
+-keep class com.edu.axe.** { *; }
 
 # Keep WebView JavaScript interface
 -keepclassmembers class * {

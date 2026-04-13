@@ -28,6 +28,7 @@ import NotFound from "@/pages/NotFound";
 import Admin from "@/pages/Admin";
 import AtlasPool from "@/pages/AtlasPool";
 import Blog from "@/pages/Blog";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 
 function PullToRefresh({ children }: { children: React.ReactNode }) {
   const [pulling, setPulling] = useState(false);
@@ -148,6 +149,7 @@ export function MobileLayout() {
               <Route path="/github" element={<GitHub />} />
               <Route path="/atlaspool" element={<AtlasPool />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/blog" element={<Blog />} />
               
               <Route path="*" element={<NotFound />} />

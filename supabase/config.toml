@@ -27,8 +27,6 @@ verify_jwt = false
 [functions.fetch-altcoin-stats]
 verify_jwt = false
 
-[functions.seed-admins]
-verify_jwt = false
 
 [functions.pool-stats-api]
 verify_jwt = false

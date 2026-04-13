@@ -7,8 +7,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function isPrivateIP(ip: string): boolean {
+  // Remove port if present
+  const host = ip.split(':')[0];
+  const parts = host.split('.');
+  if (parts.length !== 4 || parts.some(p => isNaN(Number(p)) || Number(p) < 0 || Number(p) > 255)) {
+    return true; // Invalid IP format, reject
+  }
+  const [a, b] = parts.map(Number);
+  if (a === 10) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 127) return true;
+  if (a === 169 && b === 254) return true;
+  if (a === 0) return true;
+  return false;
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -20,19 +36,29 @@ serve(async (req) => {
     );
 
     const { minerId, ipAddress } = await req.json();
-    
+
+    if (!ipAddress || typeof ipAddress !== 'string') {
+      return new Response(JSON.stringify({ error: 'Valid IP address is required' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (isPrivateIP(ipAddress)) {
+      return new Response(JSON.stringify({ error: 'Private/reserved IP addresses are not allowed' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     console.log(`Fetching stats for miner ${minerId} at ${ipAddress}`);
     
-    // Fetch data from Bitaxe API endpoints
     const stats = await fetchBitaxeStats(ipAddress);
     
-    // Store stats in database if minerId is provided
     if (minerId && stats) {
       const { error: insertError } = await supabaseClient
         .from('miner_stats')
         .insert({
           miner_id: minerId,
-          user_id: null, // Public access, no user required
+          user_id: null,
           hashrate: stats.hashrate,
           temperature: stats.temperature,
           voltage: stats.voltage,
@@ -53,7 +79,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in fetch-bitaxe-stats function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -61,62 +87,48 @@ serve(async (req) => {
 });
 
 async function fetchBitaxeStats(ipAddress: string) {
-  try {
-    // Try multiple Bitaxe API endpoints
-    const endpoints = [
-      `http://${ipAddress}/api/system/info`,
-      `http://${ipAddress}/api/v1/system/info`,
-      `http://${ipAddress}/system/info`
-    ];
+  const endpoints = [
+    `http://${ipAddress}/api/system/info`,
+    `http://${ipAddress}/api/v1/system/info`,
+    `http://${ipAddress}/system/info`
+  ];
 
-    let response;
-    let data;
+  let data;
 
-    for (const endpoint of endpoints) {
-      try {
-        console.log(`Trying endpoint: ${endpoint}`);
-        response = await fetch(endpoint, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: AbortSignal.timeout(10000) // 10 second timeout
-        });
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(10000)
+      });
 
-        if (response.ok) {
-          data = await response.json();
-          console.log(`Success with endpoint: ${endpoint}`, data);
-          break;
-        }
-      } catch (err) {
-        console.log(`Failed endpoint ${endpoint}:`, err.message);
-        continue;
+      if (response.ok) {
+        data = await response.json();
+        break;
       }
+    } catch (err) {
+      continue;
     }
-
-    if (!data) {
-      throw new Error(`Unable to connect to any Bitaxe API endpoint for ${ipAddress}`);
-    }
-
-    return parseBitaxeData(data);
-  } catch (error) {
-    console.error(`Error fetching Bitaxe stats from ${ipAddress}:`, error);
-    throw error;
   }
+
+  if (!data) {
+    throw new Error(`Unable to connect to any Bitaxe API endpoint for ${ipAddress}`);
+  }
+
+  return parseBitaxeData(data);
 }
 
 function parseBitaxeData(data: any) {
-  console.log('Raw Bitaxe data:', data);
-  
   return {
-    hashrate: data.hashRate || data.hashrate || data['Hash Rate'] || Math.random() * 500 + 100,
-    temperature: data.temp || data.temperature || data['Temperature'] || Math.random() * 20 + 50,
-    voltage: data.voltage || data['Voltage'] || Math.random() * 1000 + 11000,
-    power: data.power || data['Power'] || Math.random() * 20 + 40,
+    hashrate: data.hashRate || data.hashrate || data['Hash Rate'] || 0,
+    temperature: data.temp || data.temperature || data['Temperature'] || 0,
+    voltage: data.voltage || data['Voltage'] || 0,
+    power: data.power || data['Power'] || 0,
     shares: {
-      accepted: data.accepted || data.sharesAccepted || data['Shares Accepted'] || Math.floor(Math.random() * 100),
-      rejected: data.rejected || data.sharesRejected || data['Shares Rejected'] || Math.floor(Math.random() * 5)
+      accepted: data.accepted || data.sharesAccepted || data['Shares Accepted'] || 0,
+      rejected: data.rejected || data.sharesRejected || data['Shares Rejected'] || 0
     },
-    uptime: data.uptime || data['Uptime'] || Math.floor(Math.random() * 86400)
+    uptime: data.uptime || data['Uptime'] || 0
   };
 }

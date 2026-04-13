@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Settings as SettingsIcon, Monitor, Smartphone, Type, RefreshCw, Bell, 
   Trash2, Download, Shield, Thermometer, Globe, Zap, Eye, Volume2, MessageSquare,
@@ -53,6 +54,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export default function Settings() {
+  const navigate = useNavigate();
   const { platform, setPlatform, textSize, setTextSize } = usePlatform();
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem("axemobile-settings");
@@ -331,6 +333,9 @@ export default function Settings() {
               <Trash2 className="h-3 w-3" /> Reset App (Everything)
             </Button>
             <p className="text-[9px] text-muted-foreground font-mono">All data is stored locally. Nothing is sent to external servers.</p>
+            <Button variant="link" size="sm" className="w-full h-8 text-xs font-mono gap-2 justify-start px-0 text-muted-foreground hover:text-primary" onClick={() => navigate("/privacy")}>
+              <Shield className="h-3 w-3" /> Privacy Policy
+            </Button>
           </div>
         </Section>
       </div>

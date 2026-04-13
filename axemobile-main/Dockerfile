@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files first for better caching
 COPY package.json ./
 
-# Install dependencies (skip native/optional deps that fail in Docker)
-RUN npm install --ignore-scripts --no-optional 2>/dev/null || npm install --legacy-peer-deps --ignore-scripts 2>/dev/null || true
+# Install dependencies - need full install for rollup native bindings
+RUN npm install --legacy-peer-deps 2>/dev/null || npm install 2>/dev/null || true
 
 # Copy source files needed for build
 COPY index.html ./

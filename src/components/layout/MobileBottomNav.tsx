@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Activity, Layers, Sliders, Mountain, Zap, Waves, BookMarked, Trophy, Settings, MoreHorizontal } from "lucide-react";
+import { Home, Activity, Layers, Sliders, Mountain, Zap, Waves, BookMarked, Trophy, Settings, MoreHorizontal, BookOpen } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
@@ -18,6 +18,7 @@ const moreTabs = [
   { title: "Pools", url: "/pools", icon: Waves },
   { title: "Resources", url: "/resources", icon: BookMarked },
   { title: "Cave", url: "/cave", icon: Mountain },
+  { title: "Blog", url: "/blog", icon: BookOpen },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 

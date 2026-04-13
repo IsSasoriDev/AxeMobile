@@ -7,11 +7,11 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace "dev.issasori.axemobile"
+    namespace "com.edu.axe"
     compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {
-        applicationId "dev.issasori.axemobile"
+        applicationId "com.edu.axe"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 10

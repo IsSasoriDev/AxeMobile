@@ -66,7 +66,7 @@ export default function Admin() {
 
   const handleLogin = async () => {
     setLoginLoading(true);
-    const email = username.includes("@") ? username : `${username.toLowerCase()}@axemobile.local`;
+    const email = username.includes("@") ? username : `${username}@axemobile.local`;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast.error("Invalid credentials");
