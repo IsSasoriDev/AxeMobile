@@ -35,6 +35,7 @@ import Admin from "./pages/Admin";
 import AtlasPool from "./pages/AtlasPool";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Leaderboard from "./pages/Leaderboard";
 
 const Blog = lazy(() => import("./pages/Blog"));
 
@@ -83,6 +84,7 @@ const DesktopLayout = () => (
               <Route path="/cave" element={<Cave />} />
               <Route path="/github" element={<GitHub />} />
               <Route path="/atlaspool" element={<AtlasPool />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               

@@ -43,6 +43,34 @@ export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView, onUpd
     return miner.isActive ? "default" : "destructive";
   };
 
+  const formatRelative = (ts?: number) => {
+    if (!ts) return "never";
+    const diff = Math.max(0, Date.now() - ts);
+    const s = Math.floor(diff / 1000);
+    if (s < 60) return `${s}s ago`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  };
+
+  // Color-coded freshness based on lastSeen
+  const getFreshness = () => {
+    if (!miner.lastSeen) {
+      return { label: "Never seen", className: "bg-muted text-muted-foreground border-border" };
+    }
+    const ageMs = Date.now() - miner.lastSeen;
+    const m = ageMs / 60000;
+    if (m < 1) return { label: "Live", className: "bg-success/15 text-success border-success/40 animate-pulse" };
+    if (m < 5) return { label: "Fresh", className: "bg-success/15 text-success border-success/40" };
+    if (m < 30) return { label: "Recent", className: "bg-warning/15 text-warning border-warning/40" };
+    if (m < 60 * 24) return { label: "Stale", className: "bg-orange-500/15 text-orange-500 border-orange-500/40" };
+    return { label: "Cold", className: "bg-destructive/15 text-destructive border-destructive/40" };
+  };
+
+  const freshness = getFreshness();
+
   return (
     <Card className="group relative overflow-hidden shadow-card hover:shadow-glow transition-all duration-500 border-primary/20 hover:border-primary/40">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -100,10 +128,20 @@ export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView, onUpd
           
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
             <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Status</span>
-            <Badge variant={getStatusVariant()} className="gap-1.5 px-3 py-1">
-              {getStatusIcon()}
-              <span className="font-bold">{miner.isActive ? 'Online' : 'Offline'}</span>
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge className={`gap-1 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider border ${freshness.className}`}>
+                {freshness.label}
+              </Badge>
+              <Badge variant={getStatusVariant()} className="gap-1.5 px-3 py-1">
+                {getStatusIcon()}
+                <span className="font-bold">{miner.isActive ? 'Online' : 'Offline'}</span>
+              </Badge>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-muted/30 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+            <span>Last seen: <span className="text-foreground/80">{formatRelative(miner.lastSeen)}</span></span>
+            <span>Scanned: <span className="text-foreground/80">{formatRelative(miner.lastScannedAt)}</span></span>
           </div>
 
           {miner.hashRate && (

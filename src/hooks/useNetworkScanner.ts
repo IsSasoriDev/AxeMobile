@@ -44,7 +44,35 @@ export interface MinerDevice {
   frequency?: number;
   fanSpeed?: number;
   chipCount?: number;
+  // Persistence metadata
+  lastSeen?: number; // epoch ms of last successful (isActive) reach
+  lastScannedAt?: number; // epoch ms of most recent scan attempt
 }
+
+// Merge a freshly-scanned device with its previously stored counterpart so
+// we keep the last reachable timestamp / cached metadata even if the latest
+// probe failed.
+const mergeFreshness = (prev: MinerDevice | undefined, fresh: MinerDevice): MinerDevice => {
+  const now = Date.now();
+  if (fresh.isActive) {
+    return {
+      ...prev,
+      ...fresh,
+      lastSeen: now,
+      lastScannedAt: now,
+    };
+  }
+  // Offline now — keep previous cached fields (name, model, hashRate, etc.)
+  return {
+    ...prev,
+    ...fresh,
+    name: fresh.name ?? prev?.name,
+    model: prev?.model ?? fresh.model,
+    deviceType: prev?.deviceType ?? fresh.deviceType,
+    lastSeen: prev?.lastSeen,
+    lastScannedAt: now,
+  };
+};
 
 export const useNetworkScanner = () => {
   const [devices, setDevices] = useState<MinerDevice[]>([]);
@@ -326,9 +354,11 @@ export const useNetworkScanner = () => {
 
         if (activeDevices.length > 0) {
           setDevices(prev => {
-            const existing = prev.filter(d => !foundDevices.some(f => f.IP === d.IP));
-            const newDevices = [...existing, ...foundDevices];
-            // Persist found devices to localStorage
+            const map = new Map(prev.map(d => [d.IP, d]));
+            for (const d of activeDevices) {
+              map.set(d.IP, mergeFreshness(map.get(d.IP), d));
+            }
+            const newDevices = Array.from(map.values());
             localStorage.setItem('MINER_DEVICES', JSON.stringify(newDevices));
             return newDevices;
           });
@@ -369,19 +399,16 @@ export const useNetworkScanner = () => {
       return false;
     }
 
-    const deviceInfo = await getDeviceInfo(ip);
-    
+    const deviceInfo = mergeFreshness(undefined, await getDeviceInfo(ip));
+    const next = [...devices, deviceInfo];
+    setDevices(next);
+    localStorage.setItem('MINER_DEVICES', JSON.stringify(next));
     if (deviceInfo.isActive) {
-      setDevices(prev => [...prev, deviceInfo]);
-      localStorage.setItem('MINER_DEVICES', JSON.stringify([...devices, deviceInfo]));
       toast.success('Device added successfully');
       return true;
-    } else {
-      setDevices(prev => [...prev, deviceInfo]);
-      localStorage.setItem('MINER_DEVICES', JSON.stringify([...devices, deviceInfo]));
-      toast.warning('Device added but appears to be offline');
-      return false;
     }
+    toast.warning('Device added but appears to be offline');
+    return false;
   }, [devices]);
 
   // Remove device
@@ -431,7 +458,7 @@ export const useNetworkScanner = () => {
     if (devices.length === 0) return;
 
     const updatedDevices = await Promise.all(
-      devices.map(device => getDeviceInfo(device.IP))
+      devices.map(async (device) => mergeFreshness(device, await getDeviceInfo(device.IP)))
     );
 
     setDevices(updatedDevices);
@@ -449,14 +476,13 @@ export const useNetworkScanner = () => {
           // Immediately show stored devices (possibly stale) so they never disappear
           setDevices(storedDevices);
 
-          // Then refresh their status in background
+          // Then refresh their status in background, preserving lastSeen
           const refreshedDevices = await Promise.all(
             storedDevices.map(async (device) => {
               try {
-                return await getDeviceInfo(device.IP);
+                return mergeFreshness(device, await getDeviceInfo(device.IP));
               } catch {
-                // Keep the stored device data but mark inactive
-                return { ...device, isActive: false };
+                return mergeFreshness(device, { ...device, isActive: false });
               }
             })
           );

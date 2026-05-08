@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const primaryTabs = [
-  { title: "Miners", url: "/", icon: Home },
+  { title: "Home", url: "/", icon: Home },
   { title: "Stats", url: "/stats", icon: Activity },
   { title: "Atlas", url: "/atlaspool", icon: Waves },
   { title: "Blocks", url: "/blocks", icon: Layers },
@@ -14,6 +14,7 @@ const primaryTabs = [
 const moreTabs = [
   { title: "Config", url: "/config", icon: Sliders },
   { title: "Achievements", url: "/achievements", icon: Trophy },
+  { title: "Leaderboard", url: "/leaderboard", icon: Trophy },
   { title: "Flash", url: "/flash", icon: Zap },
   { title: "Pools", url: "/pools", icon: Waves },
   { title: "Resources", url: "/resources", icon: BookMarked },

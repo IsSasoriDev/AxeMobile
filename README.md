@@ -390,38 +390,6 @@ npx cap open ios
 
 ---
 
-## 🏊 AxePool - Solo Mining Pool
-
-AxePool is a built-in solo mining pool that connects directly to your Bitcoin node. Point your Bitaxe miners directly at your Umbrel!
-
-### Features
-- Stratum server on port 3333
-- Real-time hashrate & share tracking
-- Block found notifications
-- Direct connection to your Bitcoin node
-
-### Setup (Umbrel)
-
-1. Install AxeMobile from the Umbrel App Store
-2. Go to **AxePool** tab and configure your Bitcoin node RPC credentials
-3. Point your miners to: `stratum+tcp://umbrel.local:3333`
-4. Use your Bitcoin address as the username
-
-### Manual Docker Setup
-
-```bash
-cd axemobile-main
-docker-compose up -d
-```
-
-Configure environment variables:
-- `APP_BITCOIN_NODE_IP` - Your Bitcoin node IP (default: 10.21.21.9)
-- `APP_BITCOIN_RPC_PASS` - RPC password
-- `APP_POOL_ADDRESS` - Your Bitcoin payout address
-
----
-
-## 🏠 Run on Umbrel
 
 ### Community App Store Structure
 

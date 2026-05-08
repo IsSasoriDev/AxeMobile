@@ -86,6 +86,81 @@ export type Database = {
         }
         Relationships: []
       }
+      leaderboard_bans: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string | null
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
+      leaderboard_cave_entries: {
+        Row: {
+          achieved_at: string
+          cave_btc: number
+          created_at: string
+          id: string
+          username: string
+        }
+        Insert: {
+          achieved_at?: string
+          cave_btc?: number
+          created_at?: string
+          id?: string
+          username: string
+        }
+        Update: {
+          achieved_at?: string
+          cave_btc?: number
+          created_at?: string
+          id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      leaderboard_entries: {
+        Row: {
+          achieved_at: string
+          best_difficulty: number
+          created_at: string
+          id: string
+          miner_name: string
+          time_to_find_seconds: number
+          username: string
+        }
+        Insert: {
+          achieved_at?: string
+          best_difficulty?: number
+          created_at?: string
+          id?: string
+          miner_name?: string
+          time_to_find_seconds?: number
+          username: string
+        }
+        Update: {
+          achieved_at?: string
+          best_difficulty?: number
+          created_at?: string
+          id?: string
+          miner_name?: string
+          time_to_find_seconds?: number
+          username?: string
+        }
+        Relationships: []
+      }
       pool_blocks: {
         Row: {
           finder: string
@@ -202,7 +277,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_best_diff_leaderboard: {
+        Args: { _limit?: number; _username?: string }
+        Returns: {
+          achieved_at: string
+          best_difficulty: number
+          is_current_user: boolean
+          miner_name: string
+          prize_cave_btc: number
+          rank: number
+          time_to_find_seconds: number
+          username: string
+        }[]
+      }
+      get_cave_btc_leaderboard: {
+        Args: { _limit?: number; _username?: string }
+        Returns: {
+          achieved_at: string
+          cave_btc: number
+          is_current_user: boolean
+          prize_cave_btc: number
+          rank: number
+          username: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

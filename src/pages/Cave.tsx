@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useMiningGame } from "@/hooks/useMiningGame";
 import { useMiningShop } from "@/hooks/useMiningShop";
 import { useNetworkScanner } from "@/hooks/useNetworkScanner";
 import { useMiningSound } from "@/hooks/useMiningSound";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pickaxe, Package, TrendingUp, ShoppingCart, Coins, Zap, Clock, DollarSign, Sparkles, Volume2, VolumeX, Mountain } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Pickaxe, Package, ShoppingCart, Coins, Zap, Clock, DollarSign, Sparkles, Volume2, VolumeX, Mountain, User, Trophy } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -22,9 +25,14 @@ import emeraldOre from "@/assets/ores/emerald.png";
 import diamondOre from "@/assets/ores/diamond.png";
 import bitcoinOre from "@/assets/ores/bitcoin.png";
 
+const USERNAME_KEY = "leaderboardUsername";
+
 export default function Cave() {
   const { totalHashRate } = useNetworkScanner();
   const [showSellAllDialog, setShowSellAllDialog] = useState(false);
+  const [username, setUsername] = useState(() => localStorage.getItem(USERNAME_KEY) || "");
+  const [draftName, setDraftName] = useState("");
+  const [submittingScore, setSubmittingScore] = useState(false);
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem('caveSoundMuted') === 'true');
   useEffect(() => { localStorage.setItem('caveSoundMuted', String(isMuted)); }, [isMuted]);
 
@@ -47,12 +55,48 @@ export default function Cave() {
     else { const item = shopItems.find(i => i.id === id); toast.error(item && btcBalance < item.price ? 'Not enough BTC!' : 'Cannot purchase'); }
   };
 
-  const handleSellOre = (oreId: string, amount: number, value: number) => { sellOre(oreId, amount); toast.success(`Sold for ${(value * amount * 0.1).toFixed(1)} BTC!`); };
+  const handleSellOre = (oreId: string, amount: number, value: number) => { sellOre(oreId, amount); toast.success(`Sold for ${(value * amount * 0.1).toFixed(1)} Cave BTC!`); };
   const handleSellAll = () => { addBTC(inventory.reduce((s, i) => s + (i.value * i.count * 0.1), 0)); clearInventory(); setShowSellAllDialog(false); toast.success("Sold all items!"); };
+  const saveUsername = () => {
+    const trimmed = draftName.trim();
+    if (trimmed.length < 2 || trimmed.length > 32) { toast.error("Username must be 2-32 characters"); return; }
+    localStorage.setItem(USERNAME_KEY, trimmed);
+    setUsername(trimmed);
+  };
+  const submitCaveScore = async () => {
+    if (!username) return;
+    setSubmittingScore(true);
+    const { error } = await supabase.from("leaderboard_cave_entries" as any).insert({ username, cave_btc: btcBalance } as any);
+    setSubmittingScore(false);
+    if (error) toast.error(error.message.includes("banned") ? "You are banned from submitting" : "Could not submit Cave BTC");
+    else toast.success("Cave BTC submitted!");
+  };
 
   const oreImages: Record<string, string> = { coal: coalOre, copper: copperOre, iron: ironOre, gold: goldOre, emerald: emeraldOre, diamond: diamondOre, bitcoin: bitcoinOre };
 
   const getTimeRemaining = (e?: Date) => { if (!e) return 'Permanent'; const m = Math.floor((e.getTime() - Date.now()) / 60000); return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`; };
+
+  if (!username) {
+    return (
+      <div className="h-full flex items-center justify-center p-4">
+        <div className="w-full max-w-xs space-y-4 animate-scale-up">
+          <div className="text-center space-y-2">
+            <div className="inline-flex p-3 rounded-xl bg-primary/10 border border-primary/20"><Mountain className="h-6 w-6 text-primary" /></div>
+            <h1 className="text-lg font-bold font-mono">Enter the Cave</h1>
+            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">Pick a username once to continue</p>
+          </div>
+          <div>
+            <Label className="text-[10px] font-mono uppercase text-muted-foreground">Username</Label>
+            <div className="relative mt-1">
+              <User className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input value={draftName} onChange={e => setDraftName(e.target.value)} placeholder="e.g. AxeWizard" maxLength={32} className="h-8 text-xs font-mono pl-8" onKeyDown={e => e.key === "Enter" && saveUsername()} />
+            </div>
+          </div>
+          <Button onClick={saveUsername} className="w-full h-8 text-xs font-mono">Continue</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto p-4 md:p-6 space-y-4">
@@ -64,13 +108,14 @@ export default function Cave() {
           </div>
           <div>
             <h1 className="text-lg font-bold font-mono tracking-tight">Mining Cave</h1>
-            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">Find Rare Resources</p>
+            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">{username} · Cave BTC only, not real BTC</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setIsMuted(!isMuted)}>
             {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </Button>
+          <Button variant="outline" size="sm" className="h-7 px-2 text-[10px] font-mono gap-1" onClick={submitCaveScore} disabled={submittingScore}><Trophy className="h-3 w-3" />Submit</Button>
           <div className="flex items-center gap-3 text-xs font-mono">
             <span className="text-warning font-bold">₿ {btcBalance.toFixed(1)}</span>
             <span className="text-muted-foreground">|</span>
@@ -108,7 +153,7 @@ export default function Cave() {
                 <img src={oreImages[recentFind.id]} alt={recentFind.name} className="w-8 h-8 object-contain" />
                 <div>
                   <span className="font-bold text-sm font-mono">{recentFind.name}!</span>
-                  <div className="text-[10px] text-muted-foreground font-mono">+{(recentFind.value * 0.1).toFixed(1)} BTC</div>
+                   <div className="text-[10px] text-muted-foreground font-mono">+{(recentFind.value * 0.1).toFixed(1)} Cave BTC</div>
                 </div>
                 <Sparkles className="w-4 h-4 text-warning animate-pulse" />
               </div>
@@ -235,7 +280,7 @@ export default function Cave() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-warning font-bold font-mono text-sm">₿ {item.price}</span>
+                    <span className="text-warning font-bold font-mono text-sm">₿ {item.price} Cave</span>
                     <Button size="sm" className="h-7 text-xs font-mono" onClick={() => handlePurchase(item.id)} disabled={!canAfford || isOwned}>
                       {isOwned ? 'Owned' : canAfford ? 'Buy' : 'Need BTC'}
                     </Button>
@@ -259,7 +304,7 @@ export default function Cave() {
           <AlertDialogHeader>
             <AlertDialogTitle className="font-mono">Sell All Items?</AlertDialogTitle>
             <AlertDialogDescription className="font-mono text-xs">
-              You'll receive <span className="text-warning font-bold">₿ {inventory.reduce((s, i) => s + (i.value * i.count * 0.1), 0).toFixed(2)}</span>
+              You'll receive <span className="text-warning font-bold">₿ {inventory.reduce((s, i) => s + (i.value * i.count * 0.1), 0).toFixed(2)} Cave BTC</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

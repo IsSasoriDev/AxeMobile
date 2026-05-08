@@ -7,6 +7,6 @@ services:
       APP_PORT: 80
 
   web:
-    image: ghcr.io/issasoridev/axemobile:latest@sha256:78ad944893ed98eeb4e12128daf2e5b65c64968aab6d8a9742f2ac367c406bf8
+    image: ghcr.io/issasoridev/axemobile:latest
     restart: on-failure
     stop_grace_period: 1m

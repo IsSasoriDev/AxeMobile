@@ -8,8 +8,10 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { 
   Shield, LogOut, Send, Plus, Trash2, Megaphone, AlertTriangle, 
-  Sparkles, Calendar, Link as LinkIcon, User, ImagePlus, X
+  Sparkles, Calendar, Link as LinkIcon, User, ImagePlus, X, Trophy
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LeaderboardAdmin } from "@/components/admin/LeaderboardAdmin";
 
 interface Announcement {
   id: string;
@@ -254,131 +256,144 @@ export default function Admin() {
         </Button>
       </div>
 
-      {/* Create New */}
-      <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 space-y-3 animate-slide-up">
-        <div className="flex items-center gap-2">
-          <Plus className="h-3.5 w-3.5 text-primary" />
-          <h2 className="text-xs font-bold font-mono uppercase tracking-widest text-muted-foreground">New Announcement</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <Label className="text-[10px] font-mono uppercase text-muted-foreground">Title</Label>
-            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Announcement title" className="h-8 text-xs font-mono mt-1" />
-          </div>
-          <div>
-            <Label className="text-[10px] font-mono uppercase text-muted-foreground">Type</Label>
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger className="h-8 text-xs font-mono mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="info">ℹ️ Info</SelectItem>
-                <SelectItem value="warning">⚠️ Warning</SelectItem>
-                <SelectItem value="update">✨ Update</SelectItem>
-                <SelectItem value="event">📅 Event</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div>
-          <Label className="text-[10px] font-mono uppercase text-muted-foreground">Message</Label>
-          <textarea
-            value={message}
-            onChange={e => setMessage(e.target.value)}
-            placeholder="Write your announcement..."
-            className="w-full mt-1 rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono min-h-[60px] resize-y focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
+      <Tabs defaultValue="announcements" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="announcements" className="text-xs font-mono gap-1.5"><Megaphone className="h-3 w-3" />Announcements</TabsTrigger>
+          <TabsTrigger value="leaderboard" className="text-xs font-mono gap-1.5"><Trophy className="h-3 w-3" />Leaderboard</TabsTrigger>
+        </TabsList>
 
-        {/* Image Upload */}
-        <div>
-          <Label className="text-[10px] font-mono uppercase text-muted-foreground flex items-center gap-1">
-            <ImagePlus className="h-3 w-3" /> Image (optional)
-          </Label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageSelect}
-            className="hidden"
-          />
-          {imagePreview ? (
-            <div className="relative mt-1 rounded-lg overflow-hidden border border-border/40 max-h-32">
-              <img src={imagePreview} alt="Preview" className="w-full h-32 object-cover" />
-              <button
-                onClick={clearImage}
-                className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/60 hover:bg-black/80 transition-colors"
-              >
-                <X className="h-3 w-3 text-white" />
-              </button>
+        <TabsContent value="announcements" className="space-y-4 mt-4">
+          {/* Create New */}
+          <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 space-y-3 animate-slide-up">
+            <div className="flex items-center gap-2">
+              <Plus className="h-3.5 w-3.5 text-primary" />
+              <h2 className="text-xs font-bold font-mono uppercase tracking-widest text-muted-foreground">New Announcement</h2>
             </div>
-          ) : (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleDrop}
-              className={`w-full mt-1 h-20 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-center gap-1 text-[10px] font-mono text-muted-foreground ${
-                dragOver ? "border-primary bg-primary/10 text-primary" : "border-border/60 bg-secondary/10 hover:bg-secondary/20"
-              }`}
-            >
-              <ImagePlus className="h-4 w-4" />
-              {dragOver ? "Drop image here" : "Click or drag & drop image"}
-            </button>
-          )}
-        </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label className="text-[10px] font-mono uppercase text-muted-foreground">Title</Label>
+                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Announcement title" className="h-8 text-xs font-mono mt-1" />
+              </div>
+              <div>
+                <Label className="text-[10px] font-mono uppercase text-muted-foreground">Type</Label>
+                <Select value={type} onValueChange={setType}>
+                  <SelectTrigger className="h-8 text-xs font-mono mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="info">ℹ️ Info</SelectItem>
+                    <SelectItem value="warning">⚠️ Warning</SelectItem>
+                    <SelectItem value="update">✨ Update</SelectItem>
+                    <SelectItem value="event">📅 Event</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label className="text-[10px] font-mono uppercase text-muted-foreground">Message</Label>
+              <textarea
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                placeholder="Write your announcement..."
+                className="w-full mt-1 rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono min-h-[60px] resize-y focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
 
-        <div>
-          <Label className="text-[10px] font-mono uppercase text-muted-foreground flex items-center gap-1">
-            <LinkIcon className="h-3 w-3" /> Link (optional)
-          </Label>
-          <Input value={link} onChange={e => setLink(e.target.value)} placeholder="https://..." className="h-8 text-xs font-mono mt-1" />
-        </div>
-        <Button onClick={handleSubmit} disabled={submitting} className="w-full h-8 text-xs font-mono gap-2">
-          <Send className="h-3 w-3" /> {submitting ? "Publishing..." : "Publish Announcement"}
-        </Button>
-      </div>
-
-      {/* Existing Announcements */}
-      <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 space-y-3">
-        <h2 className="text-xs font-bold font-mono uppercase tracking-widest text-muted-foreground">
-          All Announcements ({announcements.length})
-        </h2>
-        {announcements.length === 0 ? (
-          <p className="text-[10px] font-mono text-muted-foreground text-center py-4">No announcements yet</p>
-        ) : (
-          <div className="space-y-2">
-            {announcements.map(a => {
-              const Icon = typeIcons[a.type] || Megaphone;
-              return (
-                <div key={a.id} className={`p-3 rounded-lg border transition-all ${
-                  a.active ? "border-border/40 bg-secondary/20" : "border-border/20 bg-secondary/5 opacity-50"
-                }`}>
-                  <div className="flex items-start gap-2">
-                    <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-mono font-bold">{a.title}</p>
-                      <p className="text-[10px] font-mono text-muted-foreground whitespace-pre-wrap line-clamp-2">{a.message}</p>
-                      <p className="text-[8px] font-mono text-muted-foreground/60 mt-1">
-                        {new Date(a.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <Switch checked={a.active} onCheckedChange={() => toggleActive(a.id, a.active)} />
-                      <button onClick={() => deleteAnnouncement(a.id)} className="p-1 rounded hover:bg-destructive/10 transition-colors">
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </button>
-                    </div>
-                  </div>
-                  {a.image_url && (
-                    <div className="mt-2 rounded-md overflow-hidden border border-border/30 max-h-24">
-                      <img src={a.image_url} alt={a.title} className="w-full h-24 object-cover" />
-                    </div>
-                  )}
+            {/* Image Upload */}
+            <div>
+              <Label className="text-[10px] font-mono uppercase text-muted-foreground flex items-center gap-1">
+                <ImagePlus className="h-3 w-3" /> Image (optional)
+              </Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+              {imagePreview ? (
+                <div className="relative mt-1 rounded-lg overflow-hidden border border-border/40 max-h-32">
+                  <img src={imagePreview} alt="Preview" className="w-full h-32 object-cover" />
+                  <button
+                    onClick={clearImage}
+                    className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/60 hover:bg-black/80 transition-colors"
+                  >
+                    <X className="h-3 w-3 text-white" />
+                  </button>
                 </div>
-              );
-            })}
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDrop}
+                  className={`w-full mt-1 h-20 rounded-lg border-2 border-dashed transition-colors flex flex-col items-center justify-center gap-1 text-[10px] font-mono text-muted-foreground ${
+                    dragOver ? "border-primary bg-primary/10 text-primary" : "border-border/60 bg-secondary/10 hover:bg-secondary/20"
+                  }`}
+                >
+                  <ImagePlus className="h-4 w-4" />
+                  {dragOver ? "Drop image here" : "Click or drag & drop image"}
+                </button>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-[10px] font-mono uppercase text-muted-foreground flex items-center gap-1">
+                <LinkIcon className="h-3 w-3" /> Link (optional)
+              </Label>
+              <Input value={link} onChange={e => setLink(e.target.value)} placeholder="https://..." className="h-8 text-xs font-mono mt-1" />
+            </div>
+            <Button onClick={handleSubmit} disabled={submitting} className="w-full h-8 text-xs font-mono gap-2">
+              <Send className="h-3 w-3" /> {submitting ? "Publishing..." : "Publish Announcement"}
+            </Button>
           </div>
-        )}
-      </div>
+
+          {/* Existing Announcements */}
+          <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 space-y-3">
+            <h2 className="text-xs font-bold font-mono uppercase tracking-widest text-muted-foreground">
+              All Announcements ({announcements.length})
+            </h2>
+            {announcements.length === 0 ? (
+              <p className="text-[10px] font-mono text-muted-foreground text-center py-4">No announcements yet</p>
+            ) : (
+              <div className="space-y-2">
+                {announcements.map(a => {
+                  const Icon = typeIcons[a.type] || Megaphone;
+                  return (
+                    <div key={a.id} className={`p-3 rounded-lg border transition-all ${
+                      a.active ? "border-border/40 bg-secondary/20" : "border-border/20 bg-secondary/5 opacity-50"
+                    }`}>
+                      <div className="flex items-start gap-2">
+                        <Icon className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-mono font-bold">{a.title}</p>
+                          <p className="text-[10px] font-mono text-muted-foreground whitespace-pre-wrap line-clamp-2">{a.message}</p>
+                          <p className="text-[8px] font-mono text-muted-foreground/60 mt-1">
+                            {new Date(a.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Switch checked={a.active} onCheckedChange={() => toggleActive(a.id, a.active)} />
+                          <button onClick={() => deleteAnnouncement(a.id)} className="p-1 rounded hover:bg-destructive/10 transition-colors">
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </button>
+                        </div>
+                      </div>
+                      {a.image_url && (
+                        <div className="mt-2 rounded-md overflow-hidden border border-border/30 max-h-24">
+                          <img src={a.image_url} alt={a.title} className="w-full h-24 object-cover" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="leaderboard" className="mt-4">
+          <LeaderboardAdmin />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -17,14 +17,6 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: "dist",
     emptyOutDir: true,
-    rollupOptions: {
-      external: [
-        '@tauri-apps/api',
-        '@tauri-apps/plugin-updater',
-        '@tauri-apps/plugin-process',
-        '@tauri-apps/plugin-http',
-      ],
-    },
   },
   plugins: [
     react(),
