@@ -30,8 +30,9 @@ FROM nginx:alpine
 # Copy built files
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx config
-COPY axemobile-main/nginx.conf /etc/nginx/default.conf
+# Copy nginx config to the correct location
+RUN rm -f /etc/nginx/conf.d/default.conf
+COPY axemobile-main/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

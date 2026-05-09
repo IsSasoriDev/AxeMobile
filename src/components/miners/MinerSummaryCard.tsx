@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Trophy, Cpu, Zap, TrendingUp, TrendingDown, Minus, Clock } from "lucide-react";
+import { Trophy, Cpu, Zap, TrendingUp, TrendingDown, Minus, Clock, Activity, Gauge } from "lucide-react";
 import { MinerDevice } from "@/hooks/useNetworkScanner";
 import { useHashrateHistory } from "@/hooks/useHashrateHistory";
 
 interface BestDiffRecord {
   value: number;
   miner: string;
-  at: string; // ISO
+  at: string;
 }
 
 const formatDiff = (diff: number) => {
@@ -40,7 +40,6 @@ export function MinerSummaryCard({ devices, totalHashRate, totalPower, activeDev
   const { avg10m, avg1h, avg24h } = useHashrateHistory(totalHashRate, totalPower);
   const [bestRecord, setBestRecord] = useState<BestDiffRecord | null>(null);
 
-  // Track best diff with timestamp
   useEffect(() => {
     const saved = localStorage.getItem("bestDifficultyRecord");
     let current: BestDiffRecord | null = saved ? JSON.parse(saved) : null;
@@ -49,11 +48,7 @@ export function MinerSummaryCard({ devices, totalHashRate, totalPower, activeDev
     devices.forEach((d) => {
       const v = (d.bestDiff || 0) as number;
       if (v > 0 && (!current || v > current.value)) {
-        current = {
-          value: v,
-          miner: d.name || d.IP,
-          at: new Date().toISOString(),
-        };
+        current = { value: v, miner: d.name || d.IP, at: new Date().toISOString() };
         updated = true;
       }
     });
@@ -64,98 +59,167 @@ export function MinerSummaryCard({ devices, totalHashRate, totalPower, activeDev
     setBestRecord(current);
   }, [devices]);
 
+  const efficiency = totalHashRate > 0 ? totalPower / (totalHashRate / 1000) : 0;
+  const healthPct = devices.length > 0 ? (activeDevices / devices.length) * 100 : 0;
+
   const renderAvg = (label: string, avg: number | null) => {
-    let trendIcon = <Minus className="h-3 w-3" />;
+    let TrendIcon = Minus;
     let colorClass = "text-muted-foreground";
+    let bgGlow = "";
     let pct: string | null = null;
 
     if (avg !== null && avg > 0) {
       const delta = ((totalHashRate - avg) / avg) * 100;
       if (delta > 2) {
-        trendIcon = <TrendingUp className="h-3 w-3" />;
+        TrendIcon = TrendingUp;
         colorClass = "text-success";
+        bgGlow = "shadow-[0_0_20px_-8px_hsl(var(--success)/0.5)]";
       } else if (delta < -2) {
-        trendIcon = <TrendingDown className="h-3 w-3" />;
+        TrendIcon = TrendingDown;
         colorClass = "text-destructive";
+        bgGlow = "shadow-[0_0_20px_-8px_hsl(var(--destructive)/0.5)]";
       }
       pct = `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%`;
     }
 
     return (
-      <div className="p-2 rounded-lg bg-secondary/30 border border-border/20">
-        <p className="text-[8px] text-muted-foreground font-mono uppercase tracking-wider mb-1">{label}</p>
-        <p className="text-sm font-bold font-mono">
-          {avg !== null ? `${avg.toFixed(2)}` : "—"}
-          <span className="text-[9px] text-muted-foreground ml-1">GH/s</span>
-        </p>
-        <div className={`flex items-center gap-1 mt-0.5 ${colorClass}`}>
-          {trendIcon}
-          <span className="text-[9px] font-mono">{pct ?? "no data"}</span>
+      <div className={`group relative overflow-hidden rounded-lg bg-gradient-to-br from-secondary/40 to-secondary/10 border border-border/40 p-2.5 transition-all hover:border-primary/40 ${bgGlow}`}>
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[9px] font-mono uppercase tracking-[0.15em] text-muted-foreground">{label}</span>
+          <TrendIcon className={`h-3 w-3 ${colorClass}`} />
+        </div>
+        <div className="flex items-baseline gap-1">
+          <span className="text-base font-black font-mono tabular-nums">
+            {avg !== null ? avg.toFixed(2) : "—"}
+          </span>
+          <span className="text-[9px] text-muted-foreground font-mono">GH/s</span>
+        </div>
+        <div className={`text-[10px] font-mono mt-0.5 ${colorClass}`}>
+          {pct ?? "no data"}
         </div>
       </div>
     );
   };
 
   return (
-    <div className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card/60 to-accent/5 backdrop-blur-sm p-4 space-y-3 shadow-glow">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-md bg-primary/15 border border-primary/30">
-            <Cpu className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">Fleet Summary</p>
-            <p className="text-sm font-bold font-mono">{activeDevices}/{devices.length} active miner{devices.length === 1 ? "" : "s"}</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="text-[8px] text-muted-foreground font-mono uppercase tracking-wider">Current</p>
-          <p className="text-lg font-black font-mono text-primary">
-            {totalHashRate.toFixed(2)}<span className="text-[10px] text-muted-foreground ml-1">GH/s</span>
-          </p>
-        </div>
-      </div>
+    <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-card via-card to-primary/5 backdrop-blur-xl shadow-[0_0_40px_-12px_hsl(var(--primary)/0.4)]">
+      {/* Decorative grid pattern */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+        backgroundImage: 'linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)',
+        backgroundSize: '24px 24px'
+      }} />
+      {/* Glow accent */}
+      <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-accent/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Best diff + power row */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="p-2.5 rounded-lg bg-warning/10 border border-warning/30">
-          <div className="flex items-center gap-1.5 mb-1">
-            <Trophy className="h-3 w-3 text-warning" />
-            <p className="text-[9px] text-muted-foreground font-mono uppercase tracking-wider">Top Best Diff</p>
+      <div className="relative p-5 space-y-4">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/40 blur-md rounded-xl" />
+              <div className="relative p-2.5 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/40">
+                <Cpu className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">Fleet Overview</p>
+              <p className="text-base font-bold font-mono leading-tight">
+                <span className="text-primary">{activeDevices}</span>
+                <span className="text-muted-foreground">/{devices.length}</span>
+                <span className="text-xs text-muted-foreground ml-1.5 font-normal">online</span>
+              </p>
+              {/* Health bar */}
+              <div className="mt-1.5 h-1 w-32 rounded-full bg-secondary/60 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+                  style={{ width: `${healthPct}%` }}
+                />
+              </div>
+            </div>
           </div>
-          <p className="text-base font-black font-mono text-warning">{formatDiff(bestRecord?.value || 0)}</p>
-          <div className="flex items-center justify-between text-[9px] font-mono text-muted-foreground mt-0.5">
-            <span className="truncate max-w-[60%]">{bestRecord?.miner || "—"}</span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-2.5 w-2.5" />
-              {formatRelative(bestRecord?.at)}
-            </span>
+
+          <div className="text-right">
+            <div className="flex items-center justify-end gap-1.5 mb-0.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+              </span>
+              <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground">Live</p>
+            </div>
+            <p className="text-3xl font-black font-mono text-primary leading-none tabular-nums">
+              {totalHashRate.toFixed(2)}
+            </p>
+            <p className="text-[10px] font-mono text-muted-foreground mt-0.5 uppercase tracking-wider">GH/s total</p>
           </div>
         </div>
 
-        <div className="p-2.5 rounded-lg bg-accent/10 border border-accent/30">
-          <div className="flex items-center gap-1.5 mb-1">
-            <Zap className="h-3 w-3 text-accent" />
-            <p className="text-[9px] text-muted-foreground font-mono uppercase tracking-wider">Power Draw</p>
+        {/* Stat tiles row */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Best diff */}
+          <div className="relative overflow-hidden rounded-xl border border-warning/30 bg-gradient-to-br from-warning/10 via-warning/5 to-transparent p-3">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-warning/10 rounded-full blur-2xl" />
+            <div className="relative">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Trophy className="h-3.5 w-3.5 text-warning" />
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground">All-Time Best Diff</p>
+              </div>
+              <p className="text-2xl font-black font-mono text-warning leading-none tabular-nums">
+                {formatDiff(bestRecord?.value || 0)}
+              </p>
+              <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground mt-2 pt-2 border-t border-warning/20">
+                <span className="truncate max-w-[55%]" title={bestRecord?.miner}>
+                  {bestRecord?.miner || "—"}
+                </span>
+                <span className="flex items-center gap-1 shrink-0">
+                  <Clock className="h-2.5 w-2.5" />
+                  {formatRelative(bestRecord?.at)}
+                </span>
+              </div>
+            </div>
           </div>
-          <p className="text-base font-black font-mono text-accent">
-            {totalPower.toFixed(0)}<span className="text-[10px] text-muted-foreground ml-1">W</span>
-          </p>
-          <p className="text-[9px] font-mono text-muted-foreground mt-0.5">
-            {totalHashRate > 0 ? `${(totalPower / (totalHashRate / 1000)).toFixed(1)} W/TH` : "— W/TH"}
-          </p>
-        </div>
-      </div>
 
-      {/* Hashrate averages */}
-      <div>
-        <p className="text-[9px] text-muted-foreground font-mono uppercase tracking-widest mb-1.5">
-          Avg Hashrate (vs current)
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          {renderAvg("10m", avg10m)}
-          {renderAvg("1h", avg1h)}
-          {renderAvg("24h", avg24h)}
+          {/* Power */}
+          <div className="relative overflow-hidden rounded-xl border border-accent/30 bg-gradient-to-br from-accent/10 via-accent/5 to-transparent p-3">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-accent/10 rounded-full blur-2xl" />
+            <div className="relative">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Zap className="h-3.5 w-3.5 text-accent" />
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground">Power Draw</p>
+              </div>
+              <p className="text-2xl font-black font-mono text-accent leading-none tabular-nums">
+                {totalPower.toFixed(0)}
+                <span className="text-xs text-muted-foreground ml-1 font-normal">W</span>
+              </p>
+              <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground mt-2 pt-2 border-t border-accent/20">
+                <span className="flex items-center gap-1">
+                  <Gauge className="h-2.5 w-2.5" />
+                  Efficiency
+                </span>
+                <span className="text-foreground/80">
+                  {efficiency > 0 ? `${efficiency.toFixed(1)} W/TH` : "—"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Hashrate averages */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <Activity className="h-3 w-3 text-primary" />
+              <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
+                Rolling Averages
+              </p>
+            </div>
+            <p className="text-[9px] font-mono text-muted-foreground/70">vs current</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {renderAvg("10m", avg10m)}
+            {renderAvg("1h", avg1h)}
+            {renderAvg("24h", avg24h)}
+          </div>
         </div>
       </div>
     </div>
