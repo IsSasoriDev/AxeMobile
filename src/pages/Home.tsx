@@ -10,7 +10,7 @@ import { Pickaxe, Wifi, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
-  const { devices, addDevice, removeDevice, refreshDevices, updateDeviceName, scanNetwork, isScanning, totalHashRate, totalPower, activeDevices } = useNetworkScanner();
+  const { devices, addDevice, removeDevice, refreshDevices, updateDeviceName, updateDeviceIP, scanNetwork, isScanning, totalHashRate, totalPower, activeDevices } = useNetworkScanner();
   useMinerNotifications(devices);
   useTrayStats(activeDevices, devices.length, totalHashRate, totalPower, devices);
   const [webViewMiner, setWebViewMiner] = useState<MinerDevice | null>(null);
@@ -86,6 +86,7 @@ export default function Home() {
               onDelete={() => removeDevice(miner.IP)}
               onOpenWebView={handleOpenWebView}
               onUpdateName={updateDeviceName}
+              onUpdateIP={updateDeviceIP}
             />
           ))}
         </div>

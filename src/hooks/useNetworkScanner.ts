@@ -429,6 +429,28 @@ export const useNetworkScanner = () => {
     toast.success('Device name updated');
   }, [devices]);
 
+  // Update device IP address (preserves name & metadata, re-probes new IP)
+  const updateDeviceIP = useCallback(async (oldIP: string, newIP: string) => {
+    const trimmed = newIP.trim();
+    if (!trimmed) {
+      toast.error('IP cannot be empty');
+      return false;
+    }
+    if (trimmed === oldIP) return true;
+    if (devices.some(d => d.IP === trimmed)) {
+      toast.error('Another device already uses that IP');
+      return false;
+    }
+    const existing = devices.find(d => d.IP === oldIP);
+    const probed = await getDeviceInfo(trimmed);
+    const merged = mergeFreshness(existing ? { ...existing, IP: trimmed } : undefined, { ...probed, name: existing?.name ?? probed.name });
+    const updated = devices.map(d => (d.IP === oldIP ? merged : d));
+    setDevices(updated);
+    localStorage.setItem('MINER_DEVICES', JSON.stringify(updated));
+    toast.success(probed.isActive ? 'IP updated — device reachable' : 'IP updated (offline)');
+    return true;
+  }, [devices]);
+
   // Restart device - works in both Tauri and browser environments
   const restartDevice = useCallback(async (ip: string) => {
     try {
@@ -535,6 +557,7 @@ export const useNetworkScanner = () => {
     restartDevice,
     refreshDevices,
     updateDeviceName,
+    updateDeviceIP,
     totalHashRate,
     totalPower,
     activeDevices: activeDevices.length,

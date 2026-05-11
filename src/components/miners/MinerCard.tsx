@@ -15,20 +15,25 @@ interface MinerCardProps {
   onDelete: (ip: string) => void;
   onOpenWebView: (miner: MinerDevice) => void;
   onUpdateName: (ip: string, name: string) => void;
+  onUpdateIP?: (oldIP: string, newIP: string) => Promise<boolean> | void;
 }
 
-export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView, onUpdateName }: MinerCardProps) {
+export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView, onUpdateName, onUpdateIP }: MinerCardProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [editName, setEditName] = useState(miner.name || '');
+  const [editIP, setEditIP] = useState(miner.IP);
 
-  const handleSaveName = () => {
-    if (editName.trim()) {
-      onUpdateName(miner.IP, editName.trim());
-      setEditDialogOpen(false);
-    } else {
+  const handleSaveName = async () => {
+    if (!editName.trim()) {
       toast.error('Device name cannot be empty');
+      return;
     }
+    onUpdateName(miner.IP, editName.trim());
+    if (onUpdateIP && editIP.trim() && editIP.trim() !== miner.IP) {
+      await onUpdateIP(miner.IP, editIP.trim());
+    }
+    setEditDialogOpen(false);
   };
 
   const getStatusIcon = () => {
@@ -213,13 +218,11 @@ export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView, onUpd
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Miner Name</DialogTitle>
+            <DialogTitle>Edit Miner</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">
-                Miner Name
-              </label>
+              <label className="text-sm font-medium mb-2 block">Miner Name</label>
               <Input
                 placeholder="Enter miner name"
                 value={editName}
@@ -227,13 +230,21 @@ export function MinerCard({ miner, onStatusCheck, onDelete, onOpenWebView, onUpd
                 onKeyPress={(e) => e.key === 'Enter' && handleSaveName()}
               />
             </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">IP Address</label>
+              <Input
+                placeholder="e.g. 192.168.1.100"
+                value={editIP}
+                onChange={(e) => setEditIP(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSaveName()}
+              />
+              <p className="text-[10px] text-muted-foreground font-mono mt-1">
+                Changing the IP re-probes the device but keeps the name and history.
+              </p>
+            </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveName}>
-                Save
-              </Button>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveName}>Save</Button>
             </div>
           </div>
         </DialogContent>

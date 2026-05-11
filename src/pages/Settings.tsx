@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { 
   Settings as SettingsIcon, Monitor, Smartphone, Type, RefreshCw, Bell, 
   Trash2, Download, Shield, Thermometer, Globe, Zap, Eye, Volume2, MessageSquare,
-  AlertTriangle, HardDrive, Server, Megaphone
+  AlertTriangle, HardDrive, Server, Megaphone, Terminal
 } from "lucide-react";
+import { LogsViewer } from "@/components/settings/LogsViewer";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -319,6 +320,13 @@ export default function Settings() {
             <p className="text-[9px] text-muted-foreground font-mono">Receive app-wide announcements and updates from the team.</p>
           </div>
         </Section>
+
+        {/* Live Logs */}
+        <div className="lg:col-span-2">
+          <Section icon={Terminal} title="Logs">
+            <LogsViewer />
+          </Section>
+        </div>
 
         {/* Data & Privacy */}
         <Section icon={Shield} title="Data & Privacy">
