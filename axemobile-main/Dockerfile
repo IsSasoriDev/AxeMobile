@@ -1,36 +1,33 @@
-# Build stage
+# syntax=docker/dockerfile:1
+
+# ---------- Build stage ----------
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files first for better caching
-COPY package.json ./
-
-# Install dependencies - need full install for rollup native bindings
+# Install dependencies first for better layer caching.
+# Build context is the repository root (see .github/workflows/docker-publish.yml).
+COPY package.json package-lock.json* ./
 RUN npm install --legacy-peer-deps 2>/dev/null || npm install 2>/dev/null || true
 
-# Copy source files needed for build
+# Copy the files required to build the SPA
 COPY index.html ./
 COPY vite.config.ts ./
-COPY tsconfig.json ./
-COPY tsconfig.app.json ./
-COPY tsconfig.node.json ./
-COPY tailwind.config.ts ./
-COPY postcss.config.js ./
-COPY components.json ./
+COPY tsconfig.json tsconfig.app.json tsconfig.node.json ./
+COPY tailwind.config.ts postcss.config.js components.json ./
 COPY src/ ./src/
 COPY public/ ./public/
 
-# Build the app (production mode)
+# Produce the static production bundle
 RUN npx vite build
 
-# Production stage
+# ---------- Production stage ----------
 FROM nginx:alpine
 
-# Copy built files
+# Serve the compiled SPA
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx config to the correct location
+# Replace the default Nginx site with our SPA-aware config
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY axemobile-main/nginx.conf /etc/nginx/conf.d/default.conf
 

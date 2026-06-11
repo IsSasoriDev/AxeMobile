@@ -109,27 +109,28 @@ export function AppSidebar() {
             Nav
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end
-                      className={({ isActive }) =>
-                        `flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-150 ${
+            <SidebarMenu className="gap-0.5">
+              {items.map((item) => {
+                const isActive = location.pathname === item.url;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end
+                        className={`group/nav relative flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 ${
                           isActive
-                            ? "bg-primary/10 text-primary font-bold"
-                            : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-                        }`
-                      }
-                    >
-                      <item.icon className="h-3.5 w-3.5" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                            ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-bold shadow-[inset_2px_0_0_hsl(var(--primary)),0_0_16px_-8px_hsl(var(--primary)/0.6)]"
+                            : "text-muted-foreground hover:text-foreground hover:bg-secondary/40 hover:translate-x-0.5"
+                        }`}
+                      >
+                        <item.icon className="h-3.5 w-3.5 transition-transform duration-200 group-hover/nav:scale-110" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -146,13 +147,11 @@ export function AppSidebar() {
                 <SidebarMenuButton asChild>
                   <NavLink
                     to="/settings"
-                    className={({ isActive }) =>
-                      `flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-150 ${
-                        isActive
-                          ? "bg-primary/10 text-primary font-bold"
-                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-                      }`
-                    }
+                    className={`relative flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 ${
+                      location.pathname === "/settings"
+                        ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-bold shadow-[inset_2px_0_0_hsl(var(--primary)),0_0_16px_-8px_hsl(var(--primary)/0.6)]"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/40 hover:translate-x-0.5"
+                    }`}
                   >
                     <Settings className="h-3.5 w-3.5" />
                     {!collapsed && <span>Settings</span>}

@@ -12,6 +12,10 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { usePlatform } from "@/hooks/usePlatform";
 
@@ -97,8 +101,8 @@ export default function Settings() {
   };
 
   const Section = ({ icon: Icon, title, children }: { icon: typeof SettingsIcon; title: string; children: React.ReactNode }) => (
-    <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 space-y-3">
-      <div className="flex items-center gap-2">
+    <div className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 space-y-3 transition-all duration-300 hover:border-border/70 hover:bg-card/55">
+      <div className="flex items-center gap-2 pb-1 border-b border-border/30">
         <Icon className="h-3.5 w-3.5 text-primary" />
         <h2 className="text-xs font-bold font-mono uppercase tracking-widest text-muted-foreground">{title}</h2>
       </div>
@@ -334,12 +338,49 @@ export default function Settings() {
             <Button variant="outline" size="sm" className="w-full h-8 text-xs font-mono gap-2 justify-start" onClick={exportData}>
               <Download className="h-3 w-3" /> Export All Data
             </Button>
-            <Button variant="outline" size="sm" className="w-full h-8 text-xs font-mono gap-2 justify-start" onClick={clearCache}>
-              <Trash2 className="h-3 w-3" /> Clear Cache
-            </Button>
-            <Button variant="destructive" size="sm" className="w-full h-8 text-xs font-mono gap-2 justify-start" onClick={resetApp}>
-              <Trash2 className="h-3 w-3" /> Reset App (Everything)
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full h-8 text-xs font-mono gap-2 justify-start">
+                  <Trash2 className="h-3 w-3" /> Clear Cache
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clear cache?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This clears cached data but keeps your saved miners, settings, theme and platform. The app will not reload.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={clearCache}>Clear Cache</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="w-full h-8 text-xs font-mono gap-2 justify-start">
+                  <Trash2 className="h-3 w-3" /> Reset App (Everything)
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset the entire app?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently deletes ALL local data — saved miners, settings, themes, achievements and progress — then reloads the app. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={resetApp}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Reset Everything
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <p className="text-[9px] text-muted-foreground font-mono">All data is stored locally. Nothing is sent to external servers.</p>
             <Button variant="link" size="sm" className="w-full h-8 text-xs font-mono gap-2 justify-start px-0 text-muted-foreground hover:text-primary" onClick={() => navigate("/privacy")}>
               <Shield className="h-3 w-3" /> Privacy Policy

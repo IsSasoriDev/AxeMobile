@@ -31,7 +31,7 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/95 backdrop-blur-xl safe-area-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-card/85 backdrop-blur-2xl shadow-[0_-8px_32px_-12px_hsl(var(--background))] safe-area-bottom">
         <div className="flex items-stretch justify-around h-14">
           {primaryTabs.map((tab) => {
             if (tab.url === "#more") {
@@ -39,12 +39,18 @@ export function MobileBottomNav() {
                 <button
                   key="more"
                   onClick={() => setMoreOpen(true)}
-                  className={`flex flex-col items-center justify-center gap-0.5 flex-1 transition-colors ${
+                  className={`flex flex-col items-center justify-center gap-0.5 flex-1 transition-colors duration-200 ${
                     isMoreActive ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
-                  <tab.icon className="h-5 w-5" />
-                  <span className="text-[9px] font-mono font-bold">{tab.title}</span>
+                  <span
+                    className={`flex items-center justify-center h-7 px-4 rounded-full transition-all duration-300 ${
+                      isMoreActive ? "bg-primary/15 shadow-[0_0_14px_-4px_hsl(var(--primary)/0.5)]" : ""
+                    }`}
+                  >
+                    <tab.icon className="h-5 w-5" />
+                  </span>
+                  <span className="text-[9px] font-mono font-bold tracking-wide">{tab.title}</span>
                 </button>
               );
             }
@@ -55,13 +61,23 @@ export function MobileBottomNav() {
                 to={tab.url}
                 end={tab.url === "/"}
                 className={({ isActive }) =>
-                  `flex flex-col items-center justify-center gap-0.5 flex-1 transition-colors ${
+                  `flex flex-col items-center justify-center gap-0.5 flex-1 transition-colors duration-200 ${
                     isActive ? "text-primary" : "text-muted-foreground"
                   }`
                 }
               >
-                <tab.icon className="h-5 w-5" />
-                <span className="text-[9px] font-mono font-bold">{tab.title}</span>
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={`flex items-center justify-center h-7 px-4 rounded-full transition-all duration-300 ${
+                        isActive ? "bg-primary/15 shadow-[0_0_14px_-4px_hsl(var(--primary)/0.5)] scale-105" : "scale-100"
+                      }`}
+                    >
+                      <tab.icon className="h-5 w-5" />
+                    </span>
+                    <span className="text-[9px] font-mono font-bold tracking-wide">{tab.title}</span>
+                  </>
+                )}
               </NavLink>
             );
           })}
@@ -69,9 +85,9 @@ export function MobileBottomNav() {
       </nav>
 
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl pb-8">
-          <SheetHeader className="pb-2">
-            <SheetTitle className="text-sm font-mono">More</SheetTitle>
+        <SheetContent side="bottom" className="rounded-t-2xl pb-8 bg-card/95 backdrop-blur-2xl border-border/40">
+          <SheetHeader className="pb-3">
+            <SheetTitle className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">More</SheetTitle>
           </SheetHeader>
           <div className="grid grid-cols-3 gap-2">
             {moreTabs.map((tab) => (
@@ -80,10 +96,10 @@ export function MobileBottomNav() {
                 to={tab.url}
                 onClick={() => setMoreOpen(false)}
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-1.5 p-4 rounded-xl border transition-all ${
+                  `flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200 active:scale-[0.97] ${
                     isActive
-                      ? "bg-primary/10 border-primary/30 text-primary"
-                      : "border-border/30 text-muted-foreground hover:bg-secondary/40"
+                      ? "bg-gradient-to-b from-primary/15 to-primary/5 border-primary/30 text-primary shadow-[0_0_20px_-8px_hsl(var(--primary)/0.5)]"
+                      : "border-border/30 bg-secondary/20 text-muted-foreground hover:bg-secondary/50 hover:border-border/60 hover:text-foreground"
                   }`
                 }
               >

@@ -399,13 +399,12 @@ This repository is structured as an Umbrel Community App Store. The folder struc
 AxeMobile/
 ├── umbrel-app-store.yml       # Store config (id: axemobile)
 ├── axemobile-main/            # App folder (must start with store id)
-│   ├── umbrel-app.yml         # App manifest
-│   ├── docker-compose.yml     # Docker services
-│   ├── Dockerfile             # Web app image
-│   ├── nginx.conf             # Nginx config
-│   ├── icon.png               # App icon (72x72+)
-│   ├── 1.jpg, 2.jpg...        # Gallery images
-│   └── axepool-stratum/       # Stratum server
+│   ├── umbrel-app.yml         # App manifest (version + release notes)
+│   ├── docker-compose.yml     # Docker services (app_proxy + web)
+│   ├── Dockerfile             # Web app image (Node build → Nginx)
+│   ├── nginx.conf             # SPA + security headers
+│   ├── icon.png               # App store logo
+│   └── 1.jpg, 2.jpg, 3.jpg, 4.jpg   # Gallery screenshots
 ```
 
 **Important:** The app folder name must be `{store-id}-{app-name}` format.

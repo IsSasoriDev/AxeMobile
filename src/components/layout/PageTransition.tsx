@@ -36,8 +36,9 @@ export const PageTransition = ({ children }: PageTransitionProps) => {
       className="w-full h-full"
       style={{
         opacity: transitionStage === "enter" ? 1 : 0,
-        transform: transitionStage === "enter" ? "translateY(0) scale(1)" : "translateY(6px) scale(0.995)",
-        transition: "opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+        transform: transitionStage === "enter" ? "translateY(0) scale(1)" : "translateY(8px) scale(0.992)",
+        filter: transitionStage === "enter" ? "blur(0px)" : "blur(2px)",
+        transition: "opacity 0.28s cubic-bezier(0.32, 0.72, 0, 1), transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), filter 0.28s ease",
         willChange: "opacity, transform",
       }}
       key={displayLocation.pathname}
