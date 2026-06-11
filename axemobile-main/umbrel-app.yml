@@ -1,0 +1,56 @@
+manifestVersion: 1
+id: axemobile-main
+category: bitcoin
+name: AxeMobile
+version: "1.3.0"
+tagline: Monitor your Bitcoin miners from your Umbrel
+description: >-
+  AxeMobile is an all-in-one dashboard for monitoring and managing your Bitaxe
+  and Nerdaxe Bitcoin miners directly from your Umbrel.
+
+
+  Features:
+
+  - Real-time hashrate, temperature & power monitoring
+
+  - Multi-miner discovery via network scanning
+
+  - Pool configuration & performance presets
+
+  - Firmware updates over the air
+
+  - Bitcoin network stats & blocks explorer
+
+  - Block probability calculator
+
+  - Achievement system & gamified mining cave
+
+
+  Quick Start:
+
+  1. Install AxeMobile from the Umbrel App Store.
+
+  2. Add your miner IPs or scan your local network.
+
+  3. Monitor hashrate, temperature, and efficiency in real-time.
+
+developer: IsSasoriDev
+website: https://github.com/IsSasoriDev/AxeMobile
+dependencies: []
+repo: https://github.com/IsSasoriDev/AxeMobile
+support: https://github.com/IsSasoriDev/AxeMobile/issues
+port: 3847
+gallery:
+  - 1.jpg
+  - 2.jpg
+  - 3.jpg
+  - 4.jpg
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+torOnly: false
+permissions: []
+releaseNotes: >-
+  v1.3.0 — Simplified architecture. Removed built-in stratum server.
+  Added block probability calculator, AtlasPool integration, and
+  updated app store branding.

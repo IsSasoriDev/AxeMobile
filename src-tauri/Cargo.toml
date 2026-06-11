@@ -1,0 +1,30 @@
+[package]
+name = "axemobile"
+version = "1.0.0"
+description = "AxeMobile - Bitcoin Mining Device Manager"
+authors = ["you"]
+edition = "2021"
+
+[lib]
+name = "axemobile_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.1", features = [] }
+
+[dependencies]
+tauri = { version = "2.1", features = ["tray-icon"] }
+tauri-plugin-http = "2.1"
+tauri-plugin-updater = "2.1"
+tauri-plugin-process = "2.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.11", features = ["json"] }
+tokio = { version = "1", features = ["full"] }
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

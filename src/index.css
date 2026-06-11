@@ -1,0 +1,789 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* AxeMobile — Cyberpunk Neon Design System */
+
+@layer base {
+  /* ─── Default: Electric Blue + Black ─── */
+  :root {
+    --background: 220 20% 4%;
+    --foreground: 210 20% 92%;
+
+    --card: 220 20% 7%;
+    --card-foreground: 210 20% 92%;
+
+    --popover: 220 20% 7%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 199 100% 55%;
+    --primary-foreground: 220 20% 4%;
+
+    --secondary: 220 18% 12%;
+    --secondary-foreground: 210 20% 92%;
+
+    --muted: 220 18% 12%;
+    --muted-foreground: 215 15% 55%;
+
+    --accent: 160 100% 45%;
+    --accent-foreground: 220 20% 4%;
+
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 210 20% 92%;
+
+    --border: 220 20% 14%;
+    --input: 220 20% 14%;
+    --ring: 199 100% 55%;
+
+    --success: 160 100% 45%;
+    --warning: 40 100% 55%;
+    --info: 199 100% 55%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(199 100% 55%), hsl(220 100% 65%));
+    --gradient-accent: linear-gradient(135deg, hsl(160 100% 45%), hsl(199 100% 55%));
+
+    --shadow-glow: 0 0 25px hsl(199 100% 55% / 0.35);
+    --shadow-card: 0 4px 20px hsl(220 20% 4% / 0.6);
+    --shadow-neon: 0 0 8px hsl(199 100% 55% / 0.4), 0 0 20px hsl(199 100% 55% / 0.15);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 220 22% 5%;
+    --sidebar-foreground: 210 20% 85%;
+    --sidebar-primary: 199 100% 55%;
+    --sidebar-primary-foreground: 220 20% 4%;
+    --sidebar-accent: 220 18% 10%;
+    --sidebar-accent-foreground: 210 20% 92%;
+    --sidebar-border: 220 20% 14%;
+    --sidebar-ring: 199 100% 55%;
+  }
+
+  /* ─── AMOLED: Pure black ─── */
+  .theme-amoled {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 3%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 3%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 199 100% 55%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 7%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 7%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 160 100% 45%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 199 100% 55%;
+    --success: 160 100% 45%;
+    --warning: 40 100% 55%;
+    --info: 199 100% 55%;
+    --gradient-primary: linear-gradient(135deg, hsl(199 100% 55%), hsl(220 100% 65%));
+    --gradient-accent: linear-gradient(135deg, hsl(160 100% 45%), hsl(199 100% 55%));
+    --shadow-glow: 0 0 30px hsl(199 100% 55% / 0.5);
+    --shadow-card: 0 4px 12px hsl(0 0% 0% / 0.4);
+    --shadow-neon: 0 0 10px hsl(199 100% 55% / 0.5), 0 0 25px hsl(199 100% 55% / 0.2);
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 199 100% 55%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 7%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 12%;
+    --sidebar-ring: 199 100% 55%;
+  }
+
+  /* ─── Disco: Rave mode ─── */
+  .theme-disco {
+    --background: 270 100% 5%;
+    --foreground: 0 100% 100%;
+    --card: 270 100% 8%;
+    --card-foreground: 0 100% 100%;
+    --popover: 270 100% 8%;
+    --popover-foreground: 0 100% 100%;
+    --primary: 0 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 120 100% 10%;
+    --secondary-foreground: 0 100% 100%;
+    --muted: 240 100% 15%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 60 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 100% 100%;
+    --border: 300 100% 25%;
+    --input: 300 100% 25%;
+    --ring: 0 100% 50%;
+    --success: 120 100% 50%;
+    --warning: 60 100% 50%;
+    --info: 240 100% 50%;
+    --gradient-primary: linear-gradient(45deg, hsl(0 100% 50%), hsl(120 100% 50%), hsl(240 100% 50%));
+    --gradient-accent: linear-gradient(90deg, hsl(60 100% 50%), hsl(300 100% 50%), hsl(180 100% 50%));
+    --shadow-glow: 0 0 30px hsl(0 100% 50% / 0.8);
+    --shadow-card: 0 4px 6px hsl(0 100% 50% / 0.3);
+    --shadow-neon: 0 0 15px hsl(0 100% 50% / 0.6);
+    --sidebar-background: 270 100% 5%;
+    --sidebar-foreground: 0 100% 100%;
+    --sidebar-primary: 0 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 120 100% 10%;
+    --sidebar-accent-foreground: 0 100% 100%;
+    --sidebar-border: 300 100% 25%;
+    --sidebar-ring: 0 100% 50%;
+    animation: disco-flash 0.1s infinite;
+  }
+
+  @keyframes disco-flash {
+    0% { filter: hue-rotate(0deg) saturate(1); }
+    25% { filter: hue-rotate(90deg) saturate(1.5); }
+    50% { filter: hue-rotate(180deg) saturate(2); }
+    75% { filter: hue-rotate(270deg) saturate(1.5); }
+    100% { filter: hue-rotate(360deg) saturate(1); }
+  }
+
+  /* ─── IxTech: Clean light with blue accents ─── */
+  .theme-ixtech {
+    --background: 220 15% 8%;
+    --foreground: 210 20% 92%;
+    --card: 220 15% 11%;
+    --card-foreground: 210 20% 92%;
+    --popover: 220 15% 11%;
+    --popover-foreground: 210 20% 92%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 210 20% 92%;
+    --muted: 220 15% 15%;
+    --muted-foreground: 215 16% 55%;
+    --accent: 160 100% 45%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 217 91% 60%;
+    --success: 160 100% 45%;
+    --warning: 38 92% 50%;
+    --info: 221 83% 53%;
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(221 83% 53%));
+    --gradient-accent: linear-gradient(135deg, hsl(160 100% 45%), hsl(217 91% 60%));
+    --shadow-glow: 0 0 20px hsl(217 91% 60% / 0.3);
+    --shadow-card: 0 4px 12px hsl(220 15% 4% / 0.5);
+    --shadow-neon: 0 0 8px hsl(217 91% 60% / 0.4);
+    --sidebar-background: 220 15% 6%;
+    --sidebar-foreground: 210 20% 85%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 220 15% 12%;
+    --sidebar-accent-foreground: 210 20% 92%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 217 91% 60%;
+  }
+
+  html.theme-ixtech {
+    background-image: url('/images/ed155a7d-20ad-465b-9dae-1cb96e004260.png') !important;
+    background-size: cover !important;
+    background-attachment: fixed !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    min-height: 100vh !important;
+  }
+
+  html.theme-ixtech body {
+    background-image: url('/images/ed155a7d-20ad-465b-9dae-1cb96e004260.png') !important;
+    background-size: cover !important;
+    background-attachment: fixed !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    min-height: 100vh !important;
+    background-color: transparent !important;
+  }
+
+  html.theme-ixtech body #root {
+    background: transparent !important;
+    min-height: 100vh !important;
+  }
+
+  @keyframes ixtech-float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-4px); }
+  }
+
+  @keyframes ixtech-glow {
+    0%, 100% { box-shadow: 0 4px 12px hsl(217 91% 60% / 0.1); }
+    50% { box-shadow: 0 8px 25px hsl(217 91% 60% / 0.15); }
+  }
+
+  @keyframes ix-box-glow {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.04); }
+  }
+
+  @keyframes pm-ring-pulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.15); }
+  }
+
+  @keyframes pm-ring-expand {
+    0%, 100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.3); }
+  }
+
+  .theme-ixtech .card,
+  .theme-ixtech [class*="rounded-xl"][class*="border"][class*="bg-card"] {
+    background: hsl(220 15% 11% / 0.92) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(217 91% 60% / 0.2) !important;
+    animation: ixtech-glow 3s ease-in-out infinite;
+    transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+
+  .theme-ixtech .card:hover,
+  .theme-ixtech [class*="rounded-xl"][class*="border"][class*="bg-card"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px hsl(217 91% 60% / 0.2) !important;
+    border-color: hsl(217 91% 60% / 0.4) !important;
+  }
+
+  .theme-ixtech button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-state]) { transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1); }
+  .theme-ixtech button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-state]):hover { transform: translateY(-2px); }
+  .theme-ixtech [data-radix-popover-content] { animation: none !important; }
+
+  /* ─── BitAxe: Red cyberpunk ─── */
+  .theme-bitaxe {
+    --background: 0 0% 2%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 9%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 9%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 0 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 0 60% 15%;
+    --input: 0 0% 9%;
+    --ring: 0 100% 50%;
+    --success: 0 100% 50%;
+    --warning: 45 100% 50%;
+    --info: 0 100% 50%;
+    --gradient-primary: linear-gradient(135deg, hsl(0 100% 50%), hsl(0 80% 35%));
+    --gradient-accent: linear-gradient(135deg, hsl(0 80% 40%), hsl(0 0% 10%));
+    --shadow-glow: 0 0 30px hsl(0 100% 50% / 0.5);
+    --shadow-card: 0 0 20px hsl(0 100% 50% / 0.2);
+    --shadow-neon: 0 0 10px hsl(0 100% 50% / 0.5), 0 0 25px hsl(0 100% 50% / 0.2);
+    --sidebar-background: 0 0% 2%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 0 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 9%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 60% 15%;
+    --sidebar-ring: 0 100% 50%;
+    background-image: radial-gradient(circle at 1px 1px, hsl(0 100% 50% / 0.2) 1px, transparent 0);
+    background-size: 24px 24px;
+    background-attachment: fixed;
+  }
+
+  @keyframes bitaxe-pulse {
+    0%, 100% { box-shadow: 0 0 15px hsl(0 100% 50% / 0.3); border-color: hsl(0 100% 50% / 0.4); }
+    50% { box-shadow: 0 0 30px hsl(0 100% 50% / 0.6); border-color: hsl(0 100% 50% / 0.8); }
+  }
+
+  .theme-bitaxe .card,
+  .theme-bitaxe [class*="card"]:not([class*="dropdown"]):not([data-radix-collection-item]) {
+    border: 1px solid hsl(0 100% 50% / 0.25) !important;
+    background: hsl(0 0% 5%) !important;
+    animation: bitaxe-pulse 3s ease-in-out infinite;
+  }
+
+  .theme-bitaxe button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-radix-scroll-area-scrollbar] *):not([class*="sidebar"]):not([data-state]):not(.sidebar-system-btn) {
+    border: 1px solid hsl(0 100% 50% / 0.6) !important;
+    color: hsl(0 100% 50%) !important;
+    background: hsl(0 100% 50% / 0.08) !important;
+    text-transform: uppercase !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .theme-bitaxe button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-radix-scroll-area-scrollbar] *):not([class*="sidebar"]):not([data-state]):not(.sidebar-system-btn):hover {
+    background: hsl(0 100% 50% / 0.15) !important;
+    box-shadow: 0 0 20px hsl(0 100% 50% / 0.4) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .theme-bitaxe [data-radix-dropdown-menu-content] { background: hsl(0 0% 5%) !important; border: 1px solid hsl(0 60% 15%) !important; animation: none !important; z-index: 50 !important; }
+  .theme-bitaxe [data-radix-popover-content] { animation: none !important; }
+  .theme-bitaxe [role="menuitem"] { background: transparent !important; border: none !important; text-transform: none !important; font-weight: normal !important; letter-spacing: normal !important; box-shadow: none !important; color: hsl(0 0% 95%) !important; }
+  .theme-bitaxe [role="menuitem"]:hover { background: hsl(0 0% 9%) !important; transform: none !important; box-shadow: none !important; }
+  .theme-bitaxe .sidebar { border-right: 1px solid hsl(0 100% 50% / 0.2); }
+
+  /* ─── Bitcoin: Warm orange ─── */
+  .theme-bitcoin {
+    --background: 20 15% 5%;
+    --foreground: 0 0% 95%;
+    --card: 20 12% 8%;
+    --card-foreground: 0 0% 95%;
+    --popover: 20 12% 8%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 25 100% 54%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 20 10% 12%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 20 10% 12%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 25 100% 54%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 20 10% 16%;
+    --input: 20 10% 12%;
+    --ring: 25 100% 54%;
+    --success: 160 100% 40%;
+    --warning: 25 100% 54%;
+    --info: 25 100% 54%;
+    --gradient-primary: linear-gradient(135deg, hsl(25 100% 54%), hsl(30 90% 42%));
+    --gradient-accent: linear-gradient(135deg, hsl(25 100% 54%), hsl(20 10% 12%));
+    --shadow-glow: 0 0 25px hsl(25 100% 54% / 0.3);
+    --shadow-card: 0 4px 12px hsl(0 0% 0% / 0.5);
+    --shadow-neon: 0 0 8px hsl(25 100% 54% / 0.4), 0 0 20px hsl(25 100% 54% / 0.15);
+    --sidebar-background: 20 15% 5%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 25 100% 54%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 20 10% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 20 10% 16%;
+    --sidebar-ring: 25 100% 54%;
+  }
+
+  .theme-bitcoin::before {
+    content: '';
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+    background-image:
+      radial-gradient(circle at 10% 20%, hsl(25 100% 54% / 0.1) 0%, transparent 2%),
+      radial-gradient(circle at 80% 80%, hsl(25 100% 54% / 0.1) 0%, transparent 2%),
+      radial-gradient(circle at 50% 50%, hsl(25 100% 54% / 0.06) 0%, transparent 2%);
+    background-size: 100% 100%;
+  }
+
+  .theme-bitcoin .card { border: 1px solid hsl(20 10% 16%) !important; background: hsl(20 12% 8%) !important; transition: all 0.3s ease; }
+  .theme-bitcoin .card:hover { border-color: hsl(25 100% 54% / 0.3) !important; box-shadow: 0 8px 24px hsl(0 0% 0% / 0.5) !important; }
+  .theme-bitcoin button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-state]):not(.sidebar-system-btn) { color: hsl(25 100% 54%) !important; border: 1px solid hsl(25 100% 54% / 0.5) !important; background: transparent !important; font-weight: 600 !important; transition: all 0.2s ease !important; }
+  .theme-bitcoin button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-state]):not(.sidebar-system-btn):hover { background: hsl(25 100% 54% / 0.1) !important; box-shadow: 0 4px 12px hsl(25 100% 54% / 0.3) !important; transform: translateY(-1px) !important; }
+  .theme-bitcoin [data-radix-dropdown-menu-content] { background: hsl(20 12% 8%) !important; border: 1px solid hsl(20 10% 16%) !important; z-index: 50 !important; }
+  .theme-bitcoin [data-radix-popover-content] { animation: none !important; }
+  .theme-bitcoin [role="menuitem"] { background: transparent !important; border: none !important; color: hsl(0 0% 95%) !important; font-weight: normal !important; }
+  .theme-bitcoin [role="menuitem"]:hover { background: hsl(20 10% 12%) !important; transform: none !important; box-shadow: none !important; }
+  .theme-bitcoin .sidebar { border-right: 1px solid hsl(20 10% 16%); }
+
+  /* ─── PowerMining: Deep blue ─── */
+  .theme-powermining {
+    --background: 215 40% 6%;
+    --foreground: 0 0% 95%;
+    --card: 215 35% 9%;
+    --card-foreground: 0 0% 95%;
+    --popover: 215 35% 9%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 203 100% 48%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 215 30% 13%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 215 30% 13%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 203 100% 55%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 203 40% 16%;
+    --input: 215 30% 13%;
+    --ring: 203 100% 48%;
+    --success: 160 100% 40%;
+    --warning: 45 100% 51%;
+    --info: 203 100% 55%;
+    --gradient-primary: linear-gradient(135deg, hsl(203 100% 48%), hsl(203 100% 58%));
+    --gradient-accent: linear-gradient(135deg, hsl(203 100% 30%), hsl(203 100% 48%));
+    --shadow-glow: 0 0 25px hsl(203 100% 48% / 0.35);
+    --shadow-card: 0 4px 12px hsl(0 0% 0% / 0.5);
+    --shadow-neon: 0 0 8px hsl(203 100% 48% / 0.4), 0 0 20px hsl(203 100% 48% / 0.15);
+    --sidebar-background: 215 40% 6%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 203 100% 48%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 215 30% 13%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 203 40% 16%;
+    --sidebar-ring: 203 100% 48%;
+  }
+
+  html.theme-powermining {
+    background-image: url('/images/powermining-bg.png') !important;
+    background-size: cover !important; background-attachment: fixed !important; background-repeat: no-repeat !important; background-position: center !important; min-height: 100vh !important;
+  }
+  html.theme-powermining body { background-image: url('/images/powermining-bg.png') !important; background-size: cover !important; background-attachment: fixed !important; background-repeat: no-repeat !important; background-position: center !important; min-height: 100vh !important; background-color: transparent !important; }
+  html.theme-powermining body #root { background: transparent !important; min-height: 100vh !important; backdrop-filter: blur(8px); }
+
+  .theme-powermining .card,
+  .theme-powermining [class*="rounded-xl"][class*="border"][class*="bg-card"] { border: 1px solid hsl(203 100% 48% / 0.25) !important; background: hsl(215 35% 9% / 0.88) !important; backdrop-filter: blur(12px); transition: all 0.3s ease; }
+  .theme-powermining .card:hover,
+  .theme-powermining [class*="rounded-xl"][class*="border"][class*="bg-card"]:hover { border-color: hsl(203 100% 48% / 0.5) !important; box-shadow: 0 8px 24px hsl(203 100% 48% / 0.25) !important; transform: translateY(-2px); }
+  .theme-powermining button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-state]):not(.sidebar-system-btn) { color: hsl(203 100% 55%) !important; border: 1px solid hsl(203 100% 48% / 0.6) !important; background: hsl(203 100% 48% / 0.08) !important; font-weight: 600 !important; transition: all 0.2s ease !important; backdrop-filter: blur(8px); }
+  .theme-powermining button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-state]):not(.sidebar-system-btn):hover { background: hsl(203 100% 48% / 0.18) !important; box-shadow: 0 4px 16px hsl(203 100% 48% / 0.4) !important; transform: translateY(-1px) !important; }
+  .theme-powermining [data-radix-dropdown-menu-content] { background: hsl(215 35% 9% / 0.95) !important; backdrop-filter: blur(12px); border: 1px solid hsl(203 100% 48% / 0.25) !important; z-index: 50 !important; }
+  .theme-powermining [role="menuitem"] { background: transparent !important; border: none !important; color: hsl(0 0% 95%) !important; font-weight: normal !important; }
+  .theme-powermining [role="menuitem"]:hover { background: hsl(203 100% 48% / 0.15) !important; transform: none !important; box-shadow: none !important; }
+  .theme-powermining .sidebar { border-right: 1px solid hsl(203 100% 48% / 0.2); background: hsl(215 40% 6% / 0.88) !important; backdrop-filter: blur(12px); }
+
+  /* ─── DTV Electronics: Black/White/Orange with cosmic effects ─── */
+  .theme-dtv {
+    --background: 0 0% 3%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 25 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 25 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 25 30% 14%;
+    --input: 0 0% 10%;
+    --ring: 25 100% 50%;
+    --success: 160 100% 40%;
+    --warning: 25 100% 50%;
+    --info: 25 100% 50%;
+    --gradient-primary: linear-gradient(135deg, hsl(25 100% 50%), hsl(25 80% 38%));
+    --gradient-accent: linear-gradient(135deg, hsl(25 80% 38%), hsl(0 0% 10%));
+    --shadow-glow: 0 0 25px hsl(25 100% 50% / 0.35);
+    --shadow-card: 0 4px 12px hsl(0 0% 0% / 0.5);
+    --shadow-neon: 0 0 8px hsl(25 100% 50% / 0.4), 0 0 20px hsl(25 100% 50% / 0.15);
+    --sidebar-background: 0 0% 3%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 25 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 25 30% 14%;
+    --sidebar-ring: 25 100% 50%;
+  }
+
+  /* DTV cosmic background */
+  html.theme-dtv { background-color: hsl(0 0% 2%) !important; min-height: 100vh !important; }
+  html.theme-dtv body { background-color: hsl(0 0% 2%) !important; min-height: 100vh !important; position: relative; overflow-x: hidden; }
+
+  html.theme-dtv::before {
+    content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 30%, hsl(280 60% 15% / 0.35) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 75% 70%, hsl(25 80% 20% / 0.25) 0%, transparent 45%),
+      radial-gradient(ellipse 70% 60% at 50% 50%, hsl(260 50% 12% / 0.2) 0%, transparent 55%);
+    animation: dtv-nebula-pulse 8s ease-in-out infinite alternate;
+  }
+
+  @keyframes dtv-nebula-pulse {
+    0% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.03); }
+    100% { opacity: 0.7; transform: scale(0.98); }
+  }
+
+  html.theme-dtv body::before {
+    content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;
+    background-image:
+      radial-gradient(2px 2px at 10% 15%, hsl(0 0% 100%) 100%, transparent),
+      radial-gradient(1px 1px at 40% 10%, hsl(0 0% 100% / 0.6) 100%, transparent),
+      radial-gradient(2px 2px at 55% 45%, hsl(25 100% 60%) 100%, transparent),
+      radial-gradient(1px 1px at 70% 20%, hsl(0 0% 100% / 0.7) 100%, transparent),
+      radial-gradient(2px 2px at 85% 55%, hsl(0 0% 100% / 0.9) 100%, transparent),
+      radial-gradient(1px 1px at 15% 65%, hsl(25 100% 55%) 100%, transparent),
+      radial-gradient(2px 2px at 30% 80%, hsl(0 0% 100% / 0.8) 100%, transparent),
+      radial-gradient(2px 2px at 65% 85%, hsl(25 100% 50%) 100%, transparent),
+      radial-gradient(1px 1px at 80% 75%, hsl(0 0% 100% / 0.7) 100%, transparent),
+      radial-gradient(2px 2px at 95% 30%, hsl(0 0% 100%) 100%, transparent);
+    background-size: 100% 100%;
+    animation: dtv-stars-twinkle 4s ease-in-out infinite alternate;
+  }
+
+  @keyframes dtv-stars-twinkle { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
+
+  html.theme-dtv #root::before {
+    content: ''; position: fixed; top: 0; left: 0; width: 6px; height: 6px; border-radius: 50%; background: hsl(0 0% 100%);
+    box-shadow: 0 0 12px 3px hsl(0 0% 100%), 0 0 25px 6px hsl(0 0% 100% / 0.6), -30px 10px 20px 1px hsl(0 0% 100% / 0.3), -60px 20px 25px 0px hsl(0 0% 100% / 0.1);
+    pointer-events: none; z-index: 2; animation: dtv-comet-1 6s ease-in-out infinite; opacity: 0;
+  }
+
+  html.theme-dtv #root::after {
+    content: ''; position: fixed; top: 30%; left: 0; width: 5px; height: 5px; border-radius: 50%; background: hsl(25 100% 65%);
+    box-shadow: 0 0 10px 3px hsl(25 100% 60%), 0 0 20px 5px hsl(25 100% 55% / 0.5), 25px 8px 18px 1px hsl(25 100% 50% / 0.3), 55px 16px 22px 0px hsl(25 100% 45% / 0.1);
+    pointer-events: none; z-index: 2; animation: dtv-comet-2 8s ease-in-out infinite; animation-delay: 3s; opacity: 0;
+  }
+
+  @keyframes dtv-comet-1 { 0% { top: 5%; left: -10%; opacity: 0; transform: rotate(25deg); } 5% { opacity: 1; } 30% { top: 45%; left: 115%; opacity: 0; } 100% { top: 45%; left: 115%; opacity: 0; } }
+  @keyframes dtv-comet-2 { 0% { top: 18%; left: 115%; opacity: 0; transform: rotate(-25deg); } 5% { opacity: 1; } 35% { top: 58%; left: -15%; opacity: 0; } 100% { top: 58%; left: -15%; opacity: 0; } }
+
+  @keyframes dtv-pulse {
+    0%, 100% { box-shadow: 0 0 12px hsl(0 0% 100% / 0.1); border-color: hsl(25 100% 50% / 0.3); }
+    50% { box-shadow: 0 0 20px hsl(0 0% 100% / 0.2); border-color: hsl(25 100% 50% / 0.5); }
+  }
+
+  .theme-dtv .card { border: 1px solid hsl(25 100% 50% / 0.3) !important; background: hsl(0 0% 6% / 0.92) !important; backdrop-filter: blur(12px); transition: all 0.3s ease; animation: dtv-pulse 4s ease-in-out infinite; }
+  .theme-dtv .card:hover { border-color: hsl(25 100% 50% / 0.8) !important; box-shadow: 0 8px 30px hsl(0 0% 100% / 0.15) !important; transform: translateY(-2px); }
+  .theme-dtv button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-state]):not(.sidebar-system-btn) { color: hsl(25 100% 55%) !important; border: 1px solid hsl(25 100% 50% / 0.6) !important; background: hsl(25 100% 50% / 0.08) !important; font-weight: 600 !important; transition: all 0.2s ease !important; backdrop-filter: blur(8px); }
+  .theme-dtv button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-state]):not(.sidebar-system-btn):hover { background: hsl(25 100% 50% / 0.15) !important; box-shadow: 0 4px 16px hsl(0 0% 100% / 0.2) !important; transform: translateY(-1px) !important; }
+  .theme-dtv [data-radix-popover-content] { animation: none !important; }
+  .theme-dtv [data-radix-dropdown-menu-content] { background: hsl(0 0% 4% / 0.98) !important; backdrop-filter: blur(16px); border: 1px solid hsl(25 100% 50% / 0.3) !important; z-index: 50 !important; }
+  .theme-dtv [role="menuitem"] { background: transparent !important; border: none !important; color: hsl(0 0% 95%) !important; font-weight: normal !important; }
+  .theme-dtv [role="menuitem"]:hover { background: hsl(25 100% 50% / 0.15) !important; transform: none !important; box-shadow: none !important; }
+  .theme-dtv .sidebar { border-right: 1px solid hsl(25 100% 50% / 0.3); background: hsl(0 0% 2% / 0.95) !important; backdrop-filter: blur(16px); }
+  .theme-dtv img[alt="DTV Electronics"] { filter: drop-shadow(0 0 8px hsl(0 0% 100% / 0.4)); }
+
+  @media (max-width: 768px) {
+    html.theme-dtv::before { background: radial-gradient(ellipse 90% 60% at 25% 35%, hsl(280 60% 15% / 0.3) 0%, transparent 50%); }
+    html.theme-dtv #root::before, html.theme-dtv #root::after { display: none; }
+  }
+
+  /* ─── Atlas: Dark navy + cyan/turquoise (AtlasPool.io inspired) ─── */
+  .theme-atlas {
+    --background: 220 25% 8%;
+    --foreground: 210 20% 95%;
+    --card: 220 22% 12%;
+    --card-foreground: 210 20% 95%;
+    --popover: 220 22% 12%;
+    --popover-foreground: 210 20% 95%;
+    --primary: 174 100% 42%;
+    --primary-foreground: 220 25% 4%;
+    --secondary: 220 20% 16%;
+    --secondary-foreground: 210 20% 95%;
+    --muted: 220 20% 16%;
+    --muted-foreground: 215 15% 55%;
+    --accent: 174 100% 42%;
+    --accent-foreground: 220 25% 4%;
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 210 20% 95%;
+    --border: 220 20% 18%;
+    --input: 220 20% 16%;
+    --ring: 174 100% 42%;
+    --success: 160 100% 42%;
+    --warning: 40 100% 55%;
+    --info: 174 100% 42%;
+    --gradient-primary: linear-gradient(135deg, hsl(174 100% 42%), hsl(190 100% 50%));
+    --gradient-accent: linear-gradient(135deg, hsl(174 100% 35%), hsl(220 25% 12%));
+    --shadow-glow: 0 0 25px hsl(174 100% 42% / 0.35);
+    --shadow-card: 0 4px 16px hsl(220 25% 4% / 0.6);
+    --shadow-neon: 0 0 8px hsl(174 100% 42% / 0.4), 0 0 20px hsl(174 100% 42% / 0.15);
+    --sidebar-background: 220 25% 6%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 174 100% 42%;
+    --sidebar-primary-foreground: 220 25% 4%;
+    --sidebar-accent: 220 20% 14%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 174 100% 42%;
+  }
+
+  html.theme-atlas {
+    background-color: hsl(220 25% 6%) !important;
+    min-height: 100vh !important;
+  }
+
+  html.theme-atlas body {
+    background-color: hsl(220 25% 6%) !important;
+    min-height: 100vh !important;
+    position: relative;
+  }
+
+  /* Atlas subtle grid background */
+  html.theme-atlas::before {
+    content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+    background-image:
+      radial-gradient(circle at 1px 1px, hsl(174 100% 42% / 0.05) 1px, transparent 0);
+    background-size: 40px 40px;
+  }
+
+  /* Atlas gradient overlay */
+  html.theme-atlas body::before {
+    content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 0%, hsl(174 100% 42% / 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, hsl(190 100% 50% / 0.05) 0%, transparent 50%);
+  }
+
+  @keyframes atlas-card-glow {
+    0%, 100% { box-shadow: 0 0 12px hsl(174 100% 42% / 0.08); border-color: hsl(174 100% 42% / 0.2); }
+    50% { box-shadow: 0 0 20px hsl(174 100% 42% / 0.15); border-color: hsl(174 100% 42% / 0.35); }
+  }
+
+  .theme-atlas .card,
+  .theme-atlas [class*="rounded-xl"][class*="border"][class*="bg-card"] {
+    border: 1px solid hsl(174 100% 42% / 0.2) !important;
+    background: hsl(220 22% 12% / 0.92) !important;
+    backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+    animation: atlas-card-glow 4s ease-in-out infinite;
+  }
+
+  .theme-atlas .card:hover,
+  .theme-atlas [class*="rounded-xl"][class*="border"][class*="bg-card"]:hover {
+    border-color: hsl(174 100% 42% / 0.5) !important;
+    box-shadow: 0 8px 28px hsl(174 100% 42% / 0.2) !important;
+    transform: translateY(-2px);
+  }
+
+  .theme-atlas button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-state]):not(.sidebar-system-btn) {
+    color: hsl(174 100% 48%) !important;
+    border: 1px solid hsl(174 100% 42% / 0.5) !important;
+    background: hsl(174 100% 42% / 0.08) !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    backdrop-filter: blur(8px);
+  }
+
+  .theme-atlas button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-state]):not(.sidebar-system-btn):hover {
+    background: hsl(174 100% 42% / 0.18) !important;
+    box-shadow: 0 4px 16px hsl(174 100% 42% / 0.35) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .theme-atlas [data-radix-popover-content] { animation: none !important; }
+  .theme-atlas [data-radix-dropdown-menu-content] { background: hsl(220 22% 10% / 0.98) !important; backdrop-filter: blur(16px); border: 1px solid hsl(174 100% 42% / 0.25) !important; z-index: 50 !important; }
+  .theme-atlas [role="menuitem"] { background: transparent !important; border: none !important; color: hsl(210 20% 95%) !important; font-weight: normal !important; }
+  .theme-atlas [role="menuitem"]:hover { background: hsl(174 100% 42% / 0.12) !important; transform: none !important; box-shadow: none !important; }
+  .theme-atlas .sidebar { border-right: 1px solid hsl(174 100% 42% / 0.2); background: hsl(220 25% 6% / 0.92) !important; backdrop-filter: blur(12px); }
+  .theme-atlas img[alt="AtlasPool"] { filter: drop-shadow(0 0 10px hsl(174 100% 42% / 0.4)); }
+
+  /* Atlas snake neon text animation */
+  @keyframes atlas-neon-snake {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @keyframes atlas-snake-slide {
+    0% { background-position: 200% 50%; }
+    100% { background-position: -200% 50%; }
+  }
+
+  .atlas-neon-text {
+    background: linear-gradient(90deg, hsl(174 100% 42%), hsl(190 100% 60%), hsl(174 100% 70%), hsl(160 100% 50%), hsl(190 100% 60%), hsl(174 100% 42%));
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: atlas-snake-slide 2.5s linear infinite;
+    filter: drop-shadow(0 0 8px hsl(174 100% 42% / 0.6));
+  }
+
+  /* Rainbow text for supporters */
+  @keyframes rainbow-text {
+    0% { color: hsl(0 100% 60%); } 14% { color: hsl(30 100% 60%); } 28% { color: hsl(60 100% 50%); }
+    42% { color: hsl(120 100% 50%); } 57% { color: hsl(180 100% 50%); } 71% { color: hsl(240 100% 60%); }
+    85% { color: hsl(300 100% 60%); } 100% { color: hsl(360 100% 60%); }
+  }
+  .rainbow-text { animation: rainbow-text 3s linear infinite; font-weight: 700; }
+
+  .sidebar-background { background: hsl(var(--sidebar-background)); }
+  .sidebar-foreground { color: hsl(var(--sidebar-foreground)); }
+
+  /* ─── Global cyberpunk grid background (default theme only) ─── */
+  :root {
+    background-image:
+      radial-gradient(circle at 1px 1px, hsl(199 100% 55% / 0.06) 1px, transparent 0);
+    background-size: 32px 32px;
+    background-attachment: fixed;
+  }
+
+  /* ─── Scanline overlay for default theme ─── */
+  :root::after {
+    content: '';
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      hsl(199 100% 55% / 0.02) 2px,
+      hsl(199 100% 55% / 0.02) 4px
+    );
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; }
+
+  /* Smooth global transitions */
+  button, a, input, select, textarea, [role="button"] {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card, [class*="rounded-xl"][class*="border"] {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+  }
+}
+
+@layer utilities {
+  .transition-smooth { transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+  .neon-text { text-shadow: 0 0 10px hsl(var(--primary) / 0.5), 0 0 30px hsl(var(--primary) / 0.2); }
+  .neon-border { box-shadow: 0 0 8px hsl(var(--primary) / 0.3), inset 0 0 8px hsl(var(--primary) / 0.05); }
+  .neon-glow { box-shadow: var(--shadow-neon); }
+}
+
+/* Text size scaling */
+html.text-size-small { font-size: 13px; }
+html.text-size-medium { font-size: 16px; }
+html.text-size-large { font-size: 19px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html { scroll-behavior: smooth; }
+
+.animate-slide-up, .animate-slide-down, .animate-scale-up, .animate-fade-in, .animate-collapsible-down, .animate-collapsible-up {
+  will-change: transform, opacity;
+}
+
+/* Mobile safe area for bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Mobile-specific overrides when platform is mobile */
+@media (max-width: 767px) {
+  .mobile-compact-header h1 { font-size: 0.875rem; }
+  .mobile-compact-header p { font-size: 8px; }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+@keyframes sparkle-burst {
+  0% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 1; }
+  60% { opacity: 1; }
+  100% { transform: translate(calc(var(--tx) * 3), calc(var(--ty) * 3)) scale(1); opacity: 0; }
+}
