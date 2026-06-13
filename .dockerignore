@@ -8,7 +8,6 @@ ios
 *.md
 bun.lock
 bun.lockb
-package-lock.json
 .env.local
 .env.*.local
 playwright.config.ts

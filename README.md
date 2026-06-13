@@ -401,13 +401,13 @@ AxeMobile/
 ├── axemobile-main/            # App folder (must start with store id)
 │   ├── umbrel-app.yml         # App manifest (version + release notes)
 │   ├── docker-compose.yml     # Docker services (app_proxy + web)
-│   ├── Dockerfile             # Web app image (Node build → Nginx)
-│   ├── nginx.conf             # SPA + security headers
+│   ├── Dockerfile             # Deterministic npm ci build → Nginx image
+│   ├── nginx.conf             # SPA routing, health check, security headers
 │   ├── icon.png               # App store logo
 │   └── 1.jpg, 2.jpg, 3.jpg, 4.jpg   # Gallery screenshots
 ```
 
-**Important:** The app folder name must be `{store-id}-{app-name}` format.
+**Important:** The store id is `axemobile`, so the app id and folder must stay `axemobile-main`.
 
 <details>
 <summary><b>Option 1: Community App Store (Recommended)</b></summary>
@@ -424,12 +424,8 @@ AxeMobile/
 <summary><b>Option 2: Docker Compose (Standalone)</b></summary>
 
 ```bash
-# Clone the repository
-git clone https://github.com/IsSasoriDev/AxeMobile
-cd AxeMobile
-
-# Build and run with Docker
-docker-compose -f axemobile-main/docker-compose.yml up -d
+# Run the same image used by the Umbrel package
+docker run --rm -p 3847:80 ghcr.io/issasoridev/axemobile:1.4.1
 ```
 
 Access at **http://umbrel.local:3847**

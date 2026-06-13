@@ -1,6 +1,23 @@
-name: Build and Push Docker Image
+name: Build Umbrel Docker Package
 
 on:
+  push:
+    branches: [main, master]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - "tailwind.config.ts"
+      - "postcss.config.js"
+      - "tsconfig*.json"
+      - "components.json"
+      - "axemobile-main/**"
+      - "umbrel-app-store.yml"
+      - ".dockerignore"
+      - ".github/workflows/docker-publish.yml"
   release:
     types: [published]
   workflow_dispatch:
@@ -8,6 +25,8 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: issasoridev/axemobile
+  APP_DIR: axemobile-main
+  APP_VERSION: 1.4.1
 
 jobs:
   build:
@@ -33,21 +52,35 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
+      - name: Validate Umbrel package
+        run: |
+          test -f umbrel-app-store.yml
+          test -f "$APP_DIR/umbrel-app.yml"
+          test -f "$APP_DIR/docker-compose.yml"
+          test -f "$APP_DIR/Dockerfile"
+          test -f "$APP_DIR/nginx.conf"
+          test -f "$APP_DIR/icon.png"
+          test -f package-lock.json
+          grep -q "id: axemobile-main" "$APP_DIR/umbrel-app.yml"
+          grep -q "APP_HOST: axemobile-main_web_1" "$APP_DIR/docker-compose.yml"
+
+      - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=${{ env.APP_VERSION }}
             type=raw,value=latest
 
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./axemobile-main/Dockerfile
+          file: ./${{ env.APP_DIR }}/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}

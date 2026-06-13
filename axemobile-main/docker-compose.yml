@@ -7,6 +7,9 @@ services:
       APP_PORT: 80
 
   web:
-    image: ghcr.io/issasoridev/axemobile:latest
+    image: ghcr.io/issasoridev/axemobile:1.4.1
+    init: true
     restart: on-failure
     stop_grace_period: 1m
+    environment:
+      NGINX_ENTRYPOINT_QUIET_LOGS: "1"

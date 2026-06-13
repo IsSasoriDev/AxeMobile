@@ -2,11 +2,11 @@ manifestVersion: 1
 id: axemobile-main
 category: bitcoin
 name: AxeMobile
-version: "1.4.0"
-tagline: Monitor your Bitcoin miners from your Umbrel
+version: "1.4.1"
+tagline: Monitor Bitaxe and NerdAxe miners from Umbrel
 description: >-
-  AxeMobile is an all-in-one dashboard for monitoring and managing your Bitaxe
-  and Nerdaxe Bitcoin miners directly from your Umbrel.
+  AxeMobile is a premium dark dashboard for monitoring and managing your
+  Bitaxe and NerdAxe Bitcoin miners directly from Umbrel.
 
 
   Features:
@@ -30,7 +30,7 @@ description: >-
 
   Quick Start:
 
-  1. Install AxeMobile from the Umbrel App Store.
+  1. Install AxeMobile from your Umbrel App Store.
 
   2. Add your miner IPs or scan your local network.
 
@@ -50,22 +50,24 @@ path: ""
 defaultUsername: ""
 defaultPassword: ""
 torOnly: false
-permissions: []
 releaseNotes: >-
-  v1.4.0 — Premium polish update.
+  v1.4.1 — Umbrel package rebuild.
 
 
-  • Refined "premium dark minimal" UI across the entire app — sidebar,
-    mobile navigation, page headers, cards, dialogs and buttons.
+  • Rebuilt the Umbrel Docker image from a clean, deterministic package using
+    npm ci, the repository lockfile, and a hardened Nginx static server.
 
-  • New live Logs viewer in Settings for real-time app diagnostics.
+  • Fixed the broken build context so the lockfile and required production
+    files are included correctly.
 
-  • Safer data controls — Reset App and Clear Cache now ask for
-    confirmation so you can no longer wipe your saved miners by accident.
+  • Reworked the GitHub workflow to validate the Umbrel app folder, build
+    multi-architecture images, and publish the latest container package.
 
-  • Smarter miner discovery with editable saved IP addresses and clearer
-    in-app error reporting for unreachable devices.
+  • Added a container health check and SPA-safe Nginx routing for direct page
+    refreshes inside Umbrel.
 
-  • Smoother page transitions and balanced motion throughout.
+  • Kept the premium dark minimal UI, live Logs viewer, and safer Settings
+    reset confirmations from the previous update.
 
-  • Cleaner Umbrel build pipeline for faster, more reliable updates.
+  • Includes the AxeMobile store icon and screenshot gallery for the Umbrel
+    store listing.

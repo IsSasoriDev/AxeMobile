@@ -1,36 +1,30 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.7
 
-# ---------- Build stage ----------
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies first for better layer caching.
-# Build context is the repository root (see .github/workflows/docker-publish.yml).
-COPY package.json package-lock.json* ./
-RUN npm install --legacy-peer-deps 2>/dev/null || npm install 2>/dev/null || true
+COPY package.json package-lock.json ./
+RUN npm ci --legacy-peer-deps
 
-# Copy the files required to build the SPA
-COPY index.html ./
-COPY vite.config.ts ./
-COPY tsconfig.json tsconfig.app.json tsconfig.node.json ./
-COPY tailwind.config.ts postcss.config.js components.json ./
-COPY src/ ./src/
-COPY public/ ./public/
+COPY . .
 
-# Produce the static production bundle
-RUN npx vite build
+ARG VITE_SUPABASE_URL=https://ikvpkjbextmtjnszjexp.supabase.co
+ARG VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImlrdnBramJleHRtdGpuc3pqZXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NzQ2OTcsImV4cCI6MjA4ODU1MDY5N30.nde8E8EJJYwvScvk3XCFgdxXduvwJ0voQMcEYNAM86U
 
-# ---------- Production stage ----------
-FROM nginx:alpine
+RUN printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$VITE_SUPABASE_URL" "$VITE_SUPABASE_PUBLISHABLE_KEY" > .env.production && \
+    node -e "const fs=require('fs');const keys=['VITE_SUPABASE_URL','VITE_SUPABASE_PUBLISHABLE_KEY'];const files=['.env.production','.env'];const text=files.filter(fs.existsSync).map(f=>fs.readFileSync(f,'utf8')).join('\n');const missing=keys.filter(k=>!process.env[k]&&!new RegExp('^'+k+'=','m').test(text));if(missing.length){console.error('Missing build env: '+missing.join(', '));process.exit(1)}" && \
+    npm run build:umbrel
 
-# Serve the compiled SPA
+FROM nginx:1.27-alpine
+
 COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Replace the default Nginx site with our SPA-aware config
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY axemobile-main/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget -qO- http://127.0.0.1/health >/dev/null || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]

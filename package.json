@@ -1,11 +1,12 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "axemobile",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.4.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:umbrel": "vite build --mode production",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"
