@@ -1,24 +1,27 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
+# Node
 node_modules
 dist
 dist-ssr
 *.local
+npm-debug.log*
 
-# Editor directories and files
+# Rust
+target
+
+# Windows build output
+dist-win
+
+# Editors
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
 *.suo
-*.ntvs*
-*.njsproj
-*.sln
 *.sw?
+
+# macOS / Linux build output
+dist-mac
+dist-linux
+packaging/macos/widget/build
+packaging/macos/widget/*.xcodeproj
+packaging/macos/widget/Info.plist

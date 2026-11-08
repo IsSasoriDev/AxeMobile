@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=AxeMobile
+Comment=Watch and tune AxeForge and AxeOS Bitcoin miners
+Exec=axemobile
+Icon=axemobile
+Terminal=false
+Categories=Utility;Network;Monitor;
+StartupWMClass=AxeMobile

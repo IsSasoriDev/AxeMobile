@@ -6,14 +6,15 @@ on:
     paths:
       - "src/**"
       - "public/**"
+      - "crates/axe-core/**"
+      - "crates/axe-server/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
       - "index.html"
       - "package.json"
       - "package-lock.json"
       - "vite.config.ts"
-      - "tailwind.config.ts"
-      - "postcss.config.js"
-      - "tsconfig*.json"
-      - "components.json"
+      - "tsconfig.json"
       - "axemobile-main/**"
       - "umbrel-app-store.yml"
       - ".dockerignore"
@@ -26,7 +27,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: issasoridev/axemobile
   APP_DIR: axemobile-main
-  APP_VERSION: 1.4.1
+  APP_VERSION: 2.0.0
 
 jobs:
   build:
@@ -58,9 +59,9 @@ jobs:
           test -f "$APP_DIR/umbrel-app.yml"
           test -f "$APP_DIR/docker-compose.yml"
           test -f "$APP_DIR/Dockerfile"
-          test -f "$APP_DIR/nginx.conf"
           test -f "$APP_DIR/icon.png"
           test -f package-lock.json
+          test -f Cargo.lock
           grep -q "id: axemobile-main" "$APP_DIR/umbrel-app.yml"
           grep -q "APP_HOST: axemobile-main_web_1" "$APP_DIR/docker-compose.yml"
 

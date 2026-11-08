@@ -1,0 +1,38 @@
+# XcodeGen spec for the AxeMobile WidgetKit extension. build-mac.sh turns
+# this into an Xcode project, builds the .appex and puts it inside
+# AxeMobile.app/Contents/PlugIns.
+name: AxeMobileWidget
+options:
+  bundleIdPrefix: com.issasoridev
+  deploymentTarget:
+    macOS: "14.0"
+targets:
+  AxeMobileWidget:
+    type: app-extension
+    platform: macOS
+    sources:
+      - AxeMobileWidget.swift
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: AxeMobile
+        CFBundleShortVersionString: "2.0.0"
+        CFBundleVersion: "2.0.0"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    entitlements:
+      path: AxeMobileWidget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.issasoridev.axemobile.widget
+      SWIFT_VERSION: "5.9"
+      CODE_SIGNING_ALLOWED: "NO"
+      ARCHS: "arm64 x86_64"
+      ONLY_ACTIVE_ARCH: "NO"
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework

@@ -1,31 +1,17 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 
-// https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+// In dev the UI runs on :8080 and /api goes to a local axemobile-server
+// (npm run server). The desktop build talks to the engine inside the app.
+export default defineConfig({
   server: {
-    host: "::",
     port: 8080,
+    strictPort: true,
+    proxy: { "/api": "http://127.0.0.1:3847" },
   },
-  optimizeDeps: {
-    include: ['date-fns/format'],
-    exclude: ['date-fns'],
-  },
-  base: "/",
-  build: {
-    outDir: "dist",
-    emptyOutDir: true,
-  },
-  plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-}));
+  base: "./",
+  build: { outDir: "dist", emptyOutDir: true, target: "es2021" },
+  plugins: [react()],
+  resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
+});

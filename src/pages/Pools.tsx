@@ -1,106 +1,196 @@
-import { useState } from "react";
-import { Bitcoin, Copy, CheckCircle, XCircle, Clock, Waves, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { Navigate, useParams } from "react-router-dom";
+import { Copy } from "lucide-react";
+import { api, type PoolConfig, type PoolEntry } from "@/api";
+import { useApp } from "@/App";
+import { KindTag, LoginDialog, MinerPicker, Modal, Seg } from "@/components/bits";
+import { useToast } from "@/components/Toast";
+import { displayName } from "@/format";
 
-interface Pool {
-  id: string; name: string; description: string; stratumUrl: string;
-  port: number; fees: string; status: "active" | "offline" | "warning"; password?: string;
-}
-
-const pools: Pool[] = [
-  { id: "public-pool", name: "Public Pool", description: "Open source, no fees, transparent", stratumUrl: "public-pool.io", port: 21496, fees: "0%", status: "active" },
-  { id: "solo-ck", name: "Solo CK Pool", description: "Solo mining, 98% block reward", stratumUrl: "solo.ckpool.org", port: 3333, fees: "2%", status: "active" },
-  { id: "atlas-pool", name: "AtlasPool", description: "Reliable, performant, globally deployed solo mining", stratumUrl: "solo.atlaspool.io", port: 3333, fees: "0%", status: "active" },
-  { id: "letsmine", name: "Letsmine.it", description: "European pool, low latency", stratumUrl: "de1.letsmine.it", port: 3332, fees: "1%", status: "active", password: "diff=auto" },
-  { id: "solo-cat", name: "Solo.cat", description: "Solo mining with instant payouts", stratumUrl: "solo.cat", port: 3333, fees: "1%", status: "active" },
+const PRESETS: { name: string; url: string; port: number }[] = [
+  { name: "Public Pool", url: "public-pool.io", port: 21496 },
+  { name: "CKPool solo", url: "solo.ckpool.org", port: 3333 },
+  { name: "OCEAN", url: "mine.ocean.xyz", port: 3334 },
+  { name: "Braiins", url: "stratum.braiins.com", port: 3333 },
 ];
 
-const statusIcon = (s: Pool["status"]) => {
-  if (s === "active") return <CheckCircle className="h-3 w-3 text-accent" />;
-  if (s === "offline") return <XCircle className="h-3 w-3 text-destructive" />;
-  return <Clock className="h-3 w-3 text-warning" />;
-};
-
 export default function Pools() {
-  const [copiedPool, setCopiedPool] = useState<string | null>(null);
+  const { id } = useParams();
+  const { overview, reload } = useApp();
+  const toast = useToast();
+  const miners = overview?.miners ?? [];
+  const mid = Number(id);
+  const m = miners.find((x) => x.id === mid);
+  const [cfg, setCfg] = useState<PoolConfig | null>(null);
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [login, setLogin] = useState(false);
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [targets, setTargets] = useState<number[]>([]);
 
-  const handleCopy = async (pool: Pool, type: 'stratum' | 'password') => {
-    const text = type === 'stratum' ? `${pool.stratumUrl}:${pool.port}` : pool.password || '';
-    await navigator.clipboard.writeText(text);
-    setCopiedPool(`${pool.id}-${type}`);
-    toast.success(`Copied ${type === 'stratum' ? 'stratum address' : 'password'}!`);
-    setTimeout(() => setCopiedPool(null), 2000);
+  const load = async () => {
+    setErr("");
+    setCfg(null);
+    try {
+      setCfg(await api<PoolConfig>(`/miners/${mid}/pools`));
+    } catch (e: any) {
+      setErr(e.message);
+    }
+  };
+  useEffect(() => {
+    if (m) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mid, !!m]);
+
+  if (!overview) return <div className="card empty">Loading…</div>;
+  if (!id && miners.length) return <Navigate to={`/pools/${miners[0].id}`} replace />;
+  if (!miners.length) {
+    return (
+      <>
+        <header className="top"><h1>Pools</h1></header>
+        <div className="card empty">Add a miner first.</div>
+      </>
+    );
+  }
+
+  const forge = m?.kind === "axeforge";
+  const set = (i: number, patch: Partial<PoolEntry>) =>
+    setCfg((c) => (c ? { ...c, pools: c.pools.map((p, j) => (j === i ? { ...p, ...patch } : p)) } : c));
+
+  const save = async () => {
+    if (!cfg) return;
+    setBusy(true);
+    try {
+      const r = await api<{ message: string }>(`/miners/${mid}/pools`, { method: "PUT", body: cfg });
+      toast(r.message || "Saved", "ok");
+      setTimeout(load, 1500);
+    } catch (e: any) {
+      if (e.status === 401) setLogin(true);
+      toast(e.message, "err");
+    } finally {
+      setBusy(false);
+    }
   };
 
+  const copy = async () => {
+    if (!cfg) return;
+    setBusy(true);
+    try {
+      const r = await api<{ results: { id: number; ok: boolean; message: string }[] }>("/pools/apply", { body: { miners: targets, pools: cfg } });
+      const bad = r.results.filter((x) => !x.ok);
+      toast(bad.length ? `${r.results.length - bad.length} updated, ${bad.length} failed: ${bad[0].message}` : `Pools copied to ${r.results.length} miner${r.results.length === 1 ? "" : "s"}`, bad.length ? "err" : "ok");
+      setCopyOpen(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const total = cfg?.pools.filter((p) => p.enabled).reduce((a, p) => a + (p.weight ?? 0), 0) ?? 0;
+
   return (
-    <div className="h-full overflow-y-auto p-4 md:p-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-          <Waves className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-lg font-bold font-mono tracking-tight">Mining Pools</h1>
-          <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">Bitcoin Pool Directory</p>
-        </div>
-      </div>
+    <>
+      <header className="top">
+        <h1>Pools</h1>
+        {m && <KindTag kind={m.kind} />}
+      </header>
+      <MinerPicker miners={miners} current={mid} base="/pools" />
 
-      {/* Pool list */}
-      <div className="space-y-2">
-        {pools.map((pool) => (
-          <div
-            key={pool.id}
-            className="rounded-xl border border-border/40 bg-card/40 backdrop-blur-sm p-4 hover:border-primary/20 transition-all duration-200"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 flex-1 min-w-0">
-                <div className="p-2 rounded-lg bg-primary/8 border border-primary/15 mt-0.5">
-                  <Bitcoin className="h-4 w-4 text-primary" />
+      {!m ? (
+        <div className="card empty">Pick a miner.</div>
+      ) : err ? (
+        <div className="banner">
+          Couldn't read pools from {displayName(m)}: {err}{" "}
+          {err === "login required" ? <a href="#" onClick={(e) => { e.preventDefault(); setLogin(true); }}>Log in</a> : <a href="#" onClick={(e) => { e.preventDefault(); load(); }}>Retry</a>}
+        </div>
+      ) : !cfg ? (
+        <div className="card empty">Reading pools from {displayName(m)}…</div>
+      ) : (
+        <>
+          {forge ? (
+            <div className="card mb">
+              <h3>Mode</h3>
+              <Seg value={cfg.mode === "failover" ? "failover" : "split"} options={[["split", "Split by %"], ["failover", "Failover"]]} onChange={(v) => setCfg({ ...cfg, mode: v })} />
+              <p className="note">
+                {cfg.mode === "failover"
+                  ? "Mines on the first enabled pool and moves down the list when it drops."
+                  : "Splits the miner's work between the enabled pools by weight. Weights are normalised by the miner."}
+              </p>
+            </div>
+          ) : (
+            <div className="info">AxeOS has a main pool and a fallback. The miner needs a restart to pick up pool changes.</div>
+          )}
+
+          {cfg.pools.map((p, i) => (
+            <div key={i} className={`pool ${p.enabled || (!forge && i === 0) ? "" : "offp"}`}>
+              <div className="hd">
+                <span className={`dot ${p.connected ? "ok" : ""}`} />
+                <b>{forge ? `Pool ${i + 1}` : i === 0 ? "Main pool" : "Fallback pool"}</b>
+                {p.connected && <span className="tag">in use</span>}
+                {(forge || i > 0) && <input type="checkbox" className="tg" checked={p.enabled} onChange={(e) => set(i, { enabled: e.target.checked })} title="Enabled" />}
+              </div>
+              <div className="row">
+                <div style={{ gridColumn: "span 2" }}>
+                  <label className="f">Stratum host</label>
+                  <input value={p.url} onChange={(e) => set(i, { url: e.target.value })} placeholder="public-pool.io" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-bold text-sm font-mono">{pool.name}</h3>
-                    {statusIcon(pool.status)}
-                    <Badge variant="outline" className={`text-[9px] px-1.5 py-0 font-mono ${pool.fees === "0%" ? "border-accent/30 text-accent" : "border-warning/30 text-warning"}`}>
-                      {pool.fees} fee
-                    </Badge>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{pool.description}</p>
-
-                  {/* Stratum address */}
-                  <div className="mt-2 flex items-center gap-2 flex-wrap">
-                    <code className="text-[11px] font-mono bg-secondary/40 px-2 py-1 rounded border border-border/30">
-                      {pool.stratumUrl}:{pool.port}
-                    </code>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-[10px] font-mono gap-1"
-                      onClick={() => handleCopy(pool, 'stratum')}
-                    >
-                      {copiedPool === `${pool.id}-stratum` ? <CheckCircle className="h-3 w-3 text-accent" /> : <Copy className="h-3 w-3" />}
-                      {copiedPool === `${pool.id}-stratum` ? "Copied" : "Copy"}
-                    </Button>
-                    {pool.password && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-[10px] font-mono gap-1"
-                        onClick={() => handleCopy(pool, 'password')}
-                      >
-                        {copiedPool === `${pool.id}-password` ? <CheckCircle className="h-3 w-3 text-accent" /> : <Copy className="h-3 w-3" />}
-                        pw: {pool.password}
-                      </Button>
-                    )}
-                  </div>
+                <div>
+                  <label className="f">Port</label>
+                  <input type="number" value={p.port || ""} onChange={(e) => set(i, { port: Number(e.target.value) })} />
                 </div>
               </div>
+              <div className="row">
+                <div style={{ gridColumn: "span 2" }}>
+                  <label className="f">Username (address.worker)</label>
+                  <input value={p.user} onChange={(e) => set(i, { user: e.target.value })} placeholder="bc1q….worker" />
+                </div>
+                <div>
+                  <label className="f">Password</label>
+                  <input type="password" value={p.pass} onChange={(e) => set(i, { pass: e.target.value })} placeholder="unchanged" autoComplete="off" />
+                </div>
+              </div>
+              {forge && cfg.mode !== "failover" && p.weight !== undefined && (
+                <>
+                  <label className="f">
+                    Share of work <span className="rv">{total > 0 && p.enabled ? Math.round(((p.weight ?? 0) / total) * 100) : 0}%</span>
+                  </label>
+                  <input type="range" min={1} max={100} value={p.weight ?? 100} onChange={(e) => set(i, { weight: Number(e.target.value) })} />
+                </>
+              )}
+              <div className="btns" style={{ marginTop: 10 }}>
+                {PRESETS.map((x) => (
+                  <button key={x.name} type="button" className="btn alt sm" onClick={() => set(i, { url: x.url, port: x.port, enabled: true })}>{x.name}</button>
+                ))}
+              </div>
             </div>
+          ))}
+
+          <div className="btns">
+            <button className="btn" onClick={save} disabled={busy}>{forge ? "Save & reconnect" : "Save"}</button>
+            {miners.length > 1 && (
+              <button className="btn alt" onClick={() => { setTargets([]); setCopyOpen(true); }} disabled={busy}><Copy /> Copy to other miners</button>
+            )}
+            <span className="meta">{forge ? "No reboot needed." : "Restart the miner afterwards."} Empty password keeps the saved one.</span>
           </div>
-        ))}
-      </div>
-    </div>
+        </>
+      )}
+
+      {login && m && <LoginDialog miner={m} onClose={() => setLogin(false)} onDone={() => { reload(); load(); }} />}
+      {copyOpen && m && (
+        <Modal onClose={() => setCopyOpen(false)}>
+          <h2>Copy pools</h2>
+          <p className="meta">Sends this pool setup to the miners you pick. AxeOS miners take the first two pools.</p>
+          {miners.filter((x) => x.id !== m.id).map((x) => (
+            <label key={x.id} className="switch" style={{ cursor: "pointer" }}>
+              <div><b>{displayName(x)}</b><span>{x.model} · {x.ip}</span></div>
+              <input type="checkbox" className="tg" checked={targets.includes(x.id)} onChange={(e) => setTargets(e.target.checked ? [...targets, x.id] : targets.filter((t) => t !== x.id))} />
+            </label>
+          ))}
+          <div className="btns" style={{ marginTop: 14 }}>
+            <button className="btn" disabled={!targets.length || busy} onClick={copy}>Copy to {targets.length || ""} miner{targets.length === 1 ? "" : "s"}</button>
+            <button className="btn alt" onClick={() => setCopyOpen(false)}>Cancel</button>
+          </div>
+        </Modal>
+      )}
+    </>
   );
 }

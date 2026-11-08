@@ -1,0 +1,18 @@
+[package]
+name = "axe-core"
+description = "AxeMobile engine: miner clients, poller, SQLite store and HTTP API"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+axum = "0.8"
+tower-http = { version = "0.6", features = ["fs", "cors"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+futures = "0.3"
+anyhow = "1"
