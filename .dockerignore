@@ -1,15 +1,6 @@
 node_modules
 dist
+target
 .git
-src-tauri
-resources
-android
-ios
 *.md
-bun.lock
-bun.lockb
-.env.local
-.env.*.local
-playwright.config.ts
-playwright-fixture.ts
-capacitor.config.ts
+dist-win

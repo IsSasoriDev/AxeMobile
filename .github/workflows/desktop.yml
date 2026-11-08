@@ -1,0 +1,105 @@
+name: Desktop builds
+
+# Builds AxeMobile for Windows (installer), macOS (DMG with the widget) and
+# Linux (.deb + .tar.gz). Every run uploads the files as artifacts; a
+# published release also gets them attached.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "crates/**"
+      - "packaging/**"
+      - "scripts/build-windows.ps1"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/desktop.yml"
+  pull_request:
+    paths:
+      - "crates/**"
+      - "packaging/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/desktop.yml"
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Test
+        run: cargo test -p axe-core -p axe-desktop
+      - name: Build app and installer
+        shell: pwsh
+        run: ./scripts/build-windows.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AxeMobile-Windows
+          path: dist-win/*.exe
+      - name: Attach to release
+        if: github.event_name == 'release'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" (Get-ChildItem dist-win/AxeMobile-Setup-*.exe).FullName --clobber
+
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Test
+        run: cargo test -p axe-core -p axe-desktop
+      - name: Build app, widget and DMG
+        env:
+          MACOS_SIGN_ID: ${{ secrets.MACOS_SIGN_ID }}
+        run: bash packaging/macos/build-mac.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AxeMobile-macOS
+          path: dist-mac/*.dmg
+      - name: Attach to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist-mac/*.dmg --clobber
+
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: System libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev \
+            libxrandr-dev libxi-dev libgl1-mesa-dev libdbus-1-dev pkg-config
+      - name: Test
+        run: cargo test -p axe-core -p axe-desktop
+      - name: Build .deb and .tar.gz
+        run: bash packaging/linux/build-linux.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AxeMobile-Linux
+          path: |
+            dist-linux/*.deb
+            dist-linux/*.tar.gz
+      - name: Attach to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist-linux/*.deb dist-linux/*.tar.gz --clobber

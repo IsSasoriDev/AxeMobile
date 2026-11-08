@@ -1,0 +1,22 @@
+[package]
+name = "axe-setup"
+description = "AxeMobile installer for Windows"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "AxeMobile-Setup"
+path = "src/main.rs"
+
+[dependencies]
+eframe = { version = "0.37", default-features = false, features = ["glow", "default_fonts", "accesskit"] }
+egui_glow = "0.37"
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.56"
+mslnk = "0.1"
+
+[build-dependencies]
+winresource = "0.1"

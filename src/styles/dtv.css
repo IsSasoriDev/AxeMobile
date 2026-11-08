@@ -1,0 +1,120 @@
+/* DTV Electronics theme, carried over unchanged from AxeMobile 1.x
+   (colours, cosmic background, comets, card pulse, button and menu styling). */
+
+/* ─── DTV Electronics: Black/White/Orange with cosmic effects ─── */
+.theme-dtv {
+  --background: 0 0% 3%;
+  --foreground: 0 0% 95%;
+  --card: 0 0% 6%;
+  --card-foreground: 0 0% 95%;
+  --popover: 0 0% 6%;
+  --popover-foreground: 0 0% 95%;
+  --primary: 25 100% 50%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 0 0% 10%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 0 0% 10%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 25 100% 50%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 84% 55%;
+  --destructive-foreground: 0 0% 95%;
+  --border: 25 30% 14%;
+  --input: 0 0% 10%;
+  --ring: 25 100% 50%;
+  --success: 160 100% 40%;
+  --warning: 25 100% 50%;
+  --info: 25 100% 50%;
+  --gradient-primary: linear-gradient(135deg, hsl(25 100% 50%), hsl(25 80% 38%));
+  --gradient-accent: linear-gradient(135deg, hsl(25 80% 38%), hsl(0 0% 10%));
+  --shadow-glow: 0 0 25px hsl(25 100% 50% / 0.35);
+  --shadow-card: 0 4px 12px hsl(0 0% 0% / 0.5);
+  --shadow-neon: 0 0 8px hsl(25 100% 50% / 0.4), 0 0 20px hsl(25 100% 50% / 0.15);
+  --sidebar-background: 0 0% 3%;
+  --sidebar-foreground: 0 0% 95%;
+  --sidebar-primary: 25 100% 50%;
+  --sidebar-primary-foreground: 0 0% 0%;
+  --sidebar-accent: 0 0% 10%;
+  --sidebar-accent-foreground: 0 0% 95%;
+  --sidebar-border: 25 30% 14%;
+  --sidebar-ring: 25 100% 50%;
+}
+
+/* DTV cosmic background */
+html.theme-dtv { background-color: hsl(0 0% 2%) !important; min-height: 100vh !important; }
+html.theme-dtv body { background-color: hsl(0 0% 2%) !important; min-height: 100vh !important; position: relative; overflow-x: hidden; }
+
+html.theme-dtv::before {
+  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 30%, hsl(280 60% 15% / 0.35) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 75% 70%, hsl(25 80% 20% / 0.25) 0%, transparent 45%),
+    radial-gradient(ellipse 70% 60% at 50% 50%, hsl(260 50% 12% / 0.2) 0%, transparent 55%);
+  animation: dtv-nebula-pulse 8s ease-in-out infinite alternate;
+}
+
+@keyframes dtv-nebula-pulse {
+  0% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 0.7; transform: scale(0.98); }
+}
+
+html.theme-dtv body::before {
+  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;
+  background-image:
+    radial-gradient(2px 2px at 10% 15%, hsl(0 0% 100%) 100%, transparent),
+    radial-gradient(1px 1px at 40% 10%, hsl(0 0% 100% / 0.6) 100%, transparent),
+    radial-gradient(2px 2px at 55% 45%, hsl(25 100% 60%) 100%, transparent),
+    radial-gradient(1px 1px at 70% 20%, hsl(0 0% 100% / 0.7) 100%, transparent),
+    radial-gradient(2px 2px at 85% 55%, hsl(0 0% 100% / 0.9) 100%, transparent),
+    radial-gradient(1px 1px at 15% 65%, hsl(25 100% 55%) 100%, transparent),
+    radial-gradient(2px 2px at 30% 80%, hsl(0 0% 100% / 0.8) 100%, transparent),
+    radial-gradient(2px 2px at 65% 85%, hsl(25 100% 50%) 100%, transparent),
+    radial-gradient(1px 1px at 80% 75%, hsl(0 0% 100% / 0.7) 100%, transparent),
+    radial-gradient(2px 2px at 95% 30%, hsl(0 0% 100%) 100%, transparent);
+  background-size: 100% 100%;
+  animation: dtv-stars-twinkle 4s ease-in-out infinite alternate;
+}
+
+@keyframes dtv-stars-twinkle { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
+
+html.theme-dtv #root::before {
+  content: ''; position: fixed; top: 0; left: 0; width: 6px; height: 6px; border-radius: 50%; background: hsl(0 0% 100%);
+  box-shadow: 0 0 12px 3px hsl(0 0% 100%), 0 0 25px 6px hsl(0 0% 100% / 0.6), -30px 10px 20px 1px hsl(0 0% 100% / 0.3), -60px 20px 25px 0px hsl(0 0% 100% / 0.1);
+  pointer-events: none; z-index: 2; animation: dtv-comet-1 6s ease-in-out infinite; opacity: 0;
+}
+
+html.theme-dtv #root::after {
+  content: ''; position: fixed; top: 30%; left: 0; width: 5px; height: 5px; border-radius: 50%; background: hsl(25 100% 65%);
+  box-shadow: 0 0 10px 3px hsl(25 100% 60%), 0 0 20px 5px hsl(25 100% 55% / 0.5), 25px 8px 18px 1px hsl(25 100% 50% / 0.3), 55px 16px 22px 0px hsl(25 100% 45% / 0.1);
+  pointer-events: none; z-index: 2; animation: dtv-comet-2 8s ease-in-out infinite; animation-delay: 3s; opacity: 0;
+}
+
+@keyframes dtv-comet-1 { 0% { top: 5%; left: -10%; opacity: 0; transform: rotate(25deg); } 5% { opacity: 1; } 30% { top: 45%; left: 115%; opacity: 0; } 100% { top: 45%; left: 115%; opacity: 0; } }
+@keyframes dtv-comet-2 { 0% { top: 18%; left: 115%; opacity: 0; transform: rotate(-25deg); } 5% { opacity: 1; } 35% { top: 58%; left: -15%; opacity: 0; } 100% { top: 58%; left: -15%; opacity: 0; } }
+
+@keyframes dtv-pulse {
+  0%, 100% { box-shadow: 0 0 12px hsl(0 0% 100% / 0.1); border-color: hsl(25 100% 50% / 0.3); }
+  50% { box-shadow: 0 0 20px hsl(0 0% 100% / 0.2); border-color: hsl(25 100% 50% / 0.5); }
+}
+
+.theme-dtv .card { border: 1px solid hsl(25 100% 50% / 0.3) !important; background: hsl(0 0% 6% / 0.92) !important; backdrop-filter: blur(12px); transition: all 0.3s ease; animation: dtv-pulse 4s ease-in-out infinite; }
+.theme-dtv .card:hover { border-color: hsl(25 100% 50% / 0.8) !important; box-shadow: 0 8px 30px hsl(0 0% 100% / 0.15) !important; transform: translateY(-2px); }
+.theme-dtv button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-state]):not(.sidebar-system-btn) { color: hsl(25 100% 55%) !important; border: 1px solid hsl(25 100% 50% / 0.6) !important; background: hsl(25 100% 50% / 0.08) !important; font-weight: 600 !important; transition: all 0.2s ease !important; backdrop-filter: blur(8px); }
+.theme-dtv button:not([data-radix-collection-item]):not([role="menuitem"]):not([data-sidebar="trigger"]):not([role="checkbox"]):not([role="switch"]):not([data-state]):not(.sidebar-system-btn):hover { background: hsl(25 100% 50% / 0.15) !important; box-shadow: 0 4px 16px hsl(0 0% 100% / 0.2) !important; transform: translateY(-1px) !important; }
+.theme-dtv [data-radix-popover-content] { animation: none !important; }
+.theme-dtv [data-radix-dropdown-menu-content] { background: hsl(0 0% 4% / 0.98) !important; backdrop-filter: blur(16px); border: 1px solid hsl(25 100% 50% / 0.3) !important; z-index: 50 !important; }
+.theme-dtv [role="menuitem"] { background: transparent !important; border: none !important; color: hsl(0 0% 95%) !important; font-weight: normal !important; }
+.theme-dtv [role="menuitem"]:hover { background: hsl(25 100% 50% / 0.15) !important; transform: none !important; box-shadow: none !important; }
+.theme-dtv .sidebar { border-right: 1px solid hsl(25 100% 50% / 0.3); background: hsl(0 0% 2% / 0.95) !important; backdrop-filter: blur(16px); }
+.theme-dtv img[alt="DTV Electronics"] { filter: drop-shadow(0 0 8px hsl(0 0% 100% / 0.4)); }
+
+@media (max-width: 768px) {
+  html.theme-dtv::before { background: radial-gradient(ellipse 90% 60% at 25% 35%, hsl(280 60% 15% / 0.3) 0%, transparent 50%); }
+  html.theme-dtv #root::before, html.theme-dtv #root::after { display: none; }
+}
+
+
+/* Tokens AxeMobile 2 added after 1.x; in DTV they follow the orange gradient. */
+.theme-dtv { --mag: 25 80% 38%; --violet: 25 100% 50%; --background2: 0 0% 3%; --glow: 0 0% 3%; }
+.theme-dtv nav.sidebar a.nav.active { background: linear-gradient(90deg, hsl(25 100% 50% / .16), transparent); }

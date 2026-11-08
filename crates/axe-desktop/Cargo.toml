@@ -1,0 +1,48 @@
+[package]
+name = "axe-desktop"
+description = "AxeMobile desktop app (native, Windows / macOS / Linux)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "AxeMobile"
+path = "src/main.rs"
+
+[dependencies]
+axe-core.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+eframe = { version = "0.37", default-features = false, features = ["glow", "default_fonts", "clipboard", "links", "accesskit"] }
+egui_glow = "0.37"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
+rfd = "0.18.0"
+axum = "0.8"
+notify-rust = "4"
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.56"
+
+[target.'cfg(any(windows, target_os = "macos"))'.dependencies]
+tray-icon = "0.26.1"
+
+# X11 and Wayland windowing on Linux
+[target.'cfg(target_os = "linux")'.dependencies]
+eframe = { version = "0.37", default-features = false, features = ["x11", "wayland"] }
+
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"
+
+[package.metadata.deb]
+name = "axemobile"
+maintainer = "IsSasoriDev"
+copyright = "IsSasoriDev"
+extended-description = "Watch and tune AxeForge and AxeOS Bitcoin miners."
+section = "utils"
+assets = [
+  ["target/release/AxeMobile", "usr/bin/axemobile", "755"],
+  ["../../packaging/linux/axemobile.desktop", "usr/share/applications/", "644"],
+  ["assets/icon.png", "usr/share/icons/hicolor/256x256/apps/axemobile.png", "644"],
+]

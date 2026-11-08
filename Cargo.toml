@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = ["crates/axe-core", "crates/axe-server", "crates/axe-desktop", "crates/axe-setup"]
+# the installer embeds the release app, so it is built on its own (scripts/build-windows.ps1)
+default-members = ["crates/axe-core", "crates/axe-server", "crates/axe-desktop"]
+
+[workspace.package]
+version = "2.0.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/IsSasoriDev/AxeMobile"
+
+[workspace.dependencies]
+axe-core = { path = "crates/axe-core" }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "net", "signal"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
+panic = "abort"

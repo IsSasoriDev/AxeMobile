@@ -1,0 +1,17 @@
+[package]
+name = "axe-server"
+description = "AxeMobile web server (Umbrel / Docker / headless)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "axemobile-server"
+path = "src/main.rs"
+
+[dependencies]
+axe-core.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+axum = "0.8"

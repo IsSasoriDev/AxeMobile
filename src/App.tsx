@@ -1,151 +1,185 @@
-import { useState, useEffect, lazy, Suspense } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
-import { Shield } from "lucide-react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/layout/AppSidebar";
-import { MobileLayout } from "@/components/layout/MobileLayout";
-import { ThemeSelector } from "@/components/layout/ThemeSelector";
-import { ReloadButton } from "@/components/layout/ReloadButton";
-import { PageTransition } from "@/components/layout/PageTransition";
-import { LoadingScreen } from "@/components/ui/loading-screen";
-import { UpdaterDialog } from "@/components/ui/updater-dialog";
-import { ReleasePopup } from "@/components/ui/release-popup";
-import { CloseDialog } from "@/components/ui/close-dialog";
-import { PlatformSelector } from "@/components/ui/platform-selector";
-import { AnnouncementBanner } from "@/components/ui/announcement-banner";
-import { useCloseHandler } from "@/hooks/useCloseHandler";
-import { usePlatform } from "@/hooks/usePlatform";
-import Home from "./pages/Home";
-import Stats from "./pages/Stats";
-import FlashFirmware from "./pages/FlashFirmware";
-import Pools from "./pages/Pools";
-import CoinPools from "./pages/CoinPools";
-import Resources from "./pages/Resources";
-import Cave from "./pages/Cave";
-import Config from "./pages/Config";
-import Settings from "./pages/Settings";
-import Achievements from "./pages/Achievements";
-import Blocks from "./pages/Blocks";
-import GitHub from "./pages/GitHub";
-import Admin from "./pages/Admin";
-import AtlasPool from "./pages/AtlasPool";
-import NotFound from "./pages/NotFound";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import Leaderboard from "./pages/Leaderboard";
+import { createContext, useContext, useEffect, useState } from "react";
+import { HashRouter, NavLink, Route, Routes } from "react-router-dom";
+import { Cpu, Gauge as GaugeIcon, LayoutDashboard, Network, Settings2, Trophy, Waves } from "lucide-react";
+import { api, type Overview } from "@/api";
+import { usePoll } from "@/hooks";
+import { ToastProvider } from "@/components/Toast";
+import { CinematicIntro } from "@/components/CinematicIntro";
+import { TypingText } from "@/components/TypingText";
+import dtvLogo from "@/assets/dtv-electronics-logo.png";
+import Dashboard from "@/pages/Dashboard";
+import MinerPage from "@/pages/Miner";
+import Swarm from "@/pages/Swarm";
+import Pools from "@/pages/Pools";
+import TuningPage from "@/pages/Tuning";
+import System from "@/pages/System";
+import Leaderboard from "@/pages/Leaderboard";
 
-const Blog = lazy(() => import("./pages/Blog"));
+export type Theme = "default" | "dtv";
 
-const queryClient = new QueryClient();
+interface Ctx {
+  overview: Overview | null;
+  error: string;
+  reload: () => Promise<void>;
+  theme: Theme;
+  setTheme: (t: Theme) => void;
+}
 
-const AdminButton = () => {
-  const navigate = useNavigate();
+const AppCtx = createContext<Ctx>(null as unknown as Ctx);
+export const useApp = () => useContext(AppCtx);
+
+function readLocal(key: string, fallback: string) {
+  try {
+    return localStorage.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+function writeLocal(key: string, v: string) {
+  try {
+    localStorage.setItem(key, v);
+  } catch {
+    /* ignore */
+  }
+}
+
+function applyTheme(t: Theme) {
+  document.documentElement.classList.toggle("theme-dtv", t === "dtv");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", t === "dtv" ? "#050505" : "#070a10");
+}
+
+function Splash({ onDone }: { onDone: () => void }) {
+  const [out, setOut] = useState(false);
+  useEffect(() => {
+    const a = setTimeout(() => setOut(true), 1100);
+    const b = setTimeout(onDone, 1600);
+    return () => {
+      clearTimeout(a);
+      clearTimeout(b);
+    };
+  }, [onDone]);
   return (
-    <button
-      onClick={() => navigate("/admin")}
-      className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
-      title="Admin"
-    >
-      <Shield className="h-4 w-4" />
-    </button>
-  );
-};
-
-const DesktopLayout = () => (
-  <SidebarProvider>
-    <div className="min-h-screen flex w-full">
-      <AppSidebar />
-      <div className="flex-1 flex flex-col">
-        <header className="h-12 flex items-center justify-between border-b border-border/50 px-4 bg-card/30 backdrop-blur-sm">
-          <SidebarTrigger className="text-muted-foreground hover:text-primary transition-colors" />
-          <div className="flex items-center gap-2">
-            <AdminButton />
-            <ReloadButton />
-            <ThemeSelector />
-          </div>
-        </header>
-        <AnnouncementBanner />
-        <main className="flex-1 overflow-hidden">
-          <PageTransition>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/stats" element={<Stats />} />
-              <Route path="/blocks" element={<Blocks />} />
-              <Route path="/config" element={<Config />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/achievements" element={<Achievements />} />
-              <Route path="/flash" element={<FlashFirmware />} />
-              <Route path="/pools" element={<Pools />} />
-              <Route path="/pools/:coin" element={<CoinPools />} />
-              <Route path="/resources" element={<Resources />} />
-              <Route path="/cave" element={<Cave />} />
-              <Route path="/github" element={<GitHub />} />
-              <Route path="/atlaspool" element={<AtlasPool />} />
-              <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              
-              <Route path="/blog" element={<Suspense fallback={<div className="flex items-center justify-center h-full text-muted-foreground">Loading...</div>}><Blog /></Suspense>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </PageTransition>
-        </main>
+    <div className={`splash ${out ? "out" : ""}`}>
+      <div>
+        <div className="mark">
+          <b>Axe</b>Mobile<i>.</i>
+        </div>
+        <div className="line">
+          <i />
+        </div>
       </div>
     </div>
-  </SidebarProvider>
-);
+  );
+}
 
-const AppContent = () => {
-  const { showCloseDialog, setShowCloseDialog } = useCloseHandler();
-  const { isFirstTime, setPlatform, isMobile: isMobilePlatform } = usePlatform();
-  const [showLoading, setShowLoading] = useState(true);
-  const [showPlatformSelector, setShowPlatformSelector] = useState(false);
+const NAV = [
+  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/swarm", label: "Swarm", icon: Network },
+  { to: "/pools", label: "Pools", icon: Waves },
+  { to: "/tuning", label: "Tuning", icon: GaugeIcon },
+  { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
+  { to: "/system", label: "System", icon: Settings2 },
+];
 
-  const handleLoadingComplete = () => {
-    setShowLoading(false);
-    if (isFirstTime) {
-      setShowPlatformSelector(true);
-    }
+function Shell() {
+  const { overview, theme } = useApp();
+  const f = overview?.fleet;
+  return (
+    <div className="app">
+      <nav className="sidebar">
+        {theme === "dtv" ? (
+          <div className="logo">
+            <img src={dtvLogo} alt="DTV Electronics" />
+            <span>AxeMobile</span>
+          </div>
+        ) : (
+          <div className="logo">
+            <span>
+              <b>Axe</b>Mobile<i>.</i>
+            </span>
+          </div>
+        )}
+        <div className="tagline">
+          <TypingText
+            key={theme}
+            texts={theme === "dtv" ? ["EST. BLOCK 723,420"] : ["Open Source Mining", "Hack the planet"]}
+            typingSpeed={60}
+            deletingSpeed={25}
+            pauseDuration={2000}
+          />
+        </div>
+        {NAV.map((n) => (
+          <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `nav ${isActive ? "active" : ""}`}>
+            <n.icon />
+            <span>{n.label}</span>
+            {n.to === "/swarm" && f && (
+              <span className="count">
+                {f.online}/{f.total}
+              </span>
+            )}
+          </NavLink>
+        ))}
+        <div className="foot">
+          <span>
+            <Cpu size={12} style={{ verticalAlign: "-2px" }} /> Umbrel · v2.0.0
+          </span>
+          <span>AxeForge &amp; AxeOS miners</span>
+        </div>
+      </nav>
+      <main>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/miner/:id" element={<MinerPage />} />
+          <Route path="/swarm" element={<Swarm />} />
+          <Route path="/pools" element={<Pools />} />
+          <Route path="/pools/:id" element={<Pools />} />
+          <Route path="/tuning" element={<TuningPage />} />
+          <Route path="/tuning/:id" element={<TuningPage />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/system" element={<System />} />
+          <Route path="*" element={<Dashboard />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
+export default function App() {
+  const [theme, setThemeState] = useState<Theme>(() => (readLocal("axemobile-theme", "default") === "dtv" ? "dtv" : "default"));
+  const [intro, setIntro] = useState(() => readLocal("axemobile-intro", "1") !== "0");
+  const { data, error, reload } = usePoll(() => api<Overview>("/overview"), 5000);
+
+  useEffect(() => applyTheme(theme), [theme]);
+
+  // The engine keeps the theme too, so it survives a browser change.
+  useEffect(() => {
+    api<{ settings: Record<string, string> }>("/settings")
+      .then(({ settings }) => {
+        if (settings.theme === "dtv" || settings.theme === "default") {
+          if (settings.theme !== readLocal("axemobile-theme", "")) {
+            setThemeState(settings.theme as Theme);
+            writeLocal("axemobile-theme", settings.theme);
+          }
+        }
+        writeLocal("axemobile-intro", settings.intro ?? "1");
+      })
+      .catch(() => {});
+  }, []);
+
+  const setTheme = (t: Theme) => {
+    setThemeState(t);
+    writeLocal("axemobile-theme", t);
+    api("/settings", { method: "PUT", body: { theme: t } }).catch(() => {});
   };
 
-  const handlePlatformSelect = (platform: "pc" | "mobile") => {
-    setPlatform(platform);
-    setShowPlatformSelector(false);
-  };
-
-  if (showLoading) {
-    return <LoadingScreen onComplete={handleLoadingComplete} />;
-  }
-
-  if (showPlatformSelector) {
-    return <PlatformSelector onSelect={handlePlatformSelect} />;
-  }
-
   return (
-    <>
-      <Toaster />
-      <Sonner />
-      <UpdaterDialog />
-      <ReleasePopup />
-      <CloseDialog open={showCloseDialog} onOpenChange={setShowCloseDialog} />
-      <BrowserRouter>
-        {isMobilePlatform ? <MobileLayout /> : <DesktopLayout />}
-      </BrowserRouter>
-    </>
+    <AppCtx.Provider value={{ overview: data, error, reload, theme, setTheme }}>
+      <ToastProvider>
+        {intro && (theme === "dtv" ? <CinematicIntro onComplete={() => setIntro(false)} /> : <Splash onDone={() => setIntro(false)} />)}
+        <HashRouter>
+          <Shell />
+        </HashRouter>
+      </ToastProvider>
+    </AppCtx.Provider>
   );
-};
-
-const App = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AppContent />
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
-
-export default App;
+}

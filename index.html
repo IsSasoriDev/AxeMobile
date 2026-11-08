@@ -1,26 +1,19 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AxeMobile - Bitcoin Miner Management</title>
-    <meta name="description" content="Unleash the Open Source power - Manage your Bitcoin miners with AxeMobile dashboard">
-    <meta name="author" content="IsSasoriDev" />
-
-
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="/images/og-image.png" />
-    <meta property="og:title" content="AxeMobile - Bitcoin Miner Management">
-    <meta property="og:description" content="Unleash the Open Source power - Manage your Bitcoin miners with AxeMobile dashboard">
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="/images/og-image.png" />
-    <meta name="twitter:title" content="AxeMobile - Bitcoin Miner Management">
-    <meta name="twitter:description" content="Unleash the Open Source power - Manage your Bitcoin miners with AxeMobile dashboard">
-
-    <link rel="icon" type="image/png" href="/favicon.png">
-</head>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#070a10" />
+    <title>AxeMobile</title>
+    <meta name="description" content="Monitor and tune your AxeForge and AxeOS Bitcoin miners." />
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <script>
+      try {
+        var t = localStorage.getItem("axemobile-theme");
+        if (t === "dtv") document.documentElement.classList.add("theme-dtv");
+      } catch (e) {}
+    </script>
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
