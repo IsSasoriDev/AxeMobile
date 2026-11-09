@@ -52,12 +52,16 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context, now: f64, id:
 
     let hist = app.history(now, Some(id), app.st.miner_range);
     let avail = ui.available_width();
+    let hero_id = egui::Id::unique("miner-hero-h");
+    let hero_h: f32 = ui.ctx().data(|d| d.get_temp(hero_id)).unwrap_or(0.0);
     ui.horizontal_top(|ui| {
         ui.spacing_mut().item_spacing.x = 14.0;
         ui.allocate_ui_with_layout(Vec2::new(250.0, 0.0), egui::Layout::top_down(egui::Align::Center), |ui| {
             ui.set_width(250.0);
             w::card(ui, &p, |ui| {
+                ui.set_min_height((hero_h - 32.0).max(0.0));
                 ui.vertical_centered(|ui| {
+                    ui.add_space(((hero_h - 32.0 - 210.0) / 2.0).max(0.0));
                     let sub = s.as_ref().and_then(|s| s.expected).map(|e| format!("expected {}", fmt::hash_str(Some(e)))).unwrap_or_else(|| "hashrate".into());
                     let max = s.as_ref().map(|s| s.expected.unwrap_or(0.0).max(s.hashrate.unwrap_or(0.0))).unwrap_or(1.0).max(1.0);
                     w::gauge(ui, &p, if online { s.as_ref().and_then(|s| s.hashrate) } else { None }, max, &sub);
@@ -67,7 +71,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context, now: f64, id:
         let cw = avail - 264.0;
         ui.allocate_ui_with_layout(Vec2::new(cw, 0.0), egui::Layout::top_down(egui::Align::Min), |ui| {
             ui.set_width(cw);
-            w::card_ex(ui, &p, true, |ui| {
+            let hr = w::card_ex(ui, &p, true, |ui| {
                 let mut r = app.st.miner_range;
                 let mut se = app.st.miner_series;
                 w::h3_row(ui, &p, "History", |ui| {
@@ -79,6 +83,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context, now: f64, id:
                 ui.add_space(4.0);
                 w::chart(ui, &p, &hist, se, (se == Series::Hashrate).then_some(Series::Temp), 186.0);
             });
+            ui.ctx().data_mut(|d| d.insert_temp(hero_id, hr.response.rect.height()));
         });
     });
     ui.add_space(14.0);
@@ -92,7 +97,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context, now: f64, id:
     };
     w::cols(ui, 4, 14.0, |i, ui| {
         w::card(ui, &p, |ui| {
-            ui.set_min_height(86.0);
+            ui.set_min_height(104.0);
             match i {
                 0 => {
                     w::h3(ui, &p, "ASIC temp");
@@ -117,6 +122,31 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context, now: f64, id:
                 }
             }
         });
+    });
+    ui.add_space(14.0);
+
+    // last 24 hours, from the local history
+    let day_ago = axe_core::db::now() - 86_400;
+    let since = day_ago.max(m.row.added_at);
+    let (count, avg_h, peak_h, avg_t, max_t) = app.engine.db.summary(id, since).unwrap_or((0, None, None, None, None));
+    // share of AxeMobile's own poll rounds in which this miner answered,
+    // so time with the app closed doesn't count against the miner
+    let rounds = app.engine.db.poll_rounds(since).unwrap_or(0).max(1);
+    let avail_pct = (count as f64 / rounds as f64 * 100.0).min(100.0);
+    let window = if since > day_ago { format!("since added, {}", fmt::ago(since)) } else { "last 24 hours".into() };
+    w::cols(ui, 4, 14.0, |i, ui| match i {
+        0 => w::stat(ui, &p, "Average hashrate", &fmt::hash(avg_h).0, fmt::hash(avg_h).1, &window, None),
+        1 => w::stat(ui, &p, "Peak hashrate", &fmt::hash(peak_h).0, fmt::hash(peak_h).1, &window, None),
+        2 => w::stat(ui, &p, "Average temp", &fmt::num(avg_t, 1), "°C", &max_t.map(|t| format!("hottest {t:.1}°C")).unwrap_or_default(), Some(w::temp_color(&p, avg_t))),
+        _ => w::stat(
+            ui,
+            &p,
+            "Reachable",
+            &format!("{avail_pct:.1}"),
+            "%",
+            &format!("answered {count} of {rounds} reads"),
+            Some(if avail_pct >= 98.0 { p.good } else if avail_pct >= 90.0 { p.warn } else { p.bad }),
+        ),
     });
     ui.add_space(14.0);
 

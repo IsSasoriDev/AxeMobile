@@ -10,6 +10,7 @@ mod fonts;
 mod game;
 mod jobs;
 mod pages;
+mod palette;
 mod sys;
 mod theme;
 mod tray;

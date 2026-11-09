@@ -22,12 +22,17 @@ firmware and with the stock AxeOS firmware, and it reads and writes both.
 
 ## What you get
 
-**The dashboard.** Total hashrate on a gauge, a history chart you can stretch from one hour to thirty
-days, power and J/TH, best share, shares and rejects. There's also the Bitcoin price, fees, the chain
-height and how likely your fleet is to hit a block.
+**The dashboard.** Total hashrate on a gauge, a chart of hashrate, temperature or power from one hour
+to thirty days, power and J/TH, best share, shares and rejects. There's also the Bitcoin price, fees, the
+chain height, what your fleet would earn on a pay-per-share pool, and how likely it is to hit a block
+solo. Every miner tile has a little six-hour trend line.
 
 **A page for every miner.** The same layout as the AxeForge web page: chip and VR temps, power, fans,
-the pool it's on, best shares, firmware, uptime, Wi-Fi, and its own history.
+the pool it's on, best shares, firmware, uptime, Wi-Fi, and its own history. A row underneath shows
+the last 24 hours: average and peak hashrate, average temperature, and how often it answered.
+
+**Ctrl+K.** Opens a search box: type a few letters to jump to any page or miner, restart a miner,
+open its web page, scan the network or switch theme.
 
 **Swarm.** Add a miner by IP, scan your network for them, or pull in every miner an AxeForge unit
 already knows about.
@@ -61,7 +66,8 @@ work too: log in once and AxeMobile remembers the session.
 | ![Black hole intro](docs/screenshots/intro-1.jpg) | ![Intro title](docs/screenshots/intro.jpg) |
 | ![Miner page](docs/screenshots/miner.jpg) | ![The Cave](docs/screenshots/cave.jpg) |
 | ![AxeForge theme](docs/screenshots/dashboard-forge.jpg) | ![Pools](docs/screenshots/pools.jpg) |
-| ![Leaderboard](docs/screenshots/leaderboard.jpg) | ![Installer](docs/screenshots/installer.jpg) |
+| ![Leaderboard](docs/screenshots/leaderboard.jpg) | ![Ctrl+K search](docs/screenshots/palette.jpg) |
+| ![Installer](docs/screenshots/installer.jpg) | ![Swarm](docs/screenshots/swarm.jpg) |
 
 ## Download
 

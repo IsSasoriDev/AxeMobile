@@ -27,6 +27,7 @@ pub struct SwarmState {
     pub name: String,
     pub subnet: String,
     pub focus: bool,
+    pub auto_scan: bool,
     pub add: Option<Job<Result<String, String>>>,
     pub scan: Option<Job<(String, Vec<Found>)>>,
     pub found: Option<Vec<Found>>,
@@ -83,6 +84,7 @@ pub enum LbTab {
 
 pub struct State {
     pub dash_range: &'static str,
+    pub dash_series: Series,
     pub miner_range: &'static str,
     pub miner_series: Series,
     pub swarm: SwarmState,
@@ -100,6 +102,7 @@ impl State {
         let g = |k: &str, d: &str| s.get(k).cloned().unwrap_or_else(|| d.to_string());
         Self {
             dash_range: "6h",
+            dash_series: Series::Hashrate,
             miner_range: "1h",
             miner_series: Series::Hashrate,
             swarm: SwarmState { subnet: g("scan_subnet", ""), ..Default::default() },
@@ -359,11 +362,16 @@ pub fn events_list(ui: &mut egui::Ui, app: &App, events: &[axe_core::db::Event],
                 _ => p.pri,
             };
             w::dot(ui, c, matches!(e.kind.as_str(), "best" | "block"));
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            // fixed widths so a long message truncates instead of widening the card
+            let time_w = 90.0;
+            let msg_w = (ui.available_width() - time_w - 10.0).max(60.0);
+            ui.allocate_ui_with_layout(egui::vec2(msg_w, 20.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                ui.set_width(msg_w);
+                ui.add(egui::Label::new(RichText::new(&e.message).size(13.5)).truncate());
+            });
+            ui.allocate_ui_with_layout(egui::vec2(time_w, 20.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.set_width(time_w);
                 ui.label(RichText::new(crate::fmt::ago(e.ts)).size(11.5).color(p.dim));
-                ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                    ui.add(egui::Label::new(RichText::new(&e.message).size(13.5)).truncate());
-                });
             });
         });
         ui.add_space(4.0);

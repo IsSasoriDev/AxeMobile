@@ -24,9 +24,18 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to attach the builds to (leave empty to just build)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
+
+env:
+  # set on a published release, or by hand when re-running for an existing one
+  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
 
 jobs:
   windows:
@@ -45,14 +54,14 @@ jobs:
           name: AxeMobile-Windows
           path: dist-win/*.exe
       - name: Attach to release
-        if: github.event_name == 'release'
+        if: env.RELEASE_TAG != ''
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" (Get-ChildItem dist-win/AxeMobile-Setup-*.exe).FullName --clobber
+        run: gh release upload "$env:RELEASE_TAG" (Get-ChildItem dist-win/AxeMobile-Setup-*.exe).FullName --clobber
 
   macos:
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -72,10 +81,10 @@ jobs:
           name: AxeMobile-macOS
           path: dist-mac/*.dmg
       - name: Attach to release
-        if: github.event_name == 'release'
+        if: env.RELEASE_TAG != ''
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" dist-mac/*.dmg --clobber
+        run: gh release upload "$RELEASE_TAG" dist-mac/*.dmg --clobber
 
   linux:
     runs-on: ubuntu-22.04
@@ -99,7 +108,7 @@ jobs:
             dist-linux/*.deb
             dist-linux/*.tar.gz
       - name: Attach to release
-        if: github.event_name == 'release'
+        if: env.RELEASE_TAG != ''
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" dist-linux/*.deb dist-linux/*.tar.gz --clobber
+        run: gh release upload "$RELEASE_TAG" dist-linux/*.deb dist-linux/*.tar.gz --clobber
