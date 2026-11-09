@@ -93,6 +93,9 @@ pub fn router(engine: Shared, cfg: &Config) -> Router {
         .route("/events", get(events))
         .route("/scan", get(scan_info).post(scan))
         .route("/settings", get(get_settings).put(put_settings))
+        .route("/pool", get(pool_status))
+        .route("/pool/history", get(pool_history))
+        .route("/pool/point/{id}", post(pool_point))
         .route("/export", get(export))
         .route("/import", post(import))
         .layer(middleware::from_fn_with_state(engine.clone(), auth))
@@ -383,14 +386,15 @@ async fn scan(State(e): State<Shared>, Json(b): Json<ScanBody>) -> R<Value> {
 async fn get_settings(State(e): State<Shared>) -> R<Value> {
     let (samples, hourly, events) = e.db.stats()?;
     Ok(Json(json!({
-        "settings": e.settings(),
+        "settings": public_settings(&e),
+        "fixed": e.fixed.read().unwrap().keys().cloned().collect::<Vec<_>>(),
         "db": {"samples": samples, "hourly": hourly, "events": events},
     })))
 }
 
 async fn put_settings(State(e): State<Shared>, Json(b): Json<HashMap<String, Value>>) -> R<Value> {
     for (k, v) in b {
-        if !crate::DEFAULTS.iter().any(|(d, _)| *d == k) {
+        if !crate::DEFAULTS.iter().any(|(d, _)| *d == k) || e.is_fixed(&k) {
             continue;
         }
         let s = match v {
@@ -398,10 +402,24 @@ async fn put_settings(State(e): State<Shared>, Json(b): Json<HashMap<String, Val
             Value::Bool(x) => (if x { "1" } else { "0" }).into(),
             other => other.to_string(),
         };
+        // the UI never gets the password back, so empty means "keep it"
+        if k == "node_pass" && s.is_empty() {
+            continue;
+        }
         e.db.set_setting(&k, &s)?;
     }
     e.wake.notify_one();
-    Ok(Json(json!({"settings": e.settings()})))
+    e.pool_wake.notify_one();
+    Ok(Json(json!({"settings": public_settings(&e)})))
+}
+
+/// Settings without secrets: the RPC password becomes `node_pass_set`.
+fn public_settings(e: &Engine) -> HashMap<String, String> {
+    let mut s = e.settings();
+    let set = s.remove("node_pass").is_some_and(|p| !p.is_empty());
+    s.insert("node_pass".into(), String::new());
+    s.insert("node_pass_set".into(), if set { "1" } else { "0" }.into());
+    s
 }
 
 async fn export(State(e): State<Shared>) -> R<Value> {
@@ -411,7 +429,9 @@ async fn export(State(e): State<Shared>) -> R<Value> {
         .into_iter()
         .map(|m| json!({"ip": m.ip, "name": m.name, "kind": m.kind, "model": m.model}))
         .collect();
-    Ok(Json(json!({"app": "axemobile", "version": 2, "miners": miners, "settings": e.settings()})))
+    let mut settings = e.settings();
+    settings.retain(|k, _| k != "node_pass" && !e.is_fixed(k));
+    Ok(Json(json!({"app": "axemobile", "version": 2, "miners": miners, "settings": settings})))
 }
 
 #[derive(Deserialize)]
@@ -452,12 +472,55 @@ async fn import(State(e): State<Shared>, Json(b): Json<ImportBody>) -> R<Value> 
         added += 1;
     }
     for (k, v) in b.settings {
-        if crate::DEFAULTS.iter().any(|(d, _)| *d == k) {
+        if crate::DEFAULTS.iter().any(|(d, _)| *d == k) && !e.is_fixed(&k) {
             e.db.set_setting(&k, &v)?;
         }
     }
     e.wake.notify_one();
     Ok(Json(json!({"added": added})))
+}
+
+// ---------- AxePool
+
+async fn pool_status(State(e): State<Shared>) -> R<Value> {
+    let st = e.pool.status();
+    let port = st.port;
+    let host = crate::pool::stratum_host();
+    let day = crate::pool::odds(st.hashrate, st.net_diff, 86_400.0);
+    let month = crate::pool::odds(st.hashrate, st.net_diff, 30.0 * 86_400.0);
+    let year = crate::pool::odds(st.hashrate, st.net_diff, 365.0 * 86_400.0);
+    let expected_days = if st.hashrate > 0.0 && st.net_diff > 0.0 {
+        Some(st.net_diff * 4_294_967_296.0 / (st.hashrate * 1e9) / 86_400.0)
+    } else {
+        None
+    };
+    Ok(Json(json!({
+        "status": st,
+        "stratum": format!("stratum+tcp://{host}:{port}"),
+        "odds": {"day": day, "month": month, "year": year, "expected_days": expected_days},
+        "blocks": e.db.pool_blocks(50)?,
+        "bests": e.db.pool_bests()?.into_iter().map(|(w, d, ts)| json!({"worker": w, "diff": d, "ts": ts})).collect::<Vec<_>>(),
+    })))
+}
+
+/// Makes AxePool the miner's first pool.
+#[derive(Deserialize, Default)]
+struct PointBody {
+    /// the address the browser used to reach AxeMobile, when it is an IP
+    #[serde(default)]
+    host: Option<String>,
+}
+
+async fn pool_point(State(e): State<Shared>, Path(id): Path<i64>, Json(b): Json<PointBody>) -> R<Value> {
+    let m = miner(&e, id)?;
+    let msg = crate::pool::point_miner(&e, &m, b.host).await?;
+    Ok(Json(json!({"ok": true, "message": msg})))
+}
+
+async fn pool_history(State(e): State<Shared>, Query(q): Query<RangeQ>) -> R<Value> {
+    let (span, bucket) = range(if q.range.is_empty() { "24h" } else { &q.range });
+    let pts = e.db.pool_history(db::now() - span, bucket)?;
+    Ok(Json(json!(pts.into_iter().map(|(t, h)| json!({"t": t, "hashrate": h})).collect::<Vec<_>>())))
 }
 
 async fn market(State(e): State<Shared>) -> R<Value> {

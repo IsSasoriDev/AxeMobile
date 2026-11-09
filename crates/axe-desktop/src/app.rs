@@ -50,6 +50,7 @@ pub enum Page {
     Miner(i64),
     Swarm,
     Pools,
+    AxePool,
     Tuning,
     Cave,
     Leaderboard,
@@ -453,10 +454,11 @@ hottest {h:.0}°C · best {}", crate::fmt::diff(f.best_diff)));
         }
         ui.add_space(12.0);
 
-        let items: [(Page, &str, &str); 7] = [
+        let items: [(Page, &str, &str); 8] = [
             (Page::Dashboard, ic::HOME, "Dashboard"),
             (Page::Swarm, ic::SWARM, "Swarm"),
             (Page::Pools, ic::POOLS, "Pools"),
+            (Page::AxePool, ic::AXEPOOL, "AxePool"),
             (Page::Tuning, ic::TUNE, "Tuning"),
             (Page::Cave, ic::GAME, "The Cave"),
             (Page::Leaderboard, ic::TROPHY, "Leaderboard"),
@@ -566,10 +568,10 @@ hottest {h:.0}°C · best {}", crate::fmt::diff(f.best_diff)));
     }
 
     fn shortcuts(&mut self, ctx: &egui::Context) {
-        let pages = [Page::Dashboard, Page::Swarm, Page::Pools, Page::Tuning, Page::Cave, Page::Leaderboard, Page::System];
+        let pages = [Page::Dashboard, Page::Swarm, Page::Pools, Page::AxePool, Page::Tuning, Page::Cave, Page::Leaderboard, Page::System];
         ctx.input(|i| {
             if i.modifiers.command {
-                for (n, key) in [egui::Key::Num1, egui::Key::Num2, egui::Key::Num3, egui::Key::Num4, egui::Key::Num5, egui::Key::Num6, egui::Key::Num7].iter().enumerate() {
+                for (n, key) in [egui::Key::Num1, egui::Key::Num2, egui::Key::Num3, egui::Key::Num4, egui::Key::Num5, egui::Key::Num6, egui::Key::Num7, egui::Key::Num8].iter().enumerate() {
                     if i.key_pressed(*key) {
                         self.page = pages[n];
                     }

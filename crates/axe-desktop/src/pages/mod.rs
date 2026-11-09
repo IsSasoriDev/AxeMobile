@@ -14,6 +14,7 @@ mod cave;
 mod dashboard;
 mod leaderboard;
 mod miner;
+mod axepool;
 mod pools;
 mod swarm;
 mod system;
@@ -89,6 +90,7 @@ pub struct State {
     pub miner_series: Series,
     pub swarm: SwarmState,
     pub pools: PoolsState,
+    pub axepool: axepool::PoolPage,
     pub tuning: TuningState,
     pub login: Option<LoginState>,
     pub rename: Option<(i64, String)>,
@@ -107,6 +109,7 @@ impl State {
             miner_series: Series::Hashrate,
             swarm: SwarmState { subnet: g("scan_subnet", ""), ..Default::default() },
             pools: PoolsState::default(),
+            axepool: axepool::PoolPage::new(s),
             tuning: TuningState::default(),
             login: None,
             rename: None,
@@ -145,6 +148,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context, now: f64) {
         Page::Miner(id) => miner::show(app, ui, ctx, now, id),
         Page::Swarm => swarm::show(app, ui, ctx),
         Page::Pools => pools::show(app, ui, ctx),
+        Page::AxePool => axepool::show(app, ui, ctx),
         Page::Tuning => tuning::show(app, ui, ctx),
         Page::Cave => cave::show(app, ui, now),
         Page::Leaderboard => leaderboard::show(app, ui),

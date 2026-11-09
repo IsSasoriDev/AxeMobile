@@ -36,6 +36,7 @@ fn main() -> eframe::Result {
     let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().expect("tokio runtime");
     rt.spawn(engine.clone().run_poller());
     rt.spawn(engine.clone().run_market());
+    rt.spawn(axe_core::pool::supervise(engine.clone()));
     // read-only summary for the macOS widget (and anything else local)
     let wr = axe_core::api::widget_router(engine.clone());
     rt.spawn(async move {

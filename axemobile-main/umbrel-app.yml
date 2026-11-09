@@ -4,8 +4,8 @@ storage:
   dataRoot: data
 category: bitcoin
 name: AxeMobile
-version: "2.1.0"
-tagline: Watch and tune your Bitaxe, NerdAxe and NerdQaxe miners
+version: "2.2.0"
+tagline: Watch, tune and solo mine with your Bitaxe and NerdQaxe miners
 description: >-
   AxeMobile keeps an eye on your home Bitcoin miners from your Umbrel. It
   talks to miners running AxeForge or the stock AxeOS firmware over your
@@ -32,14 +32,20 @@ description: >-
 
   - Leaderboard of the biggest shares your fleet has found
 
+  - AxePool, a solo pool on your own Bitcoin node: point your miners at
+  your Umbrel on port 3334 and a block found pays the full reward to your
+  address
+
   - The DTV Electronics theme
 
 
   Getting started: open AxeMobile, go to Swarm, and add a miner by its IP
-  address or scan your subnet (for example 192.168.1).
+  address or scan your subnet (for example 192.168.1). For solo mining, open
+  AxePool once your Bitcoin node is in sync.
 developer: IsSasoriDev
 website: https://github.com/IsSasoriDev/AxeMobile
-dependencies: []
+dependencies:
+  - bitcoin
 repo: https://github.com/IsSasoriDev/AxeMobile
 support: https://github.com/IsSasoriDev/AxeMobile/issues
 port: 3847
@@ -54,15 +60,16 @@ defaultUsername: ""
 defaultPassword: ""
 torOnly: false
 releaseNotes: >-
-  Fixes AxeMobile not opening on newer umbrelOS.
+  AxePool: solo mining on your own Bitcoin node.
 
 
-  - The app's data folder now ships with the package, the way umbrelOS
-  expects, so the server can create its database on first start.
+  - AxeMobile now needs the Bitcoin Node app. AxePool takes its block
+  templates from it, with nothing to set up.
 
-  - The container fixes the folder's ownership itself before starting, so
-  installs that were stuck on the old folder start working after the
-  update.
+  - Point your miners at your Umbrel's IP address on port 3334, with your
+  Bitcoin address as the username. If one of them finds a block, the full
+  reward goes to that address.
 
-  - Your data can be moved to an external drive from the app settings on
-  umbrelOS 2.0.
+  - The AxePool page shows each worker's hashrate, shares and best share,
+  your odds of finding a block, and any blocks found. It can also switch a
+  miner over to AxePool for you.

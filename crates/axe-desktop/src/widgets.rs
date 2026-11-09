@@ -36,6 +36,7 @@ pub mod ic {
     pub const FOLDER: &str = "\u{E838}";
     pub const COPY: &str = "\u{E8C8}";
     pub const LOCK: &str = "\u{E72E}";
+    pub const AXEPOOL: &str = "\u{E825}";
 }
 
 #[cfg(not(windows))]
@@ -58,6 +59,7 @@ pub mod ic {
     pub const FOLDER: &str = "🗁";
     pub const COPY: &str = "🗐";
     pub const LOCK: &str = "🔒";
+    pub const AXEPOOL: &str = "⛏";
 }
 
 // ---------------------------------------------------------------- cards

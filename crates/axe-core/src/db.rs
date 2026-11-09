@@ -55,6 +55,25 @@ CREATE TABLE IF NOT EXISTS best_shares(
   diff     REAL NOT NULL,
   PRIMARY KEY(miner_id, ts)
 ) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS pool_blocks(
+  id     INTEGER PRIMARY KEY,
+  ts     INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  hash   TEXT NOT NULL,
+  worker TEXT NOT NULL,
+  reward INTEGER NOT NULL,
+  result TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS pool_best(
+  worker TEXT PRIMARY KEY,
+  diff   REAL NOT NULL,
+  ts     INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS pool_samples(
+  ts       INTEGER PRIMARY KEY,
+  hashrate REAL NOT NULL,
+  workers  INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS settings(
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -103,6 +122,18 @@ pub struct Sample {
     pub vr_temp: Option<f64>,
     pub power: Option<f64>,
     pub fan_rpm: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct PoolBlock {
+    pub ts: i64,
+    pub height: i64,
+    pub hash: String,
+    pub worker: String,
+    /// sats
+    pub reward: i64,
+    /// "accepted" or the node's reason for refusing it
+    pub result: String,
 }
 
 pub struct Db {
@@ -289,11 +320,64 @@ impl Db {
         let c = self.c();
         c.execute("DELETE FROM samples WHERE ts < ?", [n - RAW_KEEP_SECS])?;
         c.execute("DELETE FROM hourly WHERE ts < ?", [n - HOURLY_KEEP_SECS])?;
+        c.execute("DELETE FROM pool_samples WHERE ts < ?", [n - 7 * 86_400])?;
         c.execute(
             "DELETE FROM events WHERE id <= (SELECT id FROM events ORDER BY id DESC LIMIT 1 OFFSET ?)",
             [EVENTS_KEEP],
         )?;
         Ok(())
+    }
+
+    // ---------- AxePool
+
+    pub fn add_pool_block(&self, b: &PoolBlock) -> Result<()> {
+        self.c().execute(
+            "INSERT INTO pool_blocks(ts, height, hash, worker, reward, result) VALUES(?,?,?,?,?,?)",
+            params![b.ts, b.height, b.hash, b.worker, b.reward, b.result],
+        )?;
+        Ok(())
+    }
+
+    pub fn pool_blocks(&self, limit: i64) -> Result<Vec<PoolBlock>> {
+        let c = self.c();
+        let mut st = c.prepare("SELECT ts, height, hash, worker, reward, result FROM pool_blocks ORDER BY id DESC LIMIT ?")?;
+        let rows = st
+            .query_map([limit], |r| {
+                Ok(PoolBlock { ts: r.get(0)?, height: r.get(1)?, hash: r.get(2)?, worker: r.get(3)?, reward: r.get(4)?, result: r.get(5)? })
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    /// Keeps the highest share per worker name. True when it is a new record.
+    pub fn pool_best_share(&self, worker: &str, diff: f64) -> Result<bool> {
+        let c = self.c();
+        let old: Option<f64> = c.query_row("SELECT diff FROM pool_best WHERE worker=?", [worker], |r| r.get(0)).optional()?;
+        if old.is_some_and(|o| o >= diff) {
+            return Ok(false);
+        }
+        c.execute("INSERT OR REPLACE INTO pool_best(worker, diff, ts) VALUES(?,?,?)", params![worker, diff, now()])?;
+        Ok(true)
+    }
+
+    pub fn pool_bests(&self) -> Result<Vec<(String, f64, i64)>> {
+        let c = self.c();
+        let mut st = c.prepare("SELECT worker, diff, ts FROM pool_best ORDER BY diff DESC LIMIT 50")?;
+        let rows = st.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?.collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    pub fn add_pool_sample(&self, hashrate: f64, workers: i64) -> Result<()> {
+        self.c().execute("INSERT OR REPLACE INTO pool_samples(ts, hashrate, workers) VALUES(?,?,?)", params![now(), hashrate, workers])?;
+        Ok(())
+    }
+
+    /// (ts, hashrate GH/s) averaged into `bucket`-second steps.
+    pub fn pool_history(&self, since: i64, bucket: i64) -> Result<Vec<(i64, f64)>> {
+        let c = self.c();
+        let mut st = c.prepare("SELECT (ts / ?1) * ?1 AS b, AVG(hashrate) FROM pool_samples WHERE ts >= ?2 GROUP BY b ORDER BY b")?;
+        let rows = st.query_map(params![bucket.max(1), since], |r| Ok((r.get(0)?, r.get(1)?)))?.collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(rows)
     }
 
     // ---------- events
