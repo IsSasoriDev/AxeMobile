@@ -27,7 +27,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: issasoridev/axemobile
   APP_DIR: axemobile-main
-  APP_VERSION: 2.0.0
+  APP_VERSION: 2.1.0
 
 jobs:
   build:
@@ -59,6 +59,9 @@ jobs:
           test -f "$APP_DIR/umbrel-app.yml"
           test -f "$APP_DIR/docker-compose.yml"
           test -f "$APP_DIR/Dockerfile"
+          test -f "$APP_DIR/entrypoint.sh"
+          test -f "$APP_DIR/data/.gitkeep"
+          grep -q "version: \"$APP_VERSION\"" "$APP_DIR/umbrel-app.yml"
           test -f "$APP_DIR/icon.png"
           test -f package-lock.json
           test -f Cargo.lock
