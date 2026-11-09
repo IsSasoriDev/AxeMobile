@@ -124,6 +124,12 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context) {
     });
     ui.add_space(14.0);
 
+    if app.st.swarm.auto_scan {
+        app.st.swarm.auto_scan = false;
+        if app.st.swarm.scan.is_none() {
+            do_scan = true;
+        }
+    }
     if do_add {
         let (e, ip, name) = (app.engine.clone(), app.st.swarm.ip.clone(), app.st.swarm.name.clone());
         app.st.swarm.add = Some(app.spawn(ctx, add_miner(e, ip, name)));

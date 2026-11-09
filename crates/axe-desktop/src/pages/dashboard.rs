@@ -32,16 +32,21 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, now: f64) {
         return;
     }
 
-    // hero: gauge + fleet chart
+    // hero: gauge + fleet chart, kept the same height
     let range = app.st.dash_range;
     let hist = app.history(now, None, range);
     let avail = ui.available_width();
+    let hero_id = egui::Id::unique("dash-hero-h");
+    let hero_h: f32 = ui.ctx().data(|d| d.get_temp(hero_id)).unwrap_or(0.0);
     ui.horizontal_top(|ui| {
         ui.spacing_mut().item_spacing.x = 14.0;
         ui.allocate_ui_with_layout(Vec2::new(250.0, 0.0), egui::Layout::top_down(egui::Align::Center), |ui| {
             ui.set_width(250.0);
             w::card(ui, &p, |ui| {
+                ui.set_min_height((hero_h - 32.0).max(0.0));
                 ui.vertical_centered(|ui| {
+                    let pad = ((hero_h - 32.0 - 210.0) / 2.0).max(0.0);
+                    ui.add_space(pad);
                     let sub = if f.expected > 0.0 { format!("{:.1}% of expected", f.hashrate / f.expected * 100.0) } else { "total hashrate".into() };
                     w::gauge(ui, &p, Some(f.hashrate), f.expected.max(f.hashrate).max(1.0), &sub);
                 });
@@ -50,18 +55,24 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, now: f64) {
         let cw = avail - 250.0 - 14.0;
         ui.allocate_ui_with_layout(Vec2::new(cw, 0.0), egui::Layout::top_down(egui::Align::Min), |ui| {
             ui.set_width(cw);
-            w::card_ex(ui, &p, true, |ui| {
+            let r = w::card_ex(ui, &p, true, |ui| {
                 let mut r = app.st.dash_range;
-                w::h3_row(ui, &p, "Fleet hashrate", |ui| {
+                let mut se = app.st.dash_series;
+                let title = match se {
+                    Series::Hashrate => "Fleet hashrate",
+                    Series::Temp => "Average chip temperature",
+                    Series::Power => "Fleet power",
+                };
+                w::h3_row(ui, &p, title, |ui| {
                     w::seg(ui, &p, &mut r, &RANGES, true);
-                    ui.add_space(6.0);
-                    ui.label(RichText::new("— avg temp").size(11.0).color(p.mag));
-                    ui.label(RichText::new("— hashrate").size(11.0).color(p.pri));
+                    w::seg(ui, &p, &mut se, &[(Series::Hashrate, "Hashrate"), (Series::Temp, "Temp"), (Series::Power, "Power")], true);
                 });
                 app.st.dash_range = r;
+                app.st.dash_series = se;
                 ui.add_space(4.0);
-                w::chart(ui, &p, &hist, Series::Hashrate, Some(Series::Temp), 186.0);
+                w::chart(ui, &p, &hist, se, (se == Series::Hashrate).then_some(Series::Temp), 186.0);
             });
+            ui.ctx().data_mut(|d| d.insert_temp(hero_id, r.response.rect.height()));
         });
     });
     ui.add_space(14.0);
@@ -94,7 +105,10 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, now: f64) {
     let net_diff = app.miners.iter().filter_map(|m| m.snap().and_then(|s| s.network_diff)).fold(0.0, f64::max);
     let height = app.miners.iter().filter_map(|m| m.snap().and_then(|s| s.block_height)).fold(0.0, f64::max);
     let odds = axe_core::market::odds_per_day(f.hashrate, net_diff);
-    w::cols(ui, 3, 14.0, |i, ui| match i {
+    // what the fleet would earn on a pay-per-share pool (block subsidy only)
+    let sats_day = if net_diff > 0.0 { f.hashrate * 1e9 * 86_400.0 / (net_diff * 4_294_967_296.0) * 312_500_000.0 } else { 0.0 };
+    let usd = market.as_ref().and_then(|m| m.usd);
+    w::cols(ui, 4, 14.0, |i, ui| match i {
         0 => w::card(ui, &p, |ui| {
             ui.set_min_height(92.0);
             w::h3(ui, &p, "Bitcoin");
@@ -118,6 +132,19 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, now: f64) {
             w::big(ui, &p, &if h > 0.0 { format!("{}", h as u64) } else { "–".into() }, "", None);
             let adj = market.as_ref().and_then(|m| m.retarget_pct.zip(m.retarget_blocks)).map(|(pc, b)| format!(" · next adj {pc:+.1}% in {b:.0} blocks")).unwrap_or_default();
             w::sub(ui, &p, format!("difficulty {}{adj}", fmt::diff(net_diff)));
+        }),
+        2 => w::card(ui, &p, |ui| {
+            ui.set_min_height(92.0);
+            w::h3(ui, &p, "Earnings");
+            if sats_day > 0.0 {
+                w::big(ui, &p, &format!("{:.0}", sats_day), "sats/day", Some(p.warn));
+                let fiat = usd.map(|u| format!("≈ ${:.2}/day", sats_day / 1e8 * u)).unwrap_or_default();
+                let cost = f.cost_per_day.map(|c| format!(" · power {}{:.2}", f.currency, c)).unwrap_or_default();
+                w::sub(ui, &p, format!("{fiat}{cost} on a pay-per-share pool"));
+            } else {
+                w::big(ui, &p, "–", "", None);
+                w::sub(ui, &p, "needs a hashing miner");
+            }
         }),
         _ => w::card(ui, &p, |ui| {
             ui.set_min_height(92.0);
@@ -149,6 +176,10 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, now: f64) {
     ui.add_space(6.0);
     let n = ((ui.available_width() + 14.0) / 300.0).floor().max(1.0) as usize;
     let miners = app.miners.clone();
+    let sparks: std::collections::HashMap<i64, Vec<f64>> = miners
+        .iter()
+        .map(|m| (m.row.id, app.history(now, Some(m.row.id), "6h").iter().filter_map(|x| x.hashrate).collect()))
+        .collect();
     for chunk in miners.chunks(n) {
         let mut go = None;
         w::cols(ui, n, 14.0, |i, ui| {
@@ -157,11 +188,21 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, now: f64) {
             let r = w::card(ui, &p, |ui| {
                 ui.horizontal(|ui| {
                     w::dot(ui, if m.online() { p.good } else if s.is_some() { p.bad } else { p.warn }, m.online());
-                    ui.add(egui::Label::new(RichText::new(m.name()).font(bold(15.0))).truncate());
+                    // leave room for the status pill so the name truncates instead of pushing it out
+                    let name_w = (ui.available_width() - 110.0).max(40.0);
+                    ui.allocate_ui_with_layout(Vec2::new(name_w, 22.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                        ui.set_width(name_w);
+                        ui.add(egui::Label::new(RichText::new(m.name()).font(bold(15.0))).truncate());
+                    });
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| status_pill(ui, app, m));
                 });
                 let (v, u) = fmt::hash(if m.online() { s.and_then(|s| s.hashrate) } else { None });
-                w::big(ui, &p, &v, u, None);
+                ui.horizontal(|ui| {
+                    w::big(ui, &p, &v, u, None);
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        w::spark(ui, &p, sparks.get(&m.row.id).map(Vec::as_slice).unwrap_or(&[]), Vec2::new(96.0, 30.0));
+                    });
+                });
                 ui.horizontal(|ui| {
                     ui.label(RichText::new(if m.row.model.is_empty() { "Unknown" } else { &m.row.model }).size(12.0).color(p.dim));
                     kind_tag(ui, app, &m.row.kind);

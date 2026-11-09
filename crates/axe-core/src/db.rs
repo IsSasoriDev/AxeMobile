@@ -266,6 +266,24 @@ impl Db {
         Ok(rows)
     }
 
+    /// Summary of one miner since `since`: (samples, avg hashrate, peak hashrate, avg temp, max temp).
+    pub fn summary(&self, miner_id: i64, since: i64) -> Result<(i64, Option<f64>, Option<f64>, Option<f64>, Option<f64>)> {
+        let c = self.c();
+        Ok(c.query_row(
+            "SELECT COUNT(*), AVG(hashrate), MAX(hashrate), AVG(temp), MAX(temp) FROM samples WHERE miner_id=? AND ts>=?",
+            params![miner_id, since],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
+        )?)
+    }
+
+    /// How many poll rounds wrote anything since `since`. Every miner read in
+    /// one round shares the round's timestamp, so this counts the times
+    /// AxeMobile was actually running and polling.
+    pub fn poll_rounds(&self, since: i64) -> Result<i64> {
+        let c = self.c();
+        Ok(c.query_row("SELECT COUNT(DISTINCT ts) FROM samples WHERE ts>=?", [since], |r| r.get(0))?)
+    }
+
     pub fn prune(&self) -> Result<()> {
         let n = now();
         let c = self.c();

@@ -173,17 +173,29 @@ pub fn bar(ui: &mut Ui, p: &Pal, frac: f32, color: Option<Color32>) {
 }
 
 /// Two-column key/value grid like `.kv` on the firmware page.
-pub fn kv(ui: &mut Ui, p: &Pal, id: &str, rows: &[(&str, String)]) {
-    egui::Grid::new(id).num_columns(2).spacing([16.0, 7.0]).show(ui, |ui| {
-        let w = ui.available_width();
-        for (k, v) in rows {
-            ui.label(RichText::new(*k).color(p.dim));
-            ui.allocate_ui_with_layout(Vec2::new((w - 90.0).max(80.0), 18.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.add(egui::Label::new(RichText::new(v).font(bold(13.5))).truncate());
+pub fn kv(ui: &mut Ui, p: &Pal, _id: &str, rows: &[(&str, String)]) {
+    // label on the left, value right-aligned in whatever width is left;
+    // the value only truncates (with a tooltip) when it really doesn't fit
+    let width = ui.available_width();
+    let label_w = rows
+        .iter()
+        .map(|(k, _)| ui.painter().layout_no_wrap(k.to_string(), egui::FontId::proportional(14.0), p.dim).size().x)
+        .fold(0.0, f32::max)
+        + 14.0;
+    for (k, v) in rows {
+        ui.allocate_ui_with_layout(Vec2::new(width, 22.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+            ui.set_width(width);
+            ui.allocate_ui_with_layout(Vec2::new(label_w, 20.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                ui.set_width(label_w);
+                ui.label(RichText::new(*k).color(p.dim));
             });
-            ui.end_row();
-        }
-    });
+            let vw = (width - label_w - ui.spacing().item_spacing.x).max(40.0);
+            ui.allocate_ui_with_layout(Vec2::new(vw, 20.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.set_width(vw);
+                ui.add(egui::Label::new(RichText::new(v).font(bold(13.5))).truncate()).on_hover_text(v);
+            });
+        });
+    }
 }
 
 pub fn temp_color(p: &Pal, t: Option<f64>) -> Color32 {
@@ -287,13 +299,14 @@ pub fn seg<T: PartialEq + Copy>(ui: &mut Ui, p: &Pal, value: &mut T, options: &[
         .collect();
     let h = galleys.iter().map(|g| g.size().y).fold(0.0, f32::max) + pad.y * 2.0;
     let total_w: f32 = galleys.iter().map(|g| g.size().x + pad.x * 2.0).sum::<f32>() + inset * 2.0;
-    let (outer, _) = ui.allocate_exact_size(Vec2::new(total_w, h + inset * 2.0), Sense::hover());
+    let (outer, outer_resp) = ui.allocate_exact_size(Vec2::new(total_w, h + inset * 2.0), Sense::hover());
     ui.painter().rect(outer, CornerRadius::same(if xs { 8 } else { 10 }), p.panel2, Stroke::new(1.0, p.line), egui::StrokeKind::Inside);
     let mut x = outer.left() + inset;
     for (i, ((v, _), g)) in options.iter().zip(galleys).enumerate() {
         let w = g.size().x + pad.x * 2.0;
         let r = Rect::from_min_size(Pos2::new(x, outer.top() + inset), Vec2::new(w, h));
-        let resp = ui.interact(r, ui.scope_id().with(("seg", i)), Sense::click());
+        // ids hang off this control's own id, so two selectors side by side don't clash
+        let resp = ui.interact(r, outer_resp.id.with(("seg", i)), Sense::click());
         let on = *value == *v;
         if on {
             ui.painter().rect_filled(r, CornerRadius::same(if xs { 6 } else { 7 }), p.pri);
@@ -383,9 +396,13 @@ pub fn dot(ui: &mut Ui, color: Color32, glow: bool) {
 /// A row of small-caps text over a value, used in miner tiles.
 pub fn mini(ui: &mut Ui, p: &Pal, label: &str, value: &str, color: Option<Color32>, width: f32) {
     egui::Frame::new().fill(p.panel2).corner_radius(CornerRadius::same(8)).inner_margin(egui::Margin::symmetric(8, 6)).show(ui, |ui| {
-        ui.set_width(width);
-        ui.label(RichText::new(label.to_uppercase()).font(bold(9.5)).color(p.dim));
-        ui.label(RichText::new(value).font(bold(13.0)).color(color.unwrap_or(p.text)));
+        // stacked even when the parent row is horizontal, and never wider than asked
+        ui.vertical(|ui| {
+            ui.set_width(width);
+            ui.spacing_mut().item_spacing.y = 2.0;
+            ui.add(egui::Label::new(RichText::new(label.to_uppercase()).font(bold(9.5)).color(p.dim)).truncate());
+            ui.add(egui::Label::new(RichText::new(value).font(bold(13.0)).color(color.unwrap_or(p.text))).truncate());
+        });
     });
 }
 
@@ -543,4 +560,36 @@ pub fn chart(ui: &mut Ui, p: &Pal, points: &[axe_core::db::Point], main: Series,
             painter.text(tip.left_top() + Vec2::new(9.0, 7.0 + 16.0 * i as f32), Align2::LEFT_TOP, t, if i == 0 { bold(12.5) } else { FontId::proportional(11.5) }, c);
         }
     }
+}
+
+
+/// Tiny trend line for tiles, with a faint fill underneath.
+pub fn spark(ui: &mut Ui, p: &Pal, values: &[f64], size: Vec2) {
+    let (rect, _) = ui.allocate_exact_size(size, Sense::hover());
+    if values.len() < 3 {
+        return;
+    }
+    let lo = values.iter().cloned().fold(f64::INFINITY, f64::min);
+    let hi = values.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+    let span = (hi - lo).max(hi * 0.02).max(1e-9);
+    let n = values.len() as f32 - 1.0;
+    let pts: Vec<Pos2> = values
+        .iter()
+        .enumerate()
+        .map(|(i, v)| Pos2::new(rect.left() + rect.width() * i as f32 / n, rect.bottom() - 2.0 - ((v - lo) / span) as f32 * (rect.height() - 4.0)))
+        .collect();
+    let mut mesh = Mesh::default();
+    let uv = egui::epaint::WHITE_UV;
+    for w in pts.windows(2) {
+        let i = mesh.vertices.len() as u32;
+        mesh.vertices.push(Vertex { pos: w[0], uv, color: alpha(p.pri, 0.18) });
+        mesh.vertices.push(Vertex { pos: w[1], uv, color: alpha(p.pri, 0.18) });
+        mesh.vertices.push(Vertex { pos: Pos2::new(w[1].x, rect.bottom()), uv, color: Color32::TRANSPARENT });
+        mesh.vertices.push(Vertex { pos: Pos2::new(w[0].x, rect.bottom()), uv, color: Color32::TRANSPARENT });
+        mesh.indices.extend_from_slice(&[i, i + 1, i + 2, i, i + 2, i + 3]);
+    }
+    ui.painter().add(Shape::mesh(mesh));
+    let last = *pts.last().unwrap();
+    ui.painter().add(Shape::line(pts, Stroke::new(1.5, p.pri)));
+    ui.painter().circle_filled(last, 2.5, p.pri);
 }

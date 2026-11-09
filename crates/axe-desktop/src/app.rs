@@ -100,6 +100,9 @@ pub struct App {
     tray_updated: f64,
     quitting: bool,
     hidden: bool,
+    shown_page: Page,
+    page_at: f64,
+    pub palette: Option<crate::palette::Palette>,
 }
 
 fn load_tex(ctx: &egui::Context, name: &str, bytes: &[u8]) -> Option<egui::TextureHandle> {
@@ -173,6 +176,9 @@ impl App {
             tray_updated: -100.0,
             quitting: false,
             hidden: false,
+            shown_page: Page::Dashboard,
+            page_at: -10.0,
+            palette: None,
         }
     }
 
@@ -403,7 +409,11 @@ hottest {h:.0}°C · best {}", crate::fmt::diff(f.best_diff)));
             ui.add_space(14.0);
             if p.dtv() {
                 if let Some(t) = &self.tex.dtv {
-                    ui.add(egui::Image::new((t.id(), Vec2::splat(34.0))));
+                    let (r, _) = ui.allocate_exact_size(Vec2::splat(44.0), Sense::hover());
+                    let mut glow = vec![];
+                    theme::radial(&mut glow, r.center(), Vec2::splat(30.0), alpha(p.pri, 0.25));
+                    ui.painter().extend(glow);
+                    ui.painter().image(t.id(), r, Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0)), Color32::WHITE);
                 }
                 ui.label(RichText::new("AxeMobile").font(bold(20.0)).color(p.text));
             } else {
@@ -425,7 +435,23 @@ hottest {h:.0}°C · best {}", crate::fmt::diff(f.best_diff)));
             ui.label(RichText::new(tag).monospace().size(10.5).color(p.dim));
         });
         ui.ctx().request_repaint_after(std::time::Duration::from_millis(60));
-        ui.add_space(16.0);
+        ui.add_space(10.0);
+        {
+            let (r, resp) = ui.allocate_exact_size(Vec2::new(rect.width(), 36.0), Sense::click());
+            let r = r.shrink2(Vec2::new(12.0, 2.0));
+            let hover = resp.hovered();
+            ui.painter().rect(r, CornerRadius::same(10), if hover { p.panel2 } else { p.panel }, Stroke::new(1.0, if hover { alpha(p.pri, 0.5) } else { p.line }), egui::StrokeKind::Inside);
+            ui.painter().text(Pos2::new(r.left() + 12.0, r.center().y), Align2::LEFT_CENTER, ic::SEARCH, icon_font(13.0), p.dim);
+            ui.painter().text(Pos2::new(r.left() + 34.0, r.center().y), Align2::LEFT_CENTER, "Search", egui::FontId::proportional(13.0), p.dim);
+            ui.painter().text(Pos2::new(r.right() - 10.0, r.center().y), Align2::RIGHT_CENTER, "Ctrl K", bold(10.5), alpha(p.dim, 0.8));
+            if hover {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+            }
+            if resp.clicked() {
+                self.palette = Some(crate::palette::Palette::new());
+            }
+        }
+        ui.add_space(12.0);
 
         let items: [(Page, &str, &str); 7] = [
             (Page::Dashboard, ic::HOME, "Dashboard"),
@@ -468,9 +494,34 @@ hottest {h:.0}°C · best {}", crate::fmt::diff(f.best_diff)));
             }
         }
 
-        // footer: DTV shop in the DTV theme, version and fleet line
-        let foot_h = if p.dtv() { 120.0 } else { 70.0 };
+        // footer: live fleet card, the DTV shop in the DTV theme, version
+        let foot_h = if p.dtv() { 172.0 } else { 122.0 };
         ui.add_space((ui.available_height() - foot_h).max(8.0));
+        let f = self.fleet.clone();
+        let (card, resp) = ui.allocate_exact_size(Vec2::new(rect.width(), 70.0), Sense::click());
+        let card = card.shrink2(Vec2::new(12.0, 0.0));
+        let hover = resp.hovered();
+        ui.painter().rect(card, CornerRadius::same(12), if hover { p.panel2 } else { p.panel }, Stroke::new(1.0, if p.dtv() { alpha(p.pri, 0.35) } else { p.line }), egui::StrokeKind::Inside);
+        let dot_col = if f.total == 0 { p.dim } else if f.online == f.total { p.good } else if f.online > 0 { p.warn } else { p.bad };
+        let t = ui.input(|i| i.time);
+        let pulse = 0.35 + 0.35 * ((t * 2.0).sin() as f32 + 1.0) / 2.0;
+        let dot = Pos2::new(card.left() + 16.0, card.top() + 20.0);
+        ui.painter().circle_filled(dot, 7.0, alpha(dot_col, pulse * 0.5));
+        ui.painter().circle_filled(dot, 4.0, dot_col);
+        ui.painter().text(Pos2::new(card.left() + 28.0, card.top() + 20.0), Align2::LEFT_CENTER, if f.total == 0 { "No miners yet".to_string() } else { format!("{}/{} online", f.online, f.total) }, bold(12.0), p.text);
+        let (hv, hu) = crate::fmt::hash(Some(f.hashrate));
+        let g = ui.painter().layout_no_wrap(hv, bold(20.0), p.text);
+        let gw = g.size().x;
+        ui.painter().galley(Pos2::new(card.left() + 14.0, card.top() + 32.0), g, p.text);
+        ui.painter().text(Pos2::new(card.left() + 18.0 + gw, card.top() + 46.0), Align2::LEFT_CENTER, hu, bold(11.0), p.pri);
+        ui.painter().text(Pos2::new(card.right() - 12.0, card.top() + 46.0), Align2::RIGHT_CENTER, format!("{:.0} W", f.power), egui::FontId::proportional(12.0), p.dim);
+        if hover {
+            ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+        }
+        if resp.on_hover_text("Open the dashboard").clicked() {
+            self.page = Page::Dashboard;
+        }
+        ui.add_space(10.0);
         ui.horizontal(|ui| {
             ui.add_space(16.0);
             ui.vertical(|ui| {
@@ -480,8 +531,7 @@ hottest {h:.0}°C · best {}", crate::fmt::diff(f.best_diff)));
                     }
                     ui.add_space(10.0);
                 }
-                ui.label(RichText::new(format!("v{VERSION} · native")).size(11.5).color(p.dim));
-                ui.label(RichText::new("AxeForge & AxeOS miners").size(11.5).color(p.dim));
+                ui.label(RichText::new(format!("AxeMobile {VERSION}")).size(11.5).color(p.dim));
             });
         });
     }
@@ -523,6 +573,9 @@ hottest {h:.0}°C · best {}", crate::fmt::diff(f.best_diff)));
                     if i.key_pressed(*key) {
                         self.page = pages[n];
                     }
+                }
+                if i.key_pressed(egui::Key::K) {
+                    self.palette = if self.palette.is_some() { None } else { Some(crate::palette::Palette::new()) };
                 }
                 if i.key_pressed(egui::Key::N) {
                     self.page = Page::Swarm;
@@ -626,17 +679,41 @@ impl eframe::App for App {
             .show(ui, |ui| self.nav(ui));
 
         egui::CentralPanel::default().frame(egui::Frame::new()).show(ui, |ui| {
-            egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
+            // a new page fades and slides in, like the firmware dashboard
+            if self.page != self.shown_page {
+                self.shown_page = self.page;
+                self.page_at = now;
+            }
+            let k = ((now - self.page_at) / 0.22).clamp(0.0, 1.0) as f32;
+            let k = 1.0 - (1.0 - k) * (1.0 - k);
+            if k < 1.0 {
+                ctx.request_repaint();
+            }
+            egui::ScrollArea::vertical().id_salt(("page", format!("{:?}", self.page))).auto_shrink([false, false]).show(ui, |ui| {
+                // one centred column, at most 1280 px wide, like `main` on AxeForge
                 let avail = ui.available_width();
-                let side = ((avail - 1280.0) / 2.0).max(0.0) + (avail * 0.025).clamp(14.0, 34.0);
-                egui::Frame::new().inner_margin(egui::Margin { left: side as i8, right: side as i8, top: 22, bottom: 40 }).show(ui, |ui| {
-                    ui.set_max_width((avail - side * 2.0).max(300.0));
-                    pages::show(self, ui, &ctx, now);
+                let pad = (avail * 0.025).clamp(16.0, 34.0);
+                let content = (avail - pad * 2.0).clamp(300.0, 1280.0);
+                let left = ((avail - content) / 2.0).max(0.0);
+                ui.add_space(22.0 + (1.0 - k) * 8.0);
+                ui.horizontal_top(|ui| {
+                    ui.add_space(left);
+                    ui.vertical(|ui| {
+                        ui.set_width(content);
+                        ui.multiply_opacity(k);
+                        pages::show(self, ui, &ctx, now);
+                        ui.add_space(40.0);
+                    });
                 });
             });
         });
 
         pages::modals(self, &ctx, now);
+        if self.palette.is_some() {
+            if let Some(cmd) = crate::palette::show(self, &ctx) {
+                crate::palette::run(self, &ctx, cmd);
+            }
+        }
         if self.intro.is_none() && self.splash.is_none() {
             self.draw_toast(&ctx, now);
         }
