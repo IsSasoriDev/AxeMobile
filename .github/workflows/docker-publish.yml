@@ -60,6 +60,8 @@ jobs:
           test -f "$APP_DIR/docker-compose.yml"
           test -f "$APP_DIR/Dockerfile"
           test -f "$APP_DIR/entrypoint.sh"
+          test -f "$APP_DIR/exports.sh"
+          bash -euo pipefail -c "source $APP_DIR/exports.sh"
           test -f "$APP_DIR/data/.gitkeep"
           grep -q "version: \"$APP_VERSION\"" "$APP_DIR/umbrel-app.yml"
           test -f "$APP_DIR/icon.png"
