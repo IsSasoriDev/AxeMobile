@@ -7,6 +7,18 @@
 //!   AXEMOBILE_DATA    folder for axemobile.db (default ./data)
 //!   AXEMOBILE_WEB     built web UI folder    (default ./dist)
 //!   AXEMOBILE_TOKEN   optional API token
+//!
+//! AxePool (the built-in solo pool). When these are set the matching setting
+//! is pinned and can't be edited in the UI, which is how Umbrel hands over
+//! its Bitcoin node:
+//!   AXEMOBILE_NODE_URL   bitcoind RPC, e.g. http://10.21.21.8:8332
+//!   AXEMOBILE_NODE_USER  RPC user
+//!   AXEMOBILE_NODE_PASS  RPC password
+//!   AXEMOBILE_NODE_COOKIE  path to bitcoind's .cookie instead of user/pass
+//!   AXEMOBILE_POOL_PORT  stratum port inside the container
+//!   AXEMOBILE_POOL_ENABLED  "1" turns the pool on at first start (it can
+//!                           still be switched off in the UI)
+//!   AXEMOBILE_POOL_HOST  host name miners should use (shown in the UI)
 
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -42,6 +54,17 @@ async fn main() {
         }
     };
     let engine = Engine::new(db, token.clone());
+    for (var, key) in [
+        ("AXEMOBILE_NODE_URL", "node_url"),
+        ("AXEMOBILE_NODE_USER", "node_user"),
+        ("AXEMOBILE_NODE_PASS", "node_pass"),
+        ("AXEMOBILE_NODE_COOKIE", "node_cookie"),
+        ("AXEMOBILE_POOL_PORT", "pool_port"),
+    ] {
+        if let Some(v) = std::env::var(var).ok().filter(|v| !v.is_empty()) {
+            engine.fix(key, &v);
+        }
+    }
     let cfg = Config {
         db_path: data.join("axemobile.db"),
         token,
@@ -50,6 +73,12 @@ async fn main() {
     };
     let app = api::router(engine.clone(), &cfg);
     tokio::spawn(engine.clone().run_market());
+    if std::env::var("AXEMOBILE_POOL_ENABLED").as_deref() == Ok("1")
+        && !engine.db.settings().map(|s| s.contains_key("pool_enabled")).unwrap_or(true)
+    {
+        let _ = engine.db.set_setting("pool_enabled", "1");
+    }
+    tokio::spawn(axe_core::pool::supervise(engine.clone()));
     tokio::spawn(engine.run_poller());
 
     let addr: SocketAddr = format!("{bind}:{port}").parse().expect("listen address");

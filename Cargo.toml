@@ -5,7 +5,7 @@ members = ["crates/axe-core", "crates/axe-server", "crates/axe-desktop", "crates
 default-members = ["crates/axe-core", "crates/axe-server", "crates/axe-desktop"]
 
 [workspace.package]
-version = "2.1.0"
+version = "2.2.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/IsSasoriDev/AxeMobile"
@@ -17,6 +17,10 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# share checking hashes a lot; keep it quick in debug builds and tests
+[profile.dev.package.sha2]
+opt-level = 3
 
 [profile.release]
 codegen-units = 1

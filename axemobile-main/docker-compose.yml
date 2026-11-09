@@ -13,8 +13,18 @@ services:
     init: true
     restart: on-failure
     stop_grace_period: 1m
+    ports:
+      # AxePool stratum, for the miners on your network
+      - "3334:3334"
     volumes:
       - ${APP_DATA_DIR}/data:/data
     environment:
       AXEMOBILE_DATA: /data
       AXEMOBILE_PORT: 3847
+      # AxePool gets its block templates from the Bitcoin Node app
+      AXEMOBILE_NODE_URL: "http://${APP_BITCOIN_NODE_IP}:${APP_BITCOIN_RPC_PORT}"
+      AXEMOBILE_NODE_USER: "${APP_BITCOIN_RPC_USER}"
+      AXEMOBILE_NODE_PASS: "${APP_BITCOIN_RPC_PASS}"
+      AXEMOBILE_POOL_PORT: 3334
+      AXEMOBILE_POOL_ENABLED: "1"
+      AXEMOBILE_POOL_HOST: "${DEVICE_DOMAIN_NAME}"

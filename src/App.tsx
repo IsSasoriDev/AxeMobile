@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { HashRouter, NavLink, Route, Routes } from "react-router-dom";
-import { Cpu, Gauge as GaugeIcon, LayoutDashboard, Network, Settings2, Trophy, Waves } from "lucide-react";
+import { Cpu, Gauge as GaugeIcon, LayoutDashboard, Network, Pickaxe, Settings2, Trophy, Waves } from "lucide-react";
 import { api, type Overview } from "@/api";
 import { usePoll } from "@/hooks";
 import { ToastProvider } from "@/components/Toast";
@@ -11,6 +11,7 @@ import Dashboard from "@/pages/Dashboard";
 import MinerPage from "@/pages/Miner";
 import Swarm from "@/pages/Swarm";
 import Pools from "@/pages/Pools";
+import AxePool from "@/pages/AxePool";
 import TuningPage from "@/pages/Tuning";
 import System from "@/pages/System";
 import Leaderboard from "@/pages/Leaderboard";
@@ -76,6 +77,7 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/swarm", label: "Swarm", icon: Network },
   { to: "/pools", label: "Pools", icon: Waves },
+  { to: "/axepool", label: "AxePool", icon: Pickaxe },
   { to: "/tuning", label: "Tuning", icon: GaugeIcon },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/system", label: "System", icon: Settings2 },
@@ -121,7 +123,7 @@ function Shell() {
         ))}
         <div className="foot">
           <span>
-            <Cpu size={12} style={{ verticalAlign: "-2px" }} /> Umbrel · v2.0.0
+            <Cpu size={12} style={{ verticalAlign: "-2px" }} /> Umbrel · v2.2.0
           </span>
           <span>AxeForge &amp; AxeOS miners</span>
         </div>
@@ -133,6 +135,7 @@ function Shell() {
           <Route path="/swarm" element={<Swarm />} />
           <Route path="/pools" element={<Pools />} />
           <Route path="/pools/:id" element={<Pools />} />
+          <Route path="/axepool" element={<AxePool />} />
           <Route path="/tuning" element={<TuningPage />} />
           <Route path="/tuning/:id" element={<TuningPage />} />
           <Route path="/leaderboard" element={<Leaderboard />} />

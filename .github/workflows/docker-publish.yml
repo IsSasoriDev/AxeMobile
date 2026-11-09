@@ -27,7 +27,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: issasoridev/axemobile
   APP_DIR: axemobile-main
-  APP_VERSION: 2.1.0
+  APP_VERSION: 2.2.0
 
 jobs:
   build:

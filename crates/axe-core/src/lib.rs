@@ -6,6 +6,7 @@ pub mod api;
 pub mod db;
 pub mod market;
 pub mod miner;
+pub mod pool;
 
 use std::collections::HashMap;
 use std::net::{Ipv4Addr, UdpSocket};
@@ -66,6 +67,11 @@ pub struct Engine {
     pub wake: Notify,
     pub token: Option<String>,
     pub market: RwLock<Option<market::Market>>,
+    pub pool: pool::Pool,
+    pub pool_wake: Notify,
+    /// settings pinned by the environment (Umbrel's node login); they win
+    /// over the database and can't be changed from the UI
+    pub fixed: RwLock<HashMap<String, String>>,
 }
 
 pub const DEFAULTS: &[(&str, &str)] = &[
@@ -81,6 +87,13 @@ pub const DEFAULTS: &[(&str, &str)] = &[
     ("alert_drop", "25"),
     ("market", "1"),
     ("autostart", "0"),
+    ("pool_enabled", "0"),
+    ("pool_port", "3334"),
+    ("pool_address", ""),
+    ("node_url", "http://127.0.0.1:8332"),
+    ("node_user", ""),
+    ("node_pass", ""),
+    ("node_cookie", ""),
 ];
 
 impl Engine {
@@ -92,10 +105,30 @@ impl Engine {
             wake: Notify::new(),
             token,
             market: RwLock::new(None),
+            pool: pool::Pool::default(),
+            pool_wake: Notify::new(),
+            fixed: RwLock::new(HashMap::new()),
         })
     }
 
+    /// Pins a setting (see `fixed`).
+    pub fn fix(&self, key: &str, value: &str) {
+        self.fixed.write().unwrap().insert(key.to_string(), value.to_string());
+    }
+
+    pub fn is_fixed(&self, key: &str) -> bool {
+        self.fixed.read().unwrap().contains_key(key)
+    }
+
+    pub fn pool_config(&self) -> pool::PoolConfig {
+        let all = self.settings();
+        pool::config_from(|k| all.get(k).cloned().unwrap_or_default())
+    }
+
     pub fn setting(&self, key: &str) -> String {
+        if let Some(v) = self.fixed.read().unwrap().get(key) {
+            return v.clone();
+        }
         if let Ok(all) = self.db.settings() {
             if let Some(v) = all.get(key) {
                 return v.clone();
@@ -110,6 +143,7 @@ impl Engine {
         if let Ok(all) = self.db.settings() {
             out.extend(all);
         }
+        out.extend(self.fixed.read().unwrap().clone());
         out
     }
 

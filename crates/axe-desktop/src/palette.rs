@@ -41,10 +41,11 @@ fn items(app: &App) -> Vec<Item> {
     v.push(page(ic::HOME, "Dashboard", "Ctrl+1", Page::Dashboard));
     v.push(page(ic::SWARM, "Swarm", "Ctrl+2", Page::Swarm));
     v.push(page(ic::POOLS, "Pools", "Ctrl+3", Page::Pools));
-    v.push(page(ic::TUNE, "Tuning", "Ctrl+4", Page::Tuning));
-    v.push(page(ic::GAME, "The Cave", "Ctrl+5", Page::Cave));
-    v.push(page(ic::TROPHY, "Leaderboard", "Ctrl+6", Page::Leaderboard));
-    v.push(page(ic::SETTINGS, "System", "Ctrl+7", Page::System));
+    v.push(page(ic::AXEPOOL, "AxePool", "Ctrl+4", Page::AxePool));
+    v.push(page(ic::TUNE, "Tuning", "Ctrl+5", Page::Tuning));
+    v.push(page(ic::GAME, "The Cave", "Ctrl+6", Page::Cave));
+    v.push(page(ic::TROPHY, "Leaderboard", "Ctrl+7", Page::Leaderboard));
+    v.push(page(ic::SETTINGS, "System", "Ctrl+8", Page::System));
     for m in &app.miners {
         let id = m.row.id;
         let name = m.name();

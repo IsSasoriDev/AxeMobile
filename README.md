@@ -41,6 +41,14 @@ already knows about.
 push one pool setup to several miners at once. Set frequency, core voltage, fan and target temp, or let
 AxeForge auto-tune and restart its search when you want.
 
+**AxePool.** A solo pool built into the app. Point your miners at it and they get their work straight
+from your own Bitcoin node. If one of them finds a block, the whole reward goes to the address in its
+username, or to the payout address you set. Nothing is shared and nobody takes a fee. The AxePool page
+shows each worker's hashrate, shares and best share, your odds, and any blocks you've found, and it
+can switch a miner over for you. On Umbrel it uses the Bitcoin Node app, so there's nothing to set
+up. On a PC or Mac you give it the RPC address and login of a Bitcoin Core node: your own, or the one
+on your Umbrel.
+
 **Alerts.** A notification when a miner drops off, runs hot, loses hashrate, beats its best share or
 (fingers crossed) finds a block.
 
@@ -94,14 +102,21 @@ AxeMobile is a community app. In Umbrel go to **App Store → ⋯ → Community 
 https://github.com/IsSasoriDev/AxeMobile
 ```
 
-and install it from there. It runs the same engine as the desktop app and keeps its data in the app's
+and install it from there. It needs the Bitcoin Node app, which AxePool gets its block templates
+from. Once the node is in sync, point your miners at your Umbrel's IP address on port 3334 with your
+Bitcoin address as the username, e.g. `stratum+tcp://192.168.1.20:3334` and `bc1q….rig1`.
+
+It runs the same engine as the desktop app and keeps its data in the app's
 folder on your Umbrel. The package itself is in [`axemobile-main/`](axemobile-main).
 
 Not on Umbrel? It runs anywhere Docker does:
 
 ```
-docker run -d -p 3847:3847 -v axemobile:/data ghcr.io/issasoridev/axemobile:2.0.0
+docker run -d -p 3847:3847 -p 3334:3334 -v axemobile:/data ghcr.io/issasoridev/axemobile:2.2.0
 ```
+
+For AxePool outside Umbrel, either fill in the node on the AxePool page or pass
+`AXEMOBILE_NODE_URL`, `AXEMOBILE_NODE_USER` and `AXEMOBILE_NODE_PASS`.
 
 ## How it's put together
 
@@ -110,7 +125,7 @@ itself on the GPU, including the black hole. The part that talks to your miners 
 same process. The Umbrel version runs that same engine as a small server with a React web UI on top.
 
 ```
-crates/axe-core     talks to AxeForge and AxeOS, polls, stores history, serves /api
+crates/axe-core     talks to AxeForge and AxeOS, polls, stores history, runs AxePool, serves /api
 crates/axe-desktop  the desktop app (Windows, macOS, Linux)
 crates/axe-setup    the Windows installer
 crates/axe-server   the server for Umbrel and Docker

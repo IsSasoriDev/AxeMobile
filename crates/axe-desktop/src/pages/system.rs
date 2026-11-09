@@ -216,7 +216,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context) {
                     ("Version", VERSION.to_string()),
                     ("Runs as", format!("Native {} app", std::env::consts::OS)),
                     ("Firmware", "AxeForge, AxeOS".into()),
-                    ("Shortcuts", "Ctrl+1…7, Ctrl+N, F5".into()),
+                    ("Shortcuts", "Ctrl+1…8, Ctrl+N, F5".into()),
                 ]);
                 if ui.add(egui::Label::new(RichText::new("github.com/IsSasoriDev/AxeMobile").color(p.pri).underline()).sense(Sense::click())).clicked() {
                     ctx.open_url(egui::OpenUrl::new_tab("https://github.com/IsSasoriDev/AxeMobile"));

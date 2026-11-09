@@ -165,7 +165,7 @@ export default function System() {
         <div className="card">
           <h3>About</h3>
           <div className="kv">
-            <div>Version</div><div>2.0.0</div>
+            <div>Version</div><div>2.2.0</div>
             <div>Runs as</div><div>Web app (Umbrel)</div>
             <div>Firmware</div><div>AxeForge, AxeOS</div>
             <div>Source</div><div><a href="#" onClick={(e) => { e.preventDefault(); openExternal("https://github.com/IsSasoriDev/AxeMobile"); }}>github.com/IsSasoriDev/AxeMobile</a></div>

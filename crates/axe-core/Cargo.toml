@@ -6,7 +6,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-tokio.workspace = true
+tokio = { workspace = true, features = ["io-util"] }
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
@@ -16,3 +16,7 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "rus
 rusqlite = { version = "0.32", features = ["bundled"] }
 futures = "0.3"
 anyhow = "1"
+sha2 = "0.10"
+bech32 = "0.11"
+bs58 = "0.5"
+hex = "0.4"
