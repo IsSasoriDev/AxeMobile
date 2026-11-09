@@ -1,8 +1,10 @@
 manifestVersion: 1
 id: axemobile-main
+storage:
+  dataRoot: data
 category: bitcoin
 name: AxeMobile
-version: "2.0.0"
+version: "2.1.0"
 tagline: Watch and tune your Bitaxe, NerdAxe and NerdQaxe miners
 description: >-
   AxeMobile keeps an eye on your home Bitcoin miners from your Umbrel. It
@@ -41,6 +43,7 @@ dependencies: []
 repo: https://github.com/IsSasoriDev/AxeMobile
 support: https://github.com/IsSasoriDev/AxeMobile/issues
 port: 3847
+icon: https://raw.githubusercontent.com/IsSasoriDev/AxeMobile/main/axemobile-main/icon.png
 gallery:
   - 1.jpg
   - 2.jpg
@@ -51,20 +54,15 @@ defaultUsername: ""
 defaultPassword: ""
 torOnly: false
 releaseNotes: >-
-  AxeMobile 2.0 is a rewrite.
+  Fixes AxeMobile not opening on newer umbrelOS.
 
 
-  - New engine written in Rust with its own SQLite database. It reads your
-  miners every few seconds, keeps two days of detail and a year of hourly
-  averages.
+  - The app's data folder now ships with the package, the way umbrelOS
+  expects, so the server can create its database on first start.
 
-  - Supports AxeForge and AxeOS miners, including AxeForge two-factor login.
+  - The container fixes the folder's ownership itself before starting, so
+  installs that were stuck on the old folder start working after the
+  update.
 
-  - New dashboard modelled on the AxeForge firmware page: fleet gauge,
-  history charts, pools, tuning and system pages.
-
-  - Alerts for overheating, hashrate drops, offline miners and new best
-  shares in the activity log.
-
-  - News, forum and the old online services are gone. Nothing leaves your
-  Umbrel except the optional price lookup on mempool.space.
+  - Your data can be moved to an external drive from the app settings on
+  umbrelOS 2.0.

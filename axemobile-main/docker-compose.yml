@@ -7,8 +7,9 @@ services:
       APP_PORT: 3847
 
   web:
-    image: ghcr.io/issasoridev/axemobile:2.0.0
-    user: "1000:1000"
+    image: ghcr.io/issasoridev/axemobile:2.1.0
+    # no `user:` here on purpose: the image starts as root only long enough
+    # to fix the ownership of /data, then drops to 1000:1000 (see entrypoint.sh)
     init: true
     restart: on-failure
     stop_grace_period: 1m

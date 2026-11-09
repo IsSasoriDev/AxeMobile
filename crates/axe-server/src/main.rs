@@ -29,7 +29,18 @@ async fn main() {
     let bind = env("AXEMOBILE_BIND", "0.0.0.0");
     let token = std::env::var("AXEMOBILE_TOKEN").ok().filter(|t| !t.is_empty());
 
-    let db = Db::open(&data.join("axemobile.db")).expect("open database");
+    let db = match Db::open(&data.join("axemobile.db")) {
+        Ok(db) => db,
+        Err(e) => {
+            // the usual cause on Umbrel/Docker is a data folder owned by root
+            tracing::error!(
+                "can't open {}: {e}. The folder must be writable by this user (uid 1000 in the image); \
+                 starting the container as root lets entrypoint.sh fix the ownership.",
+                data.join("axemobile.db").display()
+            );
+            std::process::exit(1);
+        }
+    };
     let engine = Engine::new(db, token.clone());
     let cfg = Config {
         db_path: data.join("axemobile.db"),
