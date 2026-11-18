@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import pkg from "./package.json";
 
 // In dev the UI runs on :8080 and /api goes to a local axemobile-server
 // (npm run server). The desktop build talks to the engine inside the app.
@@ -13,5 +14,6 @@ export default defineConfig({
   base: "./",
   build: { outDir: "dist", emptyOutDir: true, target: "es2021" },
   plugins: [react()],
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
 });

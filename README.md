@@ -29,13 +29,27 @@ solo. Every miner tile has a little six-hour trend line.
 
 **A page for every miner.** The same layout as the AxeForge web page: chip and VR temps, power, fans,
 the pool it's on, best shares, firmware, uptime, Wi-Fi, and its own history. A row underneath shows
-the last 24 hours: average and peak hashrate, average temperature, and how often it answered.
+the last 24 hours: average and peak hashrate, average temperature, and uptime.
+
+**Health checks.** Each miner gets a score out of 100 and a plain list of what's wrong, worked out from
+what it reports: hashrate below what its chips should do, too many rejected shares, a hot chip or
+voltage regulator, low input voltage (a weak PSU or thin cable), weak Wi-Fi, no pool, or rebooting on
+its own. The dashboard lists the miners that need a look. Uptime is shown for 24 hours, 7 days and 30
+days, and reboots you didn't ask for are counted apart from the ones you sent.
+
+**Reports.** Hashrate, energy, cost, shares, uptime and reboots per day and per miner, for the last 7, 30
+or 90 days. Download it as CSV, or the raw readings from the last two days.
+
+**Firmware updates.** AxeMobile checks GitHub for the newest AxeForge, AxeOS and NerdQAxe releases and
+marks the miners that are behind, with a link to the release. It never flashes anything itself. You can
+turn the check off in System.
 
 **Ctrl+K.** Opens a search box: type a few letters to jump to any page or miner, restart a miner,
 open its web page, scan the network or switch theme.
 
 **Swarm.** Add a miner by IP, scan your network for them, or pull in every miner an AxeForge unit
-already knows about.
+already knows about. Tick several miners to restart them together or give them all the same pool, each
+with its own worker name.
 
 **Pools and tuning.** Edit every pool slot, switch AxeForge between failover and split-by-weight, and
 push one pool setup to several miners at once. Set frequency, core voltage, fan and target temp, or let
@@ -112,7 +126,7 @@ folder on your Umbrel. The package itself is in [`axemobile-main/`](axemobile-ma
 Not on Umbrel? It runs anywhere Docker does:
 
 ```
-docker run -d -p 3847:3847 -p 3334:3334 -v axemobile:/data ghcr.io/issasoridev/axemobile:2.2.0
+docker run -d -p 3847:3847 -p 3334:3334 -v axemobile:/data ghcr.io/issasoridev/axemobile:2.3.0
 ```
 
 For AxePool outside Umbrel, either fill in the node on the AxePool page or pass

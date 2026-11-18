@@ -10,6 +10,7 @@ import { ConfirmButton, KindTag, LoginDialog, Modal, Seg, StatusPill } from "@/c
 import { useToast } from "@/components/Toast";
 import { diff, displayName, hash, num, tempTone, uptime } from "@/format";
 import { Events, RANGES } from "./Dashboard";
+import { IssueList, UpdateTag, availTone, levelTone, pct } from "@/components/health";
 
 function pctBar(v: number | null | undefined, max: number, tone = "") {
   const p = v ? Math.min(100, (v / max) * 100) : 0;
@@ -25,7 +26,7 @@ const toneVar = (t: string) => (t === "bad" ? "destructive" : t === "warn" ? "wa
 export default function MinerPage() {
   const { id } = useParams();
   const mid = Number(id);
-  const { overview, reload } = useApp();
+  const { overview, reload, health, reloadHealth } = useApp();
   const toast = useToast();
   const nav = useNavigate();
   const [range, setRange] = useLocal<"1h" | "6h" | "24h" | "7d" | "30d">("miner-range", "1h");
@@ -48,6 +49,7 @@ export default function MinerPage() {
     );
   }
   const s = m.snap;
+  const h = health[m.id];
   const online = m.online && !!s;
   const rejPct = s && (s.accepted ?? 0) + (s.rejected ?? 0) > 0 ? ((s.rejected ?? 0) / ((s.accepted ?? 0) + (s.rejected ?? 0))) * 100 : null;
   const eff = s?.power && s?.hashrate ? s.power / (s.hashrate / 1000) : null;
@@ -56,6 +58,7 @@ export default function MinerPage() {
     try {
       const r = await api<{ message: string }>(`/miners/${mid}/restart`, { body: {} });
       toast(r.message || "Restarting", "ok");
+      reloadHealth();
     } catch (e: any) {
       toast(e.message, "err");
     }
@@ -163,10 +166,31 @@ export default function MinerPage() {
             <div>Board</div><div>{s?.model || m.model || "–"}</div>
             <div>ASIC</div><div>{s?.asic_model ? `${s.asic_count ?? 1}× ${s.asic_model}` : "–"}</div>
             <div>Clock</div><div>{s?.freq ? `${Math.round(s.freq)} MHz @ ${Math.round(s.core_mv ?? 0)} mV` : "–"}</div>
-            <div>Firmware</div><div>{s?.version ? `${m.kind === "axeforge" ? "AxeForge" : "AxeOS"} ${s.version}` : "–"}</div>
+            <div>Firmware</div><div>{s?.version ? `${m.kind === "axeforge" ? "AxeForge" : "AxeOS"} ${s.version}` : "–"}<UpdateTag u={h?.update} /></div>
             <div>Uptime</div><div>{uptime(s?.uptime)}</div>
             <div>Wi-Fi</div><div>{s?.rssi ? `${s.ssid || ""} ${Math.round(s.rssi)} dBm` : "–"}</div>
           </div>
+        </div>
+      </div>
+
+      <div className="grid g2 mb">
+        <div className="card">
+          <h3>Health {h && <span className={`score ${levelTone(h.level)}`}>{h.score}</span>}</h3>
+          {h ? <IssueList issues={h.issues} empty="Nothing to fix. It's running well." /> : <div className="meta">Checking…</div>}
+        </div>
+        <div className="card">
+          <h3>Uptime <Link to="/reports" className="meta" style={{ textTransform: "none", letterSpacing: 0 }}>Reports</Link></h3>
+          <div className="kv">
+            <div>Unplanned reboots, 24 h</div><div className={h && h.reboots_24h > 1 ? "warn" : ""}>{h?.reboots_24h ?? "–"}</div>
+            <div>Unplanned reboots, 7 days</div><div>{h?.reboots_7d ?? "–"}</div>
+            <div>Running for</div><div>{online ? uptime(s?.uptime) : "–"}</div>
+          </div>
+          <div className="avail">
+            <div><span>24 h</span><b className={availTone(h?.availability_24h)}>{pct(h?.availability_24h)}</b></div>
+            <div><span>7 days</span><b className={availTone(h?.availability_7d)}>{pct(h?.availability_7d)}</b></div>
+            <div><span>30 days</span><b className={availTone(h?.availability_30d)}>{pct(h?.availability_30d)}</b></div>
+          </div>
+          <p className="note">Share of AxeMobile's readings it answered. Restarts sent from AxeMobile don't count as reboots.</p>
         </div>
       </div>
 

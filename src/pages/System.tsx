@@ -129,6 +129,10 @@ export default function System() {
             <input value={form.currency ?? ""} maxLength={4} onChange={(e) => setForm({ ...form, currency: e.target.value })} />
           </div>
         </div>
+        <label className="switch" style={{ marginTop: 12 }}>
+          <div><b>Check for firmware updates</b><span>Asks GitHub every 6 hours for the newest AxeForge, AxeOS and NerdQAxe releases and flags miners running an older one.</span></div>
+          <input type="checkbox" className="tg" checked={form.fw_check !== "0"} onChange={(e) => put({ fw_check: e.target.checked ? "1" : "0" })} />
+        </label>
         <div className="btns" style={{ marginTop: 14 }}>
           <button className="btn">Save</button>
         </div>
@@ -165,7 +169,7 @@ export default function System() {
         <div className="card">
           <h3>About</h3>
           <div className="kv">
-            <div>Version</div><div>2.2.0</div>
+            <div>Version</div><div>{__APP_VERSION__}</div>
             <div>Runs as</div><div>Web app (Umbrel)</div>
             <div>Firmware</div><div>AxeForge, AxeOS</div>
             <div>Source</div><div><a href="#" onClick={(e) => { e.preventDefault(); openExternal("https://github.com/IsSasoriDev/AxeMobile"); }}>github.com/IsSasoriDev/AxeMobile</a></div>

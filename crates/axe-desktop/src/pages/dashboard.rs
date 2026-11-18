@@ -162,7 +162,60 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, now: f64) {
             }
         }),
     });
-    ui.add_space(18.0);
+    ui.add_space(14.0);
+
+    // fleet health: who needs a look
+    if !app.health.is_empty() {
+        let mut list: Vec<axe_core::MinerHealth> = app.health.values().cloned().collect();
+        list.sort_by_key(|h| h.report.score);
+        let sick: Vec<&axe_core::MinerHealth> = list.iter().filter(|h| h.report.level != axe_core::health::Level::Info).collect();
+        let updates = list.iter().filter(|h| h.update.is_some()).count();
+        let ok = list.len() - sick.len();
+        let mut go = None;
+        w::card(ui, &p, |ui| {
+            w::h3_row(ui, &p, "Fleet health", |ui| {
+                let mut s = format!("{ok} healthy");
+                if !sick.is_empty() {
+                    s.push_str(&format!(" · {} need{} a look", sick.len(), if sick.len() == 1 { "s" } else { "" }));
+                }
+                if updates > 0 {
+                    s.push_str(&format!(" · {updates} firmware update{}", if updates == 1 { "" } else { "s" }));
+                }
+                ui.label(RichText::new(s).size(12.0).color(p.dim));
+            });
+            ui.add_space(4.0);
+            if sick.is_empty() {
+                ui.label(RichText::new(format!("✔  All {} miner{} running well.", list.len(), if list.len() == 1 { " is" } else { "s are" })).font(bold(14.0)).color(p.good));
+                return;
+            }
+            for (i, h) in sick.iter().take(6).enumerate() {
+                if i > 0 {
+                    let r = ui.available_rect_before_wrap();
+                    ui.painter().hline(r.x_range(), r.top(), egui::Stroke::new(1.0, p.line));
+                    ui.add_space(4.0);
+                }
+                let top: Vec<&axe_core::health::Issue> = h.report.issues.iter().filter(|x| x.level != axe_core::health::Level::Info).collect();
+                let resp = ui.horizontal(|ui| {
+                    w::score(ui, &p, Some(h), false);
+                    ui.label(RichText::new(&h.name).font(bold(14.0)));
+                    let more = if top.len() > 1 { format!(" (+{} more)", top.len() - 1) } else { String::new() };
+                    ui.add(egui::Label::new(RichText::new(format!("{}{more}", top.first().map(|x| x.title.as_str()).unwrap_or(""))).color(p.dim)).truncate());
+                });
+                let hit = ui.interact(resp.response.rect, ui.scope_id().with(("attn", h.id)), Sense::click());
+                if hit.hovered() {
+                    ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+                }
+                if hit.clicked() {
+                    go = Some(h.id);
+                }
+                ui.add_space(2.0);
+            }
+        });
+        if let Some(id) = go {
+            app.page = Page::Miner(id);
+        }
+        ui.add_space(18.0);
+    }
 
     // miner tiles
     ui.horizontal(|ui| {

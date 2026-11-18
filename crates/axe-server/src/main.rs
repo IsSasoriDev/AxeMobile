@@ -73,6 +73,7 @@ async fn main() {
     };
     let app = api::router(engine.clone(), &cfg);
     tokio::spawn(engine.clone().run_market());
+    tokio::spawn(engine.clone().run_firmware());
     if std::env::var("AXEMOBILE_POOL_ENABLED").as_deref() == Ok("1")
         && !engine.db.settings().map(|s| s.contains_key("pool_enabled")).unwrap_or(true)
     {

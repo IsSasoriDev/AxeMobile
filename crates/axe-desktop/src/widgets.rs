@@ -37,6 +37,8 @@ pub mod ic {
     pub const COPY: &str = "\u{E8C8}";
     pub const LOCK: &str = "\u{E72E}";
     pub const AXEPOOL: &str = "\u{E825}";
+    pub const REPORT: &str = "\u{E9F9}";
+    pub const DOWNLOAD: &str = "\u{E896}";
 }
 
 #[cfg(not(windows))]
@@ -60,6 +62,8 @@ pub mod ic {
     pub const COPY: &str = "🗐";
     pub const LOCK: &str = "🔒";
     pub const AXEPOOL: &str = "⛏";
+    pub const REPORT: &str = "📋";
+    pub const DOWNLOAD: &str = "⬇";
 }
 
 // ---------------------------------------------------------------- cards
@@ -594,4 +598,83 @@ pub fn spark(ui: &mut Ui, p: &Pal, values: &[f64], size: Vec2) {
     let last = *pts.last().unwrap();
     ui.painter().add(Shape::line(pts, Stroke::new(1.5, p.pri)));
     ui.painter().circle_filled(last, 2.5, p.pri);
+}
+
+// ---------------------------------------------------------------- health
+
+pub fn level_color(p: &Pal, l: axe_core::health::Level) -> Color32 {
+    use axe_core::health::Level;
+    match l {
+        Level::Bad => p.bad,
+        Level::Warn => p.warn,
+        Level::Info => p.good,
+    }
+}
+
+/// Health score out of 100 in a small rounded box, coloured by the worst problem.
+pub fn score(ui: &mut Ui, p: &Pal, h: Option<&axe_core::MinerHealth>, big: bool) -> Response {
+    let Some(h) = h else {
+        return ui.label(RichText::new("–").color(p.dim));
+    };
+    let col = level_color(p, h.report.level);
+    let galley = ui.painter().layout_no_wrap(h.report.score.to_string(), bold(if big { 20.0 } else { 12.0 }), col);
+    let size = Vec2::new((galley.size().x + if big { 24.0 } else { 14.0 }).max(if big { 60.0 } else { 34.0 }), if big { 40.0 } else { 22.0 });
+    let (rect, resp) = ui.allocate_exact_size(size, Sense::hover());
+    ui.painter().rect(rect, CornerRadius::same(if big { 11 } else { 7 }), alpha(col, 0.14), Stroke::new(1.0, col), egui::StrokeKind::Inside);
+    ui.painter().galley(rect.center() - galley.size() / 2.0, galley, col);
+    let names: Vec<&str> = h.report.issues.iter().filter(|i| i.level != axe_core::health::Level::Info).map(|i| i.title.as_str()).collect();
+    resp.on_hover_text(if names.is_empty() { "No problems".to_string() } else { names.join(", ") })
+}
+
+pub fn issue_list(ui: &mut Ui, p: &Pal, issues: &[axe_core::health::Issue], empty: &str) {
+    if issues.is_empty() {
+        ui.label(RichText::new(format!("✔  {empty}")).font(bold(14.0)).color(p.good));
+        return;
+    }
+    for (i, is) in issues.iter().enumerate() {
+        if i > 0 {
+            let r = ui.available_rect_before_wrap();
+            ui.painter().hline(r.x_range(), r.top(), Stroke::new(1.0, p.line));
+            ui.add_space(6.0);
+        }
+        ui.horizontal_top(|ui| {
+            let col = level_color(p, is.level);
+            let col = if is.level == axe_core::health::Level::Info { p.pri } else { col };
+            let (r, _) = ui.allocate_exact_size(Vec2::new(12.0, 18.0), Sense::hover());
+            if is.level == axe_core::health::Level::Bad {
+                ui.painter().circle_filled(r.center(), 7.0, alpha(col, 0.25));
+            }
+            ui.painter().circle_filled(r.center(), 4.0, col);
+            ui.vertical(|ui| {
+                ui.spacing_mut().item_spacing.y = 2.0;
+                ui.label(RichText::new(&is.title).font(bold(13.5)));
+                ui.label(RichText::new(&is.detail).size(12.0).color(p.dim));
+            });
+        });
+        ui.add_space(4.0);
+    }
+}
+
+/// A small square checkbox in the theme colours.
+pub fn check(ui: &mut Ui, p: &Pal, on: &mut bool) -> Response {
+    let (rect, mut resp) = ui.allocate_exact_size(Vec2::splat(18.0), Sense::click());
+    if resp.clicked() {
+        *on = !*on;
+        resp.mark_changed();
+    }
+    let r = rect.shrink(1.0);
+    if *on {
+        ui.painter().rect_filled(r, CornerRadius::same(4), p.pri);
+        let a = r.left_center() + Vec2::new(3.5, 0.5);
+        let b = r.center_bottom() + Vec2::new(-1.5, -4.0);
+        let c = r.right_top() + Vec2::new(-3.5, 4.0);
+        ui.painter().line_segment([a, b], Stroke::new(2.0, p.pri_fg));
+        ui.painter().line_segment([b, c], Stroke::new(2.0, p.pri_fg));
+    } else {
+        ui.painter().rect(r, CornerRadius::same(4), p.panel2, Stroke::new(1.0, if resp.hovered() { p.pri } else { p.line }), egui::StrokeKind::Inside);
+    }
+    if resp.hovered() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    resp
 }

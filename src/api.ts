@@ -166,3 +166,92 @@ export interface Market {
   retarget_blocks: number | null;
   updated: number;
 }
+
+export type Level = "info" | "warn" | "bad";
+
+export interface Issue {
+  code: string;
+  level: Level;
+  title: string;
+  detail: string;
+}
+
+export interface FirmwareUpdate {
+  current: string;
+  latest: string;
+  url: string;
+}
+
+export interface MinerHealth {
+  id: number;
+  name: string;
+  model: string;
+  online: boolean;
+  score: number;
+  level: Level;
+  issues: Issue[];
+  availability_24h: number | null;
+  availability_7d: number | null;
+  availability_30d: number | null;
+  reboots_24h: number;
+  reboots_7d: number;
+  firmware: string;
+  update: FirmwareUpdate | null;
+}
+
+export interface ReportDay {
+  day: number;
+  date: string;
+  hashrate: number;
+  energy_kwh: number;
+  cost: number | null;
+  accepted: number;
+  rejected: number;
+  availability: number | null;
+  reboots: number;
+  record: number | null;
+}
+
+export interface ReportMiner {
+  id: number;
+  name: string;
+  model: string;
+  hashrate: number;
+  energy_kwh: number;
+  cost: number | null;
+  efficiency: number | null;
+  accepted: number;
+  rejected: number;
+  reject_pct: number | null;
+  availability: number | null;
+  reboots: number;
+  record: number | null;
+}
+
+export interface Report {
+  days: ReportDay[];
+  miners: ReportMiner[];
+  total: ReportMiner;
+  currency: string;
+  price: number;
+  span: number;
+}
+
+/** Minutes east of UTC, for day boundaries in reports. */
+export const tzMinutes = () => -new Date().getTimezoneOffset();
+
+/** Fetches a file from the API and saves it. */
+export async function download(path: string, filename: string) {
+  const headers: Record<string, string> = {};
+  if (token) headers["X-Axe-Token"] = token;
+  const r = await fetch(base + "/api" + path, { headers });
+  if (!r.ok) throw new ApiError(r.status, `HTTP ${r.status}`);
+  const url = URL.createObjectURL(await r.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}

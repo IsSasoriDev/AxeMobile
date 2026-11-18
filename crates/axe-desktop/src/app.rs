@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
 use axe_core::db::{Event, MinerRow, Point};
-use axe_core::{Engine, Fleet, Live, Snapshot};
+use axe_core::{Engine, Fleet, Live, MinerHealth, Snapshot};
 use eframe::egui::{self, Align2, Color32, CornerRadius, Pos2, Rect, RichText, Sense, Stroke, Vec2};
 
 use crate::blackhole::{BlackHole, Intro};
@@ -52,6 +52,7 @@ pub enum Page {
     Pools,
     AxePool,
     Tuning,
+    Reports,
     Cave,
     Leaderboard,
     System,
@@ -85,6 +86,9 @@ pub struct App {
     pub miners: Vec<MinerView>,
     pub fleet: Fleet,
     pub events: Vec<Event>,
+    /// health check per miner, refreshed every few seconds
+    pub health: HashMap<i64, MinerHealth>,
+    health_at: f64,
     refreshed: f64,
     last_event: i64,
     hist: HashMap<String, (f64, Vec<Point>)>,
@@ -160,6 +164,8 @@ impl App {
             miners: vec![],
             fleet: Fleet::default(),
             events: vec![],
+            health: HashMap::new(),
+            health_at: -100.0,
             refreshed: -10.0,
             last_event,
             hist: HashMap::new(),
@@ -289,6 +295,7 @@ hottest {h:.0}°C · best {}", crate::fmt::diff(f.best_diff)));
 
     pub fn refresh_now(&mut self) {
         self.refreshed = -10.0;
+        self.health_at = -100.0;
         self.hist.clear();
     }
 
@@ -325,6 +332,10 @@ hottest {h:.0}°C · best {}", crate::fmt::diff(f.best_diff)));
         self.miners = rows.into_iter().map(|row| MinerView { live: self.engine.live_of(row.id), row }).collect();
         self.fleet = self.engine.fleet();
         self.events = self.engine.db.events(None, 14).unwrap_or_default();
+        if now - self.health_at > 10.0 {
+            self.health_at = now;
+            self.health = self.engine.health().into_iter().map(|h| (h.id, h)).collect();
+        }
         // desktop notifications for anything new
         let fresh: Vec<Event> = self.events.iter().filter(|e| e.id > self.last_event).cloned().collect();
         if let Some(top) = self.events.first() {
@@ -340,6 +351,7 @@ hottest {h:.0}°C · best {}", crate::fmt::diff(f.best_diff)));
                     "fault" => "Miner fault",
                     "best" => "New best share",
                     "block" => "BLOCK FOUND!",
+                    "restart" if e.message.ends_with("on its own") => "Miner rebooted",
                     _ => continue,
                 };
                 sys::notify(title, &e.message);
@@ -454,12 +466,13 @@ hottest {h:.0}°C · best {}", crate::fmt::diff(f.best_diff)));
         }
         ui.add_space(12.0);
 
-        let items: [(Page, &str, &str); 8] = [
+        let items: [(Page, &str, &str); 9] = [
             (Page::Dashboard, ic::HOME, "Dashboard"),
             (Page::Swarm, ic::SWARM, "Swarm"),
             (Page::Pools, ic::POOLS, "Pools"),
             (Page::AxePool, ic::AXEPOOL, "AxePool"),
             (Page::Tuning, ic::TUNE, "Tuning"),
+            (Page::Reports, ic::REPORT, "Reports"),
             (Page::Cave, ic::GAME, "The Cave"),
             (Page::Leaderboard, ic::TROPHY, "Leaderboard"),
             (Page::System, ic::SETTINGS, "System"),
@@ -568,10 +581,10 @@ hottest {h:.0}°C · best {}", crate::fmt::diff(f.best_diff)));
     }
 
     fn shortcuts(&mut self, ctx: &egui::Context) {
-        let pages = [Page::Dashboard, Page::Swarm, Page::Pools, Page::AxePool, Page::Tuning, Page::Cave, Page::Leaderboard, Page::System];
+        let pages = [Page::Dashboard, Page::Swarm, Page::Pools, Page::AxePool, Page::Tuning, Page::Reports, Page::Cave, Page::Leaderboard, Page::System];
         ctx.input(|i| {
             if i.modifiers.command {
-                for (n, key) in [egui::Key::Num1, egui::Key::Num2, egui::Key::Num3, egui::Key::Num4, egui::Key::Num5, egui::Key::Num6, egui::Key::Num7, egui::Key::Num8].iter().enumerate() {
+                for (n, key) in [egui::Key::Num1, egui::Key::Num2, egui::Key::Num3, egui::Key::Num4, egui::Key::Num5, egui::Key::Num6, egui::Key::Num7, egui::Key::Num8, egui::Key::Num9].iter().enumerate() {
                     if i.key_pressed(*key) {
                         self.page = pages[n];
                     }

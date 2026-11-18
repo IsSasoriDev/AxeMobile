@@ -4,7 +4,7 @@ storage:
   dataRoot: data
 category: bitcoin
 name: AxeMobile
-version: "2.2.0"
+version: "2.3.0"
 tagline: Watch, tune and solo mine with your Bitaxe and NerdQaxe miners
 description: >-
   AxeMobile keeps an eye on your home Bitcoin miners from your Umbrel. It
@@ -60,16 +60,22 @@ defaultUsername: ""
 defaultPassword: ""
 torOnly: false
 releaseNotes: >-
-  AxePool: solo mining on your own Bitcoin node.
+  Fleet health, reports and bulk actions.
 
 
-  - AxeMobile now needs the Bitcoin Node app. AxePool takes its block
-  templates from it, with nothing to set up.
+  - Every miner gets a health score and a list of what's wrong: hashrate
+  below expected, rejected shares, heat, a hot voltage regulator, low input
+  voltage, weak Wi-Fi, no pool, or rebooting on its own. The dashboard lists
+  the miners that need a look.
 
-  - Point your miners at your Umbrel's IP address on port 3334, with your
-  Bitcoin address as the username. If one of them finds a block, the full
-  reward goes to that address.
+  - Uptime for the last 24 hours, 7 days and 30 days, and a count of reboots
+  nobody asked for.
 
-  - The AxePool page shows each worker's hashrate, shares and best share,
-  your odds of finding a block, and any blocks found. It can also switch a
-  miner over to AxePool for you.
+  - New Reports page: hashrate, energy, cost, shares, uptime and reboots per
+  day and per miner, for 7, 30 or 90 days, with CSV downloads.
+
+  - AxeMobile checks GitHub for new AxeForge, AxeOS and NerdQAxe firmware and
+  marks miners that are behind. You can turn this off in System.
+
+  - Tick several miners on the Swarm page to restart them or give them all
+  the same pool, each with its own worker name.

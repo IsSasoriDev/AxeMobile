@@ -19,6 +19,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context, now: f64, id:
     };
     let s = m.snap().cloned();
     let online = m.online();
+    let health = app.health.get(&id).cloned();
 
     ui.horizontal(|ui| {
         if ui.add(egui::Label::new(RichText::new(ic::BACK).font(icon_font(18.0)).color(p.dim)).sense(Sense::click())).on_hover_text("Back").clicked() {
@@ -128,25 +129,72 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context, now: f64, id:
     // last 24 hours, from the local history
     let day_ago = axe_core::db::now() - 86_400;
     let since = day_ago.max(m.row.added_at);
-    let (count, avg_h, peak_h, avg_t, max_t) = app.engine.db.summary(id, since).unwrap_or((0, None, None, None, None));
-    // share of AxeMobile's own poll rounds in which this miner answered,
-    // so time with the app closed doesn't count against the miner
-    let rounds = app.engine.db.poll_rounds(since).unwrap_or(0).max(1);
-    let avail_pct = (count as f64 / rounds as f64 * 100.0).min(100.0);
+    let (_, avg_h, peak_h, avg_t, max_t) = app.engine.db.summary(id, since).unwrap_or((0, None, None, None, None));
     let window = if since > day_ago { format!("since added, {}", fmt::ago(since)) } else { "last 24 hours".into() };
     w::cols(ui, 4, 14.0, |i, ui| match i {
         0 => w::stat(ui, &p, "Average hashrate", &fmt::hash(avg_h).0, fmt::hash(avg_h).1, &window, None),
         1 => w::stat(ui, &p, "Peak hashrate", &fmt::hash(peak_h).0, fmt::hash(peak_h).1, &window, None),
         2 => w::stat(ui, &p, "Average temp", &fmt::num(avg_t, 1), "°C", &max_t.map(|t| format!("hottest {t:.1}°C")).unwrap_or_default(), Some(w::temp_color(&p, avg_t))),
-        _ => w::stat(
-            ui,
-            &p,
-            "Reachable",
-            &format!("{avail_pct:.1}"),
-            "%",
-            &format!("answered {count} of {rounds} reads"),
-            Some(if avail_pct >= 98.0 { p.good } else if avail_pct >= 90.0 { p.warn } else { p.bad }),
-        ),
+        _ => {
+            let a = health.as_ref().and_then(|h| h.availability_24h);
+            let reb = health.as_ref().map(|h| h.reboots_24h).unwrap_or(0);
+            w::stat(
+                ui,
+                &p,
+                "Uptime, 24 h",
+                &a.map(|x| format!("{:.1}", x * 100.0)).unwrap_or_else(|| "–".into()),
+                "%",
+                &format!("{reb} unplanned reboot{}", if reb == 1 { "" } else { "s" }),
+                Some(match a {
+                    Some(x) if x >= 0.99 => p.good,
+                    Some(x) if x >= 0.95 => p.warn,
+                    Some(_) => p.bad,
+                    None => p.dim,
+                }),
+            )
+        }
+    });
+    ui.add_space(14.0);
+
+    // health check and longer uptime
+    w::cols(ui, 2, 14.0, |i, ui| {
+        w::card(ui, &p, |ui| {
+            ui.set_min_height(150.0);
+            if i == 0 {
+                w::h3_row(ui, &p, "Health", |ui| {
+                    w::score(ui, &p, health.as_ref(), false);
+                });
+                ui.add_space(4.0);
+                match &health {
+                    Some(h) => w::issue_list(ui, &p, &h.report.issues, "Nothing to fix. It's running well."),
+                    None => {
+                        ui.label(RichText::new("Checking…").color(p.dim));
+                    }
+                }
+            } else {
+                w::h3(ui, &p, "Uptime");
+                ui.add_space(4.0);
+                let pc = |v: Option<f64>| v.map(|x| format!("{:.1}%", x * 100.0)).unwrap_or_else(|| "–".into());
+                let h = health.clone();
+                w::kv(ui, &p, "kv-up", &[
+                    ("Last 24 hours", pc(h.as_ref().and_then(|h| h.availability_24h))),
+                    ("Last 7 days", pc(h.as_ref().and_then(|h| h.availability_7d))),
+                    ("Last 30 days", pc(h.as_ref().and_then(|h| h.availability_30d))),
+                    ("Unplanned reboots, 7 days", h.as_ref().map(|h| h.reboots_7d.to_string()).unwrap_or_else(|| "–".into())),
+                ]);
+                ui.add_space(6.0);
+                if let Some(u) = h.as_ref().and_then(|h| h.update.clone()) {
+                    ui.horizontal(|ui| {
+                        ui.label(RichText::new(format!("Firmware {} is out (running {}).", u.latest, u.current)).color(p.warn));
+                        if w::small(ui, &p, "Release notes").clicked() {
+                            ui.ctx().open_url(egui::OpenUrl::new_tab(&u.url));
+                        }
+                    });
+                } else {
+                    ui.label(RichText::new("Uptime is the share of AxeMobile's readings it answered. Restarts sent from AxeMobile don't count as reboots.").size(12.0).color(p.dim));
+                }
+            }
+        });
     });
     ui.add_space(14.0);
 
