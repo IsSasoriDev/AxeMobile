@@ -4,9 +4,12 @@
 
 pub mod api;
 pub mod db;
+pub mod firmware;
+pub mod health;
 pub mod market;
 pub mod miner;
 pub mod pool;
+pub mod report;
 
 use std::collections::HashMap;
 use std::net::{Ipv4Addr, UdpSocket};
@@ -39,6 +42,10 @@ pub struct Live {
     pub hot: bool,
     #[serde(skip)]
     pub low: u32,
+    /// when AxeMobile last sent this miner a restart, so the reboot that
+    /// follows isn't counted as a crash
+    #[serde(skip)]
+    pub restart_sent: i64,
     pub last_seen: i64,
     pub error: String,
     pub snap: Option<Snapshot>,
@@ -72,6 +79,26 @@ pub struct Engine {
     /// settings pinned by the environment (Umbrel's node login); they win
     /// over the database and can't be changed from the UI
     pub fixed: RwLock<HashMap<String, String>>,
+    /// latest firmware release per GitHub repo
+    pub firmware: RwLock<HashMap<&'static str, firmware::Release>>,
+}
+
+/// A miner's health check plus the numbers behind it.
+#[derive(Debug, Clone, Serialize)]
+pub struct MinerHealth {
+    pub id: i64,
+    pub name: String,
+    pub model: String,
+    pub online: bool,
+    #[serde(flatten)]
+    pub report: health::Report,
+    pub availability_24h: Option<f64>,
+    pub availability_7d: Option<f64>,
+    pub availability_30d: Option<f64>,
+    pub reboots_24h: i64,
+    pub reboots_7d: i64,
+    pub firmware: String,
+    pub update: Option<firmware::Update>,
 }
 
 pub const DEFAULTS: &[(&str, &str)] = &[
@@ -87,6 +114,7 @@ pub const DEFAULTS: &[(&str, &str)] = &[
     ("alert_drop", "25"),
     ("market", "1"),
     ("autostart", "0"),
+    ("fw_check", "1"),
     ("pool_enabled", "0"),
     ("pool_port", "3334"),
     ("pool_address", ""),
@@ -108,6 +136,7 @@ impl Engine {
             pool: pool::Pool::default(),
             pool_wake: Notify::new(),
             fixed: RwLock::new(HashMap::new()),
+            firmware: RwLock::new(HashMap::new()),
         })
     }
 
@@ -184,6 +213,56 @@ impl Engine {
         f
     }
 
+    /// Newer firmware for this miner, if GitHub has one.
+    pub fn update_for(&self, m: &db::MinerRow, snap: Option<&Snapshot>) -> Option<firmware::Update> {
+        let s = snap?;
+        let fw = self.firmware.read().unwrap();
+        let rel = fw.get(firmware::repo_for(&m.kind, if s.model.is_empty() { &m.model } else { &s.model }))?;
+        firmware::update_for(&s.version, rel)
+    }
+
+    pub fn health_of(&self, m: &db::MinerRow) -> MinerHealth {
+        let l = self.live_of(m.id);
+        let now = db::now();
+        let reboots_24h = self.db.reboots(m.id, now - 86_400).unwrap_or(0);
+        let update = self.update_for(m, l.snap.as_ref());
+        let cx = health::Context {
+            online: l.online,
+            needs_login: l.error == "login required",
+            recent_hashrate: self.db.summary(m.id, now - 1800).ok().and_then(|s| (s.0 >= 3).then_some(s.1).flatten()),
+            reboots_24h,
+            alert_temp: self.setting("alert_temp").parse().unwrap_or(70.0),
+            update: update.clone(),
+        };
+        MinerHealth {
+            id: m.id,
+            name: if m.name.is_empty() { m.ip.clone() } else { m.name.clone() },
+            model: m.model.clone(),
+            online: l.online,
+            report: health::check(l.snap.as_ref(), &cx),
+            availability_24h: self.db.availability(m.id, now - 86_400).ok().flatten(),
+            availability_7d: self.db.availability(m.id, now - 7 * 86_400).ok().flatten(),
+            availability_30d: self.db.availability(m.id, now - 30 * 86_400).ok().flatten(),
+            reboots_24h,
+            reboots_7d: self.db.reboots(m.id, now - 7 * 86_400).unwrap_or(0),
+            firmware: l.snap.as_ref().map(|s| s.version.clone()).unwrap_or_default(),
+            update,
+        }
+    }
+
+    pub fn health(&self) -> Vec<MinerHealth> {
+        self.db.miners().unwrap_or_default().iter().map(|m| self.health_of(m)).collect()
+    }
+
+    /// Sends a restart and remembers it, so the reboot isn't counted as a crash.
+    pub async fn restart(&self, m: &db::MinerRow) -> anyhow::Result<String> {
+        let msg = self.client.restart(&m.ip, &m.kind, &m.session).await?;
+        if let Some(l) = self.live.write().unwrap().get_mut(&m.id) {
+            l.restart_sent = db::now();
+        }
+        Ok(msg)
+    }
+
     /// Reads every miner once and records what changed.
     pub async fn poll_once(&self) {
         let miners = match self.db.miners() {
@@ -214,7 +293,10 @@ impl Engine {
                     }
                     if let (Some(a), Some(b)) = (prev.snap.as_ref().and_then(|s| s.uptime), snap.uptime) {
                         if b + 30.0 < a {
-                            let _ = self.db.add_event(Some(m.id), "restart", &format!("{name} restarted"));
+                            let planned = ts - prev.restart_sent < 600;
+                            let _ = self.db.add_reboot(m.id, ts - b as i64, planned);
+                            let msg = if planned { format!("{name} restarted") } else { format!("{name} rebooted on its own") };
+                            let _ = self.db.add_event(Some(m.id), "restart", &msg);
                         }
                     }
                     if !snap.fault.is_empty() && prev.snap.as_ref().map(|s| s.fault.as_str()) != Some(snap.fault.as_str()) {
@@ -241,6 +323,14 @@ impl Engine {
                     if !snap.model.is_empty() && snap.model != m.model {
                         let _ = self.db.set_identity(m.id, &m.kind, &snap.model);
                     }
+                    // shares since the last poll; the counters start over when
+                    // the miner reboots
+                    let delta = |new: Option<f64>, old: Option<f64>| match (new, old) {
+                        (Some(n), Some(o)) if n >= o => n - o,
+                        (Some(n), Some(_)) => n,
+                        _ => 0.0,
+                    };
+                    let p = prev.snap.as_ref().filter(|_| prev.online);
                     let _ = self.db.add_sample(
                         m.id,
                         ts,
@@ -250,6 +340,8 @@ impl Engine {
                             vr_temp: snap.vr_temp,
                             power: snap.power,
                             fan_rpm: snap.fan_rpm,
+                            acc: delta(snap.accepted, p.and_then(|s| s.accepted)),
+                            rej: delta(snap.rejected, p.and_then(|s| s.rejected)),
                         },
                     );
                     let alert_temp: f64 = self.setting("alert_temp").parse().unwrap_or(70.0);
@@ -283,6 +375,7 @@ impl Engine {
                     next.snap = Some(snap);
                 }
                 Err(e) => {
+                    let _ = self.db.add_miss(m.id, ts);
                     next.fails += 1;
                     next.error = e.to_string();
                     if next.fails >= 2 && prev.online {
@@ -308,6 +401,30 @@ impl Engine {
                 }
             }
             tokio::time::sleep(Duration::from_secs(300)).await;
+        }
+    }
+
+    /// Latest firmware releases from GitHub every 6 hours, and soon after
+    /// the check is switched on.
+    pub async fn run_firmware(self: Arc<Self>) {
+        let mut last = 0i64;
+        loop {
+            let on = self.setting("fw_check") != "0";
+            if !on {
+                self.firmware.write().unwrap().clear();
+                last = 0;
+            } else if db::now() - last >= 6 * 3600 {
+                last = db::now();
+                for repo in firmware::REPOS {
+                    match firmware::fetch(&self.client, repo).await {
+                        Ok(r) => {
+                            self.firmware.write().unwrap().insert(repo, r);
+                        }
+                        Err(e) => tracing::debug!("firmware {repo}: {e}"),
+                    }
+                }
+            }
+            tokio::time::sleep(Duration::from_secs(60)).await;
         }
     }
 

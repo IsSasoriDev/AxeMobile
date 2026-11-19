@@ -16,6 +16,7 @@ mod leaderboard;
 mod miner;
 mod axepool;
 mod pools;
+mod reports;
 mod swarm;
 mod system;
 mod tuning;
@@ -34,6 +35,10 @@ pub struct SwarmState {
     pub found: Option<Vec<Found>>,
     pub peers: Option<(String, Vec<SwarmPeer>)>,
     pub peers_job: Option<Job<Result<(String, Vec<SwarmPeer>), String>>>,
+    /// miners ticked in the table for bulk actions
+    pub sel: Vec<i64>,
+    pub bulk_pool: Option<swarm::BulkPool>,
+    pub bulk: Option<Job<String>>,
 }
 
 #[derive(Default)]
@@ -97,6 +102,7 @@ pub struct State {
     pub system: SystemState,
     pub lb: LbTab,
     pub restart: Option<Job<Result<String, String>>>,
+    pub reports: reports::ReportsState,
 }
 
 impl State {
@@ -122,6 +128,7 @@ impl State {
             },
             lb: LbTab::Shares,
             restart: None,
+            reports: reports::ReportsState::default(),
         }
     }
 }
@@ -150,6 +157,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context, now: f64) {
         Page::Pools => pools::show(app, ui, ctx),
         Page::AxePool => axepool::show(app, ui, ctx),
         Page::Tuning => tuning::show(app, ui, ctx),
+        Page::Reports => reports::show(app, ui, now),
         Page::Cave => cave::show(app, ui, now),
         Page::Leaderboard => leaderboard::show(app, ui),
         Page::System => system::show(app, ui, ctx),
@@ -162,7 +170,7 @@ pub fn restart(app: &mut App, ctx: &egui::Context, id: i64) {
     let (row, name) = (m.row.clone(), m.name());
     let e = app.engine.clone();
     app.st.restart = Some(app.spawn(ctx, async move {
-        match e.client.restart(&row.ip, &row.kind, &row.session).await {
+        match e.restart(&row).await {
             Ok(_) => {
                 let _ = e.db.add_event(Some(row.id), "restart", &format!("Restart sent to {name}"));
                 Ok(format!("{name} is restarting"))
@@ -264,6 +272,7 @@ pub fn modals(app: &mut App, ctx: &egui::Context, _now: f64) {
     }
 
     pools::copy_modal(app, ctx);
+    swarm::bulk_pool_modal(app, ctx);
 }
 
 pub fn modal(ctx: &egui::Context, p: &crate::theme::Pal, id: &str, title: &str, add: impl FnOnce(&mut egui::Ui)) {

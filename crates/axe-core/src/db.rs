@@ -39,6 +39,15 @@ CREATE TABLE IF NOT EXISTS hourly(
   temp     REAL,
   power    REAL,
   n        INTEGER NOT NULL,
+  acc      REAL NOT NULL DEFAULT 0,
+  rej      REAL NOT NULL DEFAULT 0,
+  miss     INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY(miner_id, ts)
+) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS reboots(
+  miner_id INTEGER NOT NULL,
+  ts       INTEGER NOT NULL,
+  planned  INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY(miner_id, ts)
 ) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS events(
@@ -122,6 +131,9 @@ pub struct Sample {
     pub vr_temp: Option<f64>,
     pub power: Option<f64>,
     pub fan_rpm: Option<f64>,
+    /// shares accepted / rejected since the previous poll
+    pub acc: f64,
+    pub rej: f64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -147,6 +159,42 @@ pub fn now() -> i64 {
         .unwrap_or(0)
 }
 
+/// Adds the columns newer versions need to tables an older AxeMobile made.
+fn migrate(c: &Connection) -> Result<()> {
+    let has_hourly: bool = c.query_row("SELECT COUNT(*) FROM sqlite_master WHERE name='hourly'", [], |r| r.get::<_, i64>(0))? > 0;
+    if has_hourly {
+        let cols: Vec<String> = c
+            .prepare("SELECT name FROM pragma_table_info('hourly')")?
+            .query_map([], |r| r.get(0))?
+            .collect::<rusqlite::Result<_>>()?;
+        for (col, ty) in [("acc", "REAL"), ("rej", "REAL"), ("miss", "INTEGER")] {
+            if !cols.iter().any(|x| x == col) {
+                c.execute_batch(&format!("ALTER TABLE hourly ADD COLUMN {col} {ty} NOT NULL DEFAULT 0"))?;
+            }
+        }
+    }
+    Ok(())
+}
+
+/// One day of one miner, from the hourly table.
+#[derive(Debug, Clone, Serialize)]
+pub struct DayRow {
+    pub miner_id: i64,
+    /// days since 1970-01-01 in the caller's time zone
+    pub day: i64,
+    /// GH/s, averaged over the polls that reached the miner
+    pub hashrate: Option<f64>,
+    /// watt-hours measured while AxeMobile was polling
+    pub energy_wh: f64,
+    pub polls: i64,
+    /// reads that got no answer
+    pub misses: i64,
+    /// hours with at least one reading
+    pub hours: i64,
+    pub accepted: f64,
+    pub rejected: f64,
+}
+
 fn miner_from(r: &rusqlite::Row) -> rusqlite::Result<MinerRow> {
     Ok(MinerRow {
         id: r.get(0)?,
@@ -170,6 +218,7 @@ impl Db {
         }
         let conn = Connection::open(path)?;
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA foreign_keys=ON;")?;
+        migrate(&conn)?;
         conn.execute_batch(SCHEMA)?;
         // older databases had no share history: seed it with each miner's best
         conn.execute_batch(
@@ -183,6 +232,7 @@ impl Db {
     pub fn memory() -> Result<Self> {
         let conn = Connection::open_in_memory()?;
         conn.execute_batch(SCHEMA)?;
+        migrate(&conn)?;
         Ok(Self { conn: Mutex::new(conn) })
     }
 
@@ -250,6 +300,7 @@ impl Db {
         c.execute("DELETE FROM hourly WHERE miner_id=?", [id])?;
         c.execute("DELETE FROM events WHERE miner_id=?", [id])?;
         c.execute("DELETE FROM best_shares WHERE miner_id=?", [id])?;
+        c.execute("DELETE FROM reboots WHERE miner_id=?", [id])?;
         c.execute("DELETE FROM miners WHERE id=?", [id])?;
         Ok(())
     }
@@ -264,13 +315,15 @@ impl Db {
         )?;
         let hour = ts / 3600 * 3600;
         c.execute(
-            "INSERT INTO hourly(miner_id, ts, hashrate, temp, power, n) VALUES(?,?,?,?,?,1)
+            "INSERT INTO hourly(miner_id, ts, hashrate, temp, power, n, acc, rej) VALUES(?,?,?,?,?,1,?,?)
              ON CONFLICT(miner_id, ts) DO UPDATE SET
                hashrate = (COALESCE(hashrate,0)*n + COALESCE(excluded.hashrate,0))/(n+1),
                temp     = (COALESCE(temp,0)*n + COALESCE(excluded.temp,0))/(n+1),
                power    = (COALESCE(power,0)*n + COALESCE(excluded.power,0))/(n+1),
-               n        = n+1",
-            params![miner_id, hour, s.hashrate, s.temp, s.power],
+               n        = n+1,
+               acc      = acc + excluded.acc,
+               rej      = rej + excluded.rej",
+            params![miner_id, hour, s.hashrate, s.temp, s.power, s.acc, s.rej],
         )?;
         Ok(())
     }
@@ -307,12 +360,88 @@ impl Db {
         )?)
     }
 
-    /// How many poll rounds wrote anything since `since`. Every miner read in
-    /// one round shares the round's timestamp, so this counts the times
-    /// AxeMobile was actually running and polling.
-    pub fn poll_rounds(&self, since: i64) -> Result<i64> {
+    /// A read of this miner that got no answer (see `availability`).
+    pub fn add_miss(&self, miner_id: i64, ts: i64) -> Result<()> {
+        self.c().execute(
+            "INSERT INTO hourly(miner_id, ts, n, miss) VALUES(?,?,0,1)
+             ON CONFLICT(miner_id, ts) DO UPDATE SET miss = miss+1",
+            params![miner_id, ts / 3600 * 3600],
+        )?;
+        Ok(())
+    }
+
+    /// Share of AxeMobile's reads since `since` that the miner answered,
+    /// 0..1. Time when AxeMobile wasn't running doesn't count either way.
+    pub fn availability(&self, miner_id: i64, since: i64) -> Result<Option<f64>> {
+        let (ok, miss): (i64, i64) = self.c().query_row(
+            "SELECT COALESCE(SUM(n),0), COALESCE(SUM(miss),0) FROM hourly WHERE miner_id=? AND ts>=?",
+            params![miner_id, since / 3600 * 3600],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )?;
+        Ok((ok + miss > 0).then(|| ok as f64 / (ok + miss) as f64))
+    }
+
+    pub fn add_reboot(&self, miner_id: i64, ts: i64, planned: bool) -> Result<()> {
+        self.c().execute("INSERT OR IGNORE INTO reboots VALUES(?,?,?)", params![miner_id, ts, planned as i64])?;
+        Ok(())
+    }
+
+    /// Reboots nobody asked for since `since`.
+    pub fn reboots(&self, miner_id: i64, since: i64) -> Result<i64> {
+        Ok(self.c().query_row(
+            "SELECT COUNT(*) FROM reboots WHERE miner_id=? AND ts>=? AND planned=0",
+            params![miner_id, since],
+            |r| r.get(0),
+        )?)
+    }
+
+    /// Per-day rows for every miner (or one) since `since`. `offset` is the
+    /// caller's UTC offset in seconds, so days start at their midnight.
+    pub fn days(&self, miner_id: Option<i64>, since: i64, offset: i64) -> Result<Vec<DayRow>> {
         let c = self.c();
-        Ok(c.query_row("SELECT COUNT(DISTINCT ts) FROM samples WHERE ts>=?", [since], |r| r.get(0))?)
+        let mut st = c.prepare(
+            "SELECT miner_id, (ts + ?1) / 86400 AS d,
+                    SUM(hashrate * n) / NULLIF(SUM(CASE WHEN hashrate IS NULL THEN 0 ELSE n END), 0),
+                    COALESCE(SUM(power), 0), SUM(n), SUM(miss), SUM(CASE WHEN n > 0 THEN 1 ELSE 0 END), SUM(acc), SUM(rej)
+             FROM hourly WHERE ts >= ?2 AND (?3 IS NULL OR miner_id = ?3)
+             GROUP BY miner_id, d ORDER BY d, miner_id",
+        )?;
+        let rows = st
+            .query_map(params![offset, since, miner_id], |r| {
+                Ok(DayRow {
+                    miner_id: r.get(0)?,
+                    day: r.get(1)?,
+                    hashrate: r.get(2)?,
+                    energy_wh: r.get(3)?,
+                    polls: r.get(4)?,
+                    misses: r.get(5)?,
+                    hours: r.get(6)?,
+                    accepted: r.get(7)?,
+                    rejected: r.get(8)?,
+                })
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(rows)
+    }
+
+    /// ((miner, day), unplanned reboots) in the caller's time zone.
+    pub fn reboot_days(&self, since: i64, offset: i64) -> Result<HashMap<(i64, i64), i64>> {
+        let c = self.c();
+        let mut st = c.prepare("SELECT miner_id, (ts + ?1) / 86400 AS d, COUNT(*) FROM reboots WHERE ts >= ?2 AND planned=0 GROUP BY miner_id, d")?;
+        let rows = st
+            .query_map(params![offset, since], |r| Ok(((r.get(0)?, r.get(1)?), r.get(2)?)))?
+            .collect::<rusqlite::Result<HashMap<_, _>>>()?;
+        Ok(rows)
+    }
+
+    /// ((miner, day), best share record set that day).
+    pub fn record_days(&self, since: i64, offset: i64) -> Result<HashMap<(i64, i64), f64>> {
+        let c = self.c();
+        let mut st = c.prepare("SELECT miner_id, (ts + ?1) / 86400 AS d, MAX(diff) FROM best_shares WHERE ts >= ?2 GROUP BY miner_id, d")?;
+        let rows = st
+            .query_map(params![offset, since], |r| Ok(((r.get(0)?, r.get(1)?), r.get(2)?)))?
+            .collect::<rusqlite::Result<HashMap<_, _>>>()?;
+        Ok(rows)
     }
 
     pub fn prune(&self) -> Result<()> {
@@ -320,6 +449,7 @@ impl Db {
         let c = self.c();
         c.execute("DELETE FROM samples WHERE ts < ?", [n - RAW_KEEP_SECS])?;
         c.execute("DELETE FROM hourly WHERE ts < ?", [n - HOURLY_KEEP_SECS])?;
+        c.execute("DELETE FROM reboots WHERE ts < ?", [n - HOURLY_KEEP_SECS])?;
         c.execute("DELETE FROM pool_samples WHERE ts < ?", [n - 7 * 86_400])?;
         c.execute(
             "DELETE FROM events WHERE id <= (SELECT id FROM events ORDER BY id DESC LIMIT 1 OFFSET ?)",
@@ -429,15 +559,21 @@ impl Db {
 
     /// Raw samples as CSV (time, miner, hashrate, temps, power, fan).
     pub fn export_csv(&self, since: i64) -> Result<String> {
+        self.history_csv(None, since)
+    }
+
+    /// Raw samples as CSV for one miner or all of them.
+    pub fn history_csv(&self, miner_id: Option<i64>, since: i64) -> Result<String> {
         let c = self.c();
         let mut st = c.prepare(
             "SELECT s.ts, m.name, m.ip, s.hashrate, s.temp, s.vr_temp, s.power, s.fan_rpm
-             FROM samples s JOIN miners m ON m.id = s.miner_id WHERE s.ts >= ? ORDER BY s.ts, m.id",
+             FROM samples s JOIN miners m ON m.id = s.miner_id
+             WHERE s.ts >= ?1 AND (?2 IS NULL OR m.id = ?2) ORDER BY s.ts, m.id",
         )?;
         let mut out = String::from("time,miner,ip,hashrate_ghs,chip_temp_c,vr_temp_c,power_w,fan_rpm
 ");
         let f = |v: Option<f64>| v.map(|x| format!("{x:.2}")).unwrap_or_default();
-        let mut rows = st.query([since])?;
+        let mut rows = st.query(params![since, miner_id])?;
         while let Some(r) = rows.next()? {
             let name: String = r.get(1)?;
             out.push_str(&format!(
@@ -513,6 +649,25 @@ mod tests {
         assert_eq!(db.events(None, 10).unwrap().len(), 1);
         db.delete_miner(a).unwrap();
         assert_eq!(db.miners().unwrap().len(), 1);
+        let b = db.add_miner("10.0.0.4", "c", "axeos", "Bitaxe").unwrap();
+        let mut s = Sample { hashrate: Some(500.0), power: Some(10.0), ..Default::default() };
+        let t0 = now() / 3600 * 3600;
+        // a miss first, before any reading made the hour's row
+        db.add_miss(b, t0).unwrap();
+        for i in 1..4 {
+            s.acc = 3.0;
+            db.add_sample(b, t0 + i, &s).unwrap();
+        }
+        let av = db.availability(b, t0).unwrap().unwrap();
+        assert!((av - 0.75).abs() < 1e-9, "{av}");
+        let days = db.days(Some(b), t0, 0).unwrap();
+        assert_eq!(days.len(), 1);
+        assert_eq!(days[0].accepted, 9.0);
+        assert_eq!((days[0].polls, days[0].misses), (3, 1));
+        assert_eq!(days[0].hashrate, Some(500.0));
+        db.add_reboot(b, t0, false).unwrap();
+        db.add_reboot(b, t0 + 1, true).unwrap();
+        assert_eq!(db.reboots(b, t0).unwrap(), 1);
         db.set_setting("poll", "10").unwrap();
         db.set_setting("poll", "15").unwrap();
         assert_eq!(db.settings().unwrap()["poll"], "15");

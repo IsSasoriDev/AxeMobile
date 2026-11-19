@@ -7,6 +7,41 @@ import { Chart } from "@/components/Chart";
 import { Gauge } from "@/components/Gauge";
 import { Dot, KindTag, Seg, StatusPill } from "@/components/bits";
 import { ago, diff, displayName, hash, num, tempTone, uptime } from "@/format";
+import { ScoreBadge } from "@/components/health";
+import type { MinerHealth } from "@/api";
+
+function Attention({ list }: { list: MinerHealth[] }) {
+  const sick = list.filter((h) => h.level !== "info").sort((a, b) => a.score - b.score);
+  const updates = list.filter((h) => h.update);
+  const ok = list.length - sick.length;
+  return (
+    <div className="card mb">
+      <h3>
+        Fleet health
+        <span className="meta" style={{ textTransform: "none", letterSpacing: 0 }}>
+          {ok} healthy{sick.length ? ` · ${sick.length} need${sick.length === 1 ? "s" : ""} a look` : ""}
+          {updates.length ? ` · ${updates.length} firmware update${updates.length === 1 ? "" : "s"}` : ""}
+        </span>
+      </h3>
+      {sick.length === 0 ? (
+        <div className="allgood">All {list.length} miner{list.length === 1 ? " is" : "s are"} running well.</div>
+      ) : (
+        <div className="attn">
+          {sick.slice(0, 6).map((h) => {
+            const top = h.issues.filter((i) => i.level !== "info");
+            return (
+              <Link key={h.id} to={`/miner/${h.id}`}>
+                <ScoreBadge h={h} />
+                <b>{h.name}</b>
+                <span className="msg">{top[0]?.title}{top.length > 1 ? ` (+${top.length - 1} more)` : ""}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 type Range = "1h" | "6h" | "24h" | "7d" | "30d";
 export const RANGES: [Range, string][] = [["1h", "1H"], ["6h", "6H"], ["24h", "24H"], ["7d", "7D"], ["30d", "30D"]];
@@ -27,7 +62,7 @@ export function Events({ events, empty = "Nothing yet." }: { events: AppEvent[];
 }
 
 export default function Dashboard() {
-  const { overview, error } = useApp();
+  const { overview, error, health } = useApp();
   const [range, setRange] = useLocal<Range>("dash-range", "6h");
   const hist = usePoll(() => api<Point[]>(`/history?range=${range}`), 30000, [range]);
   const market = usePoll(() => api<{ market: Market | null }>("/market"), 60000);
@@ -146,6 +181,8 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {Object.keys(health).length > 0 && <Attention list={Object.values(health)} />}
+
           <section className="mb">
             <h3 className="sectitle">Miners <Link to="/swarm" className="meta">Manage</Link></h3>
             <div className="miners">
@@ -157,6 +194,7 @@ export default function Dashboard() {
                     <div className="hd">
                       <Dot m={m} />
                       <b>{displayName(m)}</b>
+                      {health[m.id] && health[m.id].level !== "info" && <ScoreBadge h={health[m.id]} />}
                       <StatusPill m={m} />
                     </div>
                     <div className="hr">{v}<small>{u}</small></div>

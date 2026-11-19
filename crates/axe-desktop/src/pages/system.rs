@@ -153,6 +153,10 @@ pub fn show(app: &mut App, ui: &mut egui::Ui, ctx: &egui::Context) {
         if w::switch_row(ui, &p, "Bitcoin price and fees", "Reads price, fees and chain height from mempool.space every 5 minutes.", &mut market) {
             app.set_setting("market", if market { "1" } else { "0" });
         }
+        let mut fw = app.setting("fw_check") != "0";
+        if w::switch_row(ui, &p, "Check for firmware updates", "Asks GitHub every 6 hours for the newest AxeForge, AxeOS and NerdQAxe releases and flags miners running an older one.", &mut fw) {
+            app.set_setting("fw_check", if fw { "1" } else { "0" });
+        }
     });
     ui.add_space(14.0);
 

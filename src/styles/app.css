@@ -329,3 +329,46 @@ input[type="range"] { padding: 0; height: 6px; accent-color: hsl(var(--primary))
   display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; flex: none;
   border: 1px solid transparent; font-weight: 800; font-size: 13px; color: hsl(var(--muted-foreground));
 }
+
+/* ---------- health */
+.score {
+  display: inline-grid; place-items: center; min-width: 34px; height: 24px; padding: 0 7px; border-radius: 8px; font-size: 12px; font-weight: 800;
+  font-variant-numeric: tabular-nums; border: 1px solid currentColor; background: color-mix(in srgb, currentColor 14%, transparent);
+}
+.score.big-score { min-width: 64px; height: 44px; font-size: 22px; border-radius: 12px; }
+.issues { list-style: none; margin: 0; padding: 0; }
+.issues li { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid hsl(var(--border)); font-size: 13px; }
+.issues li:first-child { border-top: 0; padding-top: 2px; }
+.issues li > i { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex: none; background: hsl(var(--primary)); }
+.issues li.lv-warn > i { background: hsl(var(--warning)); }
+.issues li.lv-bad > i { background: hsl(var(--destructive)); box-shadow: 0 0 8px hsl(var(--destructive)); }
+.issues li div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.issues li span { color: hsl(var(--muted-foreground)); font-size: 12px; }
+.allgood { display: flex; align-items: center; gap: 8px; color: hsl(var(--success)); font-weight: 600; font-size: 14px; }
+.tag.upd { border: 0; cursor: pointer; color: hsl(var(--warning)); display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; }
+.tag.upd:hover { background: hsl(var(--warning) / .15); }
+.attn { display: flex; flex-direction: column; }
+.attn a { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid hsl(var(--border)); color: inherit; text-decoration: none; font-size: 13px; }
+.attn a:first-child { border-top: 0; padding-top: 2px; }
+.attn a:hover b { color: hsl(var(--primary)); }
+.attn a .msg { flex: 1; min-width: 0; color: hsl(var(--muted-foreground)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avail { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+.avail div { background: hsl(var(--secondary) / .6); border-radius: 10px; padding: 8px 10px; }
+.avail span { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: hsl(var(--muted-foreground)); font-weight: 700; }
+.avail b { font-size: 16px; font-variant-numeric: tabular-nums; }
+
+/* ---------- bulk selection */
+.tbl td.sel, .tbl th.sel { width: 34px; padding-right: 0; }
+.tbl input.ck { width: 16px; height: 16px; accent-color: hsl(var(--primary)); color-scheme: dark; cursor: pointer; margin: 0; vertical-align: middle; }
+.bulkbar {
+  position: sticky; bottom: 14px; z-index: 5; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px;
+  padding: 10px 14px; border-radius: 14px; border: 1px solid hsl(var(--primary) / .5); background: hsl(var(--card)); box-shadow: 0 10px 30px rgb(0 0 0 / .4);
+}
+.bulkbar b { margin-right: auto; }
+
+/* ---------- reports */
+.dbar { display: flex; align-items: center; gap: 12px; }
+.dbar .track { flex: 1; min-width: 60px; height: 8px; border-radius: 4px; background: hsl(var(--secondary)); overflow: hidden; }
+.dbar .track i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, hsl(var(--primary) / .35), hsl(var(--primary))); }
+.dbar > span:last-child { min-width: 78px; text-align: right; }
+.tbl tr.total td { font-weight: 700; border-top: 2px solid hsl(var(--border)); }

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { HashRouter, NavLink, Route, Routes } from "react-router-dom";
-import { Cpu, Gauge as GaugeIcon, LayoutDashboard, Network, Pickaxe, Settings2, Trophy, Waves } from "lucide-react";
-import { api, type Overview } from "@/api";
+import { ClipboardList, Cpu, Gauge as GaugeIcon, LayoutDashboard, Network, Pickaxe, Settings2, Trophy, Waves } from "lucide-react";
+import { api, type MinerHealth, type Overview } from "@/api";
 import { usePoll } from "@/hooks";
 import { ToastProvider } from "@/components/Toast";
 import { CinematicIntro } from "@/components/CinematicIntro";
@@ -15,11 +15,15 @@ import AxePool from "@/pages/AxePool";
 import TuningPage from "@/pages/Tuning";
 import System from "@/pages/System";
 import Leaderboard from "@/pages/Leaderboard";
+import Reports from "@/pages/Reports";
 
 export type Theme = "default" | "dtv";
 
 interface Ctx {
   overview: Overview | null;
+  /** health check per miner id */
+  health: Record<number, MinerHealth>;
+  reloadHealth: () => Promise<void>;
   error: string;
   reload: () => Promise<void>;
   theme: Theme;
@@ -79,6 +83,7 @@ const NAV = [
   { to: "/pools", label: "Pools", icon: Waves },
   { to: "/axepool", label: "AxePool", icon: Pickaxe },
   { to: "/tuning", label: "Tuning", icon: GaugeIcon },
+  { to: "/reports", label: "Reports", icon: ClipboardList },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { to: "/system", label: "System", icon: Settings2 },
 ];
@@ -123,7 +128,7 @@ function Shell() {
         ))}
         <div className="foot">
           <span>
-            <Cpu size={12} style={{ verticalAlign: "-2px" }} /> Umbrel · v2.2.0
+            <Cpu size={12} style={{ verticalAlign: "-2px" }} /> Umbrel · v{__APP_VERSION__}
           </span>
           <span>AxeForge &amp; AxeOS miners</span>
         </div>
@@ -138,6 +143,7 @@ function Shell() {
           <Route path="/axepool" element={<AxePool />} />
           <Route path="/tuning" element={<TuningPage />} />
           <Route path="/tuning/:id" element={<TuningPage />} />
+          <Route path="/reports" element={<Reports />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/system" element={<System />} />
           <Route path="*" element={<Dashboard />} />
@@ -151,6 +157,9 @@ export default function App() {
   const [theme, setThemeState] = useState<Theme>(() => (readLocal("axemobile-theme", "default") === "dtv" ? "dtv" : "default"));
   const [intro, setIntro] = useState(() => readLocal("axemobile-intro", "1") !== "0");
   const { data, error, reload } = usePoll(() => api<Overview>("/overview"), 5000);
+  const hp = usePoll(() => api<MinerHealth[]>("/fleet/health"), 20000);
+  const health: Record<number, MinerHealth> = {};
+  for (const h of hp.data ?? []) health[h.id] = h;
 
   useEffect(() => applyTheme(theme), [theme]);
 
@@ -176,7 +185,7 @@ export default function App() {
   };
 
   return (
-    <AppCtx.Provider value={{ overview: data, error, reload, theme, setTheme }}>
+    <AppCtx.Provider value={{ overview: data, health, reloadHealth: hp.reload, error, reload, theme, setTheme }}>
       <ToastProvider>
         {intro && (theme === "dtv" ? <CinematicIntro onComplete={() => setIntro(false)} /> : <Splash onDone={() => setIntro(false)} />)}
         <HashRouter>

@@ -87,6 +87,12 @@ pub fn router(engine: Shared, cfg: &Config) -> Router {
         .route("/miners/{id}/login", post(login))
         .route("/miners/{id}/swarm", get(swarm))
         .route("/pools/apply", post(apply_pools))
+        .route("/bulk/restart", post(bulk_restart))
+        .route("/fleet/health", get(fleet_health))
+        .route("/firmware", get(firmware))
+        .route("/report", get(report))
+        .route("/report.csv", get(report_csv))
+        .route("/history.csv", get(history_csv))
         .route("/history", get(fleet_history))
         .route("/market", get(market))
         .route("/leaderboard", get(leaderboard))
@@ -310,7 +316,7 @@ async fn put_tuning(State(e): State<Shared>, Path(id): Path<i64>, Json(t): Json<
 
 async fn restart(State(e): State<Shared>, Path(id): Path<i64>) -> R<Value> {
     let m = miner(&e, id)?;
-    let msg = e.client.restart(&m.ip, &m.kind, &m.session).await?;
+    let msg = e.restart(&m).await?;
     e.db.add_event(Some(id), "restart", &format!("Restart sent to {}", display(&m)))?;
     Ok(Json(json!({"ok": true, "message": if msg.trim().is_empty() { "Restarting".to_string() } else { msg }})))
 }
@@ -348,6 +354,77 @@ async fn swarm(State(e): State<Shared>, Path(id): Path<i64>) -> R<Value> {
 
 fn display(m: &MinerRow) -> String {
     if m.name.is_empty() { m.ip.clone() } else { m.name.clone() }
+}
+
+#[derive(Deserialize)]
+struct BulkBody {
+    miners: Vec<i64>,
+}
+
+/// Restarts several miners. Fails per miner, not as a whole.
+async fn bulk_restart(State(e): State<Shared>, Json(b): Json<BulkBody>) -> R<Value> {
+    let mut results = vec![];
+    for id in b.miners {
+        let Ok(Some(m)) = e.db.miner(id) else { continue };
+        let r = e.restart(&m).await;
+        if r.is_ok() {
+            let _ = e.db.add_event(Some(id), "restart", &format!("Restart sent to {}", display(&m)));
+        }
+        results.push(json!({"id": id, "ok": r.is_ok(), "message": r.map(|_| "Restarting".to_string()).unwrap_or_else(|x| x.to_string())}));
+    }
+    Ok(Json(json!({"results": results})))
+}
+
+// ---------- health, firmware, reports
+
+async fn fleet_health(State(e): State<Shared>) -> R<Vec<crate::MinerHealth>> {
+    Ok(Json(e.health()))
+}
+
+async fn firmware(State(e): State<Shared>) -> R<Value> {
+    let fw = e.firmware.read().unwrap();
+    let list: Vec<_> = crate::firmware::REPOS.iter().filter_map(|r| fw.get(r).cloned()).collect();
+    Ok(Json(json!({"enabled": e.setting("fw_check") != "0", "releases": list})))
+}
+
+#[derive(Deserialize)]
+struct ReportQ {
+    #[serde(default)]
+    days: Option<i64>,
+    /// minutes east of UTC, like -new Date().getTimezoneOffset()
+    #[serde(default)]
+    tz: Option<i64>,
+    #[serde(default)]
+    miner: Option<i64>,
+    #[serde(default)]
+    range: String,
+}
+
+async fn report(State(e): State<Shared>, Query(q): Query<ReportQ>) -> R<crate::report::Report> {
+    let off = q.tz.unwrap_or(0).clamp(-14 * 60, 14 * 60) * 60;
+    Ok(Json(crate::report::build(&e, q.days.unwrap_or(7), off, q.miner)?))
+}
+
+fn csv_response(name: &str, body: String) -> Response {
+    (
+        [
+            (header::CONTENT_TYPE, "text/csv; charset=utf-8".to_string()),
+            (header::CONTENT_DISPOSITION, format!("attachment; filename=\"{name}\"")),
+        ],
+        body,
+    )
+        .into_response()
+}
+
+async fn report_csv(State(e): State<Shared>, Query(q): Query<ReportQ>) -> Result<Response, ApiError> {
+    let off = q.tz.unwrap_or(0).clamp(-14 * 60, 14 * 60) * 60;
+    let r = crate::report::build(&e, q.days.unwrap_or(30), off, q.miner)?;
+    Ok(csv_response(&format!("axemobile-report-{}d.csv", r.span), crate::report::csv(&r, &e, off, q.miner)?))
+}
+
+async fn history_csv(State(e): State<Shared>, Query(q): Query<ReportQ>) -> Result<Response, ApiError> {
+    let span = if q.range.is_empty() { db::RAW_KEEP_SECS } else { range(&q.range).0.min(db::RAW_KEEP_SECS) };
+    Ok(csv_response("axemobile-history.csv", e.db.history_csv(q.miner, db::now() - span)?))
 }
 
 // ---------- scan
